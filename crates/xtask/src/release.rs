@@ -169,7 +169,7 @@ pub fn run(root: &Path, args: &[String]) -> Result<(), String> {
     if !restored.is_empty() { println!("release: put back {} file(s) the editor rewrote: {}", restored.len(), restored.join(", ")); }
     let log = result?;
     print!("{log}");
-    if log.contains("ERROR:") { return Err("the export printed errors (above)".into()); }
+    if export_printed_errors(&log) { return Err("the export printed errors (above)".into()); }
     if !target.exists() { return Err(format!("the export wrote no {}", target.display())); }
 
     let archive = root.join(OUT_DIR).join(archive_name(&version, platform));
@@ -350,9 +350,28 @@ fn sign_macos(app: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// The one error line the Windows editor prints on every start and that says nothing about the export:
+/// it copies an extension's DLL before loading it and tries to rename the PDB path inside the copy, which
+/// fails because "gdclient.pdb" is one byte shorter than the name it wants to write. It then loads the
+/// original PDB (it says so in the warning that follows). Seen on windows-2025 with Godot 4.7.2.
+const EDITOR_PDB_LINE: &str = "ERROR: The original PDB path size in bytes is too small";
+
+/// Whether an export log carries an error line other than the editor's PDB rename line.
+fn export_printed_errors(log: &str) -> bool {
+    log.lines().any(|l| l.contains("ERROR:") && !l.contains(EDITOR_PDB_LINE))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_editor_pdb_line_is_not_an_export_error() {
+        let pdb = "ERROR: The original PDB path size in bytes is too small: 'gdclient.pdb'. Expected size: 13 or more bytes, but available 12.\n   at: copy_and_rename_pdb (platform/windows/windows_utils.cpp:179)\n";
+        assert!(!export_printed_errors(pdb));
+        assert!(!export_printed_errors("[ DONE ] reimport\n"));
+        assert!(export_printed_errors(&format!("{pdb}ERROR: Failed loading resource: res://ui/theme/project_theme.tres.\n")));
+    }
 
     #[test]
     fn archive_names() {
