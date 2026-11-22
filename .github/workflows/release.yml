@@ -37,6 +37,12 @@ env:
   # 22 November 2026), held past game/audio/sound.gd's _exit_tree. It is a shutdown report, not a fault in
   # the run, so it does not fail the release; every other ERROR line still does.
   EXIT_LEAK: '^ERROR: [0-9]+ resources still in use at exit'
+  # The hosted macOS runner's GPU ("Apple Paravirtual device") has no Metal argument buffers, so it rejects
+  # every baked shader with these three lines and compiles the shader at run time instead (132 times in the
+  # first run, 22 November 2026; the game then starts and reports its renderer). A player's Apple silicon
+  # Mac loads the baked shaders. The windowed launch lets the lines through only when the log names that
+  # adapter, so this job cannot tell whether the baked shaders load: that needs a run on a real Mac.
+  PARAVIRTUAL_SHADER: 'ERROR: (Shader was compiled with argument buffers enabled, but this device does not support them|Condition "!shader_id" is true\. Returning: RID\(\)|Condition "shader\.is_null\(\)" is true\. Returning: false)'
 
 jobs:
   build:
@@ -150,7 +156,9 @@ jobs:
         run: |
           rm -rf scratch-home && mkdir scratch-home
           HOME="$PWD/scratch-home" "unpacked/Black Pennant.app/Contents/MacOS/Black Pennant" --quit-after 600 2>&1 | tee launch.log
-          if grep -E "ERROR|SCRIPT ERROR|Parse Error|panicked" launch.log | grep -vE "$EXIT_LEAK"; then exit 1; fi
+          allow="$EXIT_LEAK"
+          if grep -q 'adapter="Apple Paravirtual device' launch.log; then allow="$EXIT_LEAK|$PARAVIRTUAL_SHADER"; fi
+          if grep -E "ERROR|SCRIPT ERROR|Parse Error|panicked" launch.log | grep -vE "$allow"; then exit 1; fi
           grep -q "renderer: method=" launch.log
 
       - uses: actions/upload-artifact@v4
