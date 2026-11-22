@@ -4,6 +4,8 @@ use super::*;
 use crate::protocol::config::{KillFate, KillRecord, PlayerResult, SortieConfig, SortieResult, SortieStats, VesselRole};
 use content::campaign::RangeBand;
 
+mod gate;
+
 fn data() -> TheatreData {
     let catalogue = Arc::new(content::catalogue::Catalogue::load_embedded().expect("catalogue"));
     let campaign = Arc::new(content::campaign::load::load_embedded(&catalogue).expect("campaign data"));
@@ -291,7 +293,8 @@ fn kit_operations_get_a_fitted_starter_and_open_kit() {
 
 /// One full-physics sortie traced every `BP_EVERY` seconds (30): own hull, the nearest true hostiles and
 /// whether the player picture holds them, the player's tracks, every mount's engagement state and the
-/// emitters. `BP_OPS` (one operation id substring), `BP_SEED` (0), `BP_MIN` (45).
+/// emitters. `BP_OPS` (one operation id substring), `BP_SEED` (0), `BP_MIN` (45); `BP_DROP`, `BP_PILOT` and
+/// `BP_EMCON` as in `gate::gate_act1`.
 /// `cargo test --release -p sim-systems --lib trace_act1 -- --ignored --nocapture`.
 #[test]
 #[ignore = "full physics; prints for a reader"]
@@ -301,7 +304,9 @@ fn trace_act1() {
     use crate::protocol::snapshot::Viewer;
     use content::campaign::MarkerKind;
     use sim_core::PhysEvent;
-    let d = data();
+    let shipped = data();
+    let act1: Vec<OperationId> = shipped.campaign.operations.values().filter(|o| o.act == Act::Act1).map(|o| o.id.clone()).collect();
+    let (d, _) = gate::dropped_data(&shipped, &act1);
     let filter = std::env::var("BP_OPS").unwrap_or_default();
     let seed: u32 = std::env::var("BP_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or(0);
     let minutes: u64 = std::env::var("BP_MIN").ok().and_then(|s| s.parse().ok()).unwrap_or(45);
@@ -312,7 +317,8 @@ fn trace_act1() {
     let setup = player_setup(Policy::Mixed);
     let mut prepared = prepare_config(&config, &setup);
     if std::env::var("BP_NOREC").is_ok() { for v in prepared.vessels.iter_mut().filter(|v| v.role == VesselRole::PlayerHull) { v.emcon = None; } }
-    let mut pilot = Pilot::new(&prepared, &setup, &d);
+    gate::spawn_emcon(&mut prepared);
+    let mut pilot = Pilot::new(&prepared, &setup, &d).with_orders(gate::pilot_orders().1);
     let deps = crate::sim::SimDeps { catalogue: d.catalogue.clone(), campaign: d.campaign.clone(), designs: Default::default(), scripts: Box::new(crate::script::NullScriptHost), guest_gate_passed: false, budgets: Default::default(), ladder: Default::default() };
     eprintln!("{} seed {seed} starter {} sea {} vis {:.0} m time {:?} weather {:?} objective {:?}", op.id.as_str(), starter.header.name, prepared.weather.sea_state.0, prepared.weather.visibility_m, prepared.time_of_day, prepared.weather.kind, prepared.objective);
     for (i, v) in prepared.vessels.iter().enumerate() {

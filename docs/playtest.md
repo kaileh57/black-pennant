@@ -17,7 +17,7 @@ Slower machines are welcome too. Say what you have in the report, because report
 
 From the newest pre-release, download one zip:
 
-- `black-pennant-<version>-macos-arm64.zip` for a Mac.
+- `black-pennant-<version>-macos-arm64.zip` for macOS on Apple silicon.
 - `black-pennant-<version>-windows-x86_64.zip` for Windows.
 
 `SHA256SUMS.txt` lists each zip's checksum. With the GitHub command line installed, `gh attestation verify <zip> --repo kaileh57/black-pennant` checks that GitHub's own runners built the file from this repository.

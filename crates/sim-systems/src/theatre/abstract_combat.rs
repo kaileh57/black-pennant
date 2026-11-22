@@ -370,7 +370,25 @@ struct Hull {
     met: bool,
 }
 
+/// Which of the pilot's orders beyond sailing the briefing route go out. The gate plays with all of them
+/// ([`PilotOrders::ALL`], the default of [`Pilot::new`]); the diagnosis harness withholds some to measure
+/// what each one is worth to the result (`bot::tests::gate`, `BP_PILOT`). Harness only.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct PilotOrders {
+    /// May order EMCON Active (`radiate`, `search`).
+    pub radiate: bool,
+    /// May designate tracks for the officers (`hunt`, `designate_wanted`).
+    pub designate: bool,
+    /// May give any order after the first ones: the hunt, holds, station actions, prizes, withdrawals, the
+    /// escort meeting and the leaving course. Off, the hull only sails the briefing route it got at the start.
+    pub beyond_route: bool,
+}
+impl PilotOrders {
+    pub(crate) const ALL: PilotOrders = PilotOrders { radiate: true, designate: true, beyond_route: true };
+}
+
 pub(crate) struct Pilot {
+    orders: PilotOrders,
     hulls: Vec<Hull>,
     objective: Objective,
     objective_pos: DVec2,
@@ -436,12 +454,17 @@ impl Pilot {
         let vis = config.weather.visibility_m;
         let photo_standoff_m = if vis.is_finite() && vis > 0.0 { PHOTO_STANDOFF_M.min(0.75 * vis).max(300.0) } else { PHOTO_STANDOFF_M };
         Pilot {
-            photo_standoff_m, target_classes, hulls, objective: config.objective.clone(), objective_pos, exits, named_exit, actions: config.actions.clone(), follow: setup.follow_briefing_route, emcon, rules,
+            orders: PilotOrders::ALL, photo_standoff_m, target_classes, hulls, objective: config.objective.clone(), objective_pos, exits, named_exit, actions: config.actions.clone(), follow: setup.follow_briefing_route, emcon, rules,
             marker_names: markers, period: 0,
         }
     }
 
     fn allowed(&self, a: StationAction) -> bool { self.actions.contains(&a) }
+
+    /// Withhold some of the pilot's orders (diagnosis only; the gate uses [`PilotOrders::ALL`]).
+    pub(crate) fn with_orders(mut self, orders: PilotOrders) -> Pilot { self.orders = orders; self }
+    /// The objective point the briefing route runs to.
+    pub(crate) fn objective_pos(&self) -> DVec2 { self.objective_pos }
 }
 
 /// The objective point the briefing route runs to: the generator's rule (`opgen`'s objective point).
@@ -518,7 +541,7 @@ impl Pilot {
             let speed = if matches!(self.objective, Objective::LayMines { .. }) { MINE_RUN_KN.min(cruise).max(MINE_MIN_KN) } else { cruise };
             self.order(i, tick, Command::SetCourse { waypoints: route, speed_kn: Some(speed), append: false }, out);
         }
-        self.start_marker_action(i, tick, out);
+        if self.orders.beyond_route { self.start_marker_action(i, tick, out); }
     }
 
     /// Start the objective's station action whose target is a marker or a line.
@@ -543,6 +566,7 @@ impl Pilot {
         // Route progress.
         while self.hulls[i].route.first().is_some_and(|w| w.distance(pos) < WAYPOINT_M) { self.hulls[i].route.remove(0); }
         if self.hulls[i].phase == Phase::Route && (self.hulls[i].route.is_empty() || pos.distance(self.objective_pos) < WAYPOINT_M) { self.hulls[i].phase = Phase::Objective; }
+        if !self.orders.beyond_route { return; }
         let primary = snap.objectives.iter().find(|o| !o.ghost);
         let primary_done = primary.is_some_and(|o| o.state == ObjectiveState::Done);
         let period = self.period;
@@ -641,7 +665,7 @@ impl Pilot {
     /// Order the radars on (EMCON Active) once: what a player does when the objective needs a contact or a fix
     /// that passive sensors have not given.
     fn radiate(&mut self, i: usize, tick: u64, out: &mut Vec<CommandEnvelope>) {
-        if !self.follow || self.hulls[i].emcon_ordered == Some(Emcon::Active) { return; }
+        if !self.follow || !self.orders.radiate || self.hulls[i].emcon_ordered == Some(Emcon::Active) { return; }
         self.hulls[i].emcon_ordered = Some(Emcon::Active);
         self.push(i, tick, Command::SetEmcon(Emcon::Active), out);
     }
@@ -681,7 +705,7 @@ impl Pilot {
         if !(fresh || self.period.is_multiple_of(HUNT_PERIODS)) { return; }
         match target {
             Some((id, at)) => {
-                if self.hulls[i].designated != id && self.follow {
+                if self.hulls[i].designated != id && self.follow && self.orders.designate {
                     self.hulls[i].designated = id;
                     self.push(i, tick, Command::Designate { track: Some(id) }, out);
                 }
@@ -694,7 +718,7 @@ impl Pilot {
     /// On the approach, designate the objective's own hull (its tag's class, or the site) as soon as a track of
     /// it exists, so the officers engage it rather than holding on a Suspect contact (designation lifts it).
     fn designate_wanted(&mut self, i: usize, snap: &Snapshot, tick: u64, out: &mut Vec<CommandEnvelope>) {
-        if !self.follow || self.target_classes.is_empty() { return; }
+        if !self.follow || !self.orders.designate || self.target_classes.is_empty() { return; }
         let pos = snap.ship.as_ref().and_then(|sh| snap.vessels.iter().find(|v| v.entity == sh.vessel)).map(|v| plane(v.kin.pose.pos)).unwrap_or(DVec2::ZERO);
         let wanted = snap.tracks.iter()
             .filter(|t| !t.last_known && t.domain == Domain::Surface && matches!(t.stance, Stance::Hostile | Stance::Suspect) && t.class.as_ref().is_some_and(|c| self.target_classes.contains(c)) && t.pos.x.is_finite() && t.pos.z.is_finite())
