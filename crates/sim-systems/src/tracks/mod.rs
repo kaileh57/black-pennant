@@ -680,6 +680,18 @@ fn bearing_update(t: &mut Track, m: &Meas<'_>, tuning: &TrackTuning) {
         None => {
             // Ranged track: a bearing pulls it across the line of sight only.
             let cpv = c.quad(nx, nz);
+            // Along the line of sight the uncertainty grows by the growth law from the last fix that measured
+            // range (the fire-control fit's latest fix, for hulls), not from the last bearing. DECISION, u1: with
+            // the along axis taken from the isotropic prior, every bearing folded the unmeasured range error to
+            // 0.64 of itself (`iso_equivalent`). The Combine track of the player in duel.auditor seed 0 (base
+            // 3278162) took a fix from the player's chaff at 569 s and then only ESM bearings: it stayed a Fine, then Coarse,
+            // circle to 1,780 s and never became the wedge L459 draws, so its hull stayed the chaff cloud after the
+            // cloud had gone, the track turned Suspect, and the ace stood off from 630 to 1,990 s to identify it.
+            // Air and weapon tracks keep no fit and keep the old prior.
+            let along_prior = match t.fit.as_ref().filter(|f| f.tick <= tk) {
+                Some(f) => cpv.max(t.growth2((tk - f.tick) as f64 * TICK_S, tuning)),
+                None => cpv,
+            };
             let k = coarse_fix_scale(alpha, cpv, mv);
             let (alpha, kv) = (alpha * k, kv * k);
             let pos = DVec3::new(p.x - alpha * e * nx, p.y, p.z - alpha * e * nz);
@@ -696,7 +708,7 @@ fn bearing_update(t: &mut Track, m: &Meas<'_>, tuning: &TrackTuning) {
             t.vel = vel;
             // Along the line of sight nothing was measured: that axis keeps its prior.
             let (r_cross, v_cross) = fold(cp, cpv_post, cv, nominal_interval_s(m.det.kind), vmax);
-            let (r_along, v_along) = fold(cpv, ppv, pvv, nominal_interval_s(m.det.kind), vmax);
+            let (r_along, v_along) = fold(along_prior, ppv, pvv, nominal_interval_s(m.det.kind), vmax);
             t.r0_m = iso_equivalent(sq(r_along), sq(r_cross)).sqrt().clamp(MIN_SIGMA_M, MAX_SIGMA_M);
             t.sigma_v = (0.5 * (sq(v_along) + sq(v_cross))).sqrt().clamp(MIN_SIGMA_V, vmax);
             t.last_update_tick = tk;
@@ -1420,6 +1432,34 @@ mod tests {
                 assert!(ids <= 40, "{kind:?} seed {seed}: {ids} track numbers in 10 minutes");
             }
         }
+    }
+
+    #[test]
+    fn bearings_alone_let_a_ranged_track_grow_to_a_wedge() {
+        // duel.auditor seed 0: a radar fix gave the Combine track of the player a range, and from then on only
+        // ESM bearings updated it. Each bearing folded the unmeasured range error to 0.64 of itself, so the track
+        // stayed a Fine circle at a range nothing measured, and its hull stayed the chaff cloud that gave it the
+        // fix. Here: one fire-control fix, then ESM alone at 2 Hz on a hull closing at 8 m/s for 3 minutes.
+        let tun = tun();
+        let tt = &tun.tracks;
+        let mut rng = Rng(4);
+        let mut pic = picture();
+        let from = DVec3::new(0.0, 10.0, 0.0);
+        let at = |tick: u64| DVec3::new(-4_000.0, 0.0, -15_000.0) + DVec3::new(2.0, 0.0, 8.0) * (tick as f64 / 60.0);
+        let mut dets = vec![det(&mut rng, 6, sref(1), SensorKind::FireControlRadar, from, eid(5), at(6))];
+        let (mut inside_n, mut n) = (0u32, 0u32);
+        for tick in (6..=(3 * 3_600u64 + 6)).step_by(6) {
+            if tick % 30 == 0 { dets.push(det(&mut rng, tick, sref(2), SensorKind::Esm, from, eid(5), at(tick))); }
+            let mut ch = Vec::new();
+            fuse_core(&mut pic, &dets, &[], tick, &tun, &mut ch);
+            dets.clear();
+            let live: Vec<&Track> = pic.tracks.iter().filter(|t| t.is_live()).collect();
+            assert_eq!(live.len(), 1, "one track at {tick}");
+            if tick > 60 * 60 { n += 1; if inside(live[0], at(tick), tick, tt) { inside_n += 1; } }
+        }
+        let t = pic.tracks.iter().find(|t| t.is_live()).expect("a track");
+        assert_eq!(t.grade, TrackGrade::Bearing, "after 3 minutes of bearings alone the range is a guess again: {t:?}");
+        assert!(inside_n as f64 >= 0.9 * n as f64, "truth inside the drawn shape in {inside_n} of {n} samples");
     }
 
     #[test]

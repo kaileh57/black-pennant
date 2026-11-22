@@ -386,7 +386,19 @@ pub(crate) const GATE_STARTER_DEFAULT: &str = "starters/fac22.bp.ron";
 /// (coordinator's ruling, 22 November 2026): one starter per operation, chosen from the act's starters and
 /// refitted the way the Quartermaster would for the operation's tags; another than the default only where a
 /// measurement shows it is the better fit. The numbers behind each entry are in the comment beside it.
-pub(crate) const GATE_STARTERS: &[(&str, &str)] = &[];
+pub(crate) const GATE_STARTERS: &[(&str, &str)] = &[
+    // Agent extraction, seeds 0 to 3 with every hostile present (22 November 2026): the insertion craft wins 2
+    // of 4 with a 25.1 minute median, no run at the 45 minute stop, and is first held by an enemy picture at
+    // 52 to 240 s; the fast attack craft refitted with the davit and berths wins 0 of 4 with a 33.0 minute
+    // median, two runs at the stop, and is held from the first second. Unopposed they take 24.0 and 29.1
+    // minutes. The insertion craft is L151's stock answer to the cross-section cap and passes it as built.
+    ("op.act1.agent_extraction", "starters/insertion26.bp.ron"),
+    // Measured the same way and left on the default, the difference being one win or none in four: defector
+    // escort (insertion craft 1 of 4, default 0), photo reconnaissance (0 and 0), depot strike (patrol boat 3
+    // of 4, default 2), minelaying (patrol boat 2 of 4, default 1) and Blind Crane Head (patrol boat 3 of 4
+    // at a 23.6 minute median with one run at the stop; default 4 of 4 at 9.8 minutes, which is the L85 step 3
+    // case, a longer approach, not a starter question).
+];
 
 /// The operation's starter design (L317 "its starter design"): the gate table's starter for it
 /// ([`GATE_STARTERS`], else [`GATE_STARTER_DEFAULT`]) when it passes the operation's briefing tags, bare or

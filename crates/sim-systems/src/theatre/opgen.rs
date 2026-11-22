@@ -540,10 +540,19 @@ pub(crate) fn stock_speeds(path: &str, data: &TheatreData) -> Option<DesignSpeed
     f
 }
 
-/// Test seam: record the speeds of a blueprint path without loading it.
-#[cfg(test)]
-pub(crate) fn set_blueprint_speeds(path: &str, top_kn: f64, cruise_kn: f64) {
-    speeds_cache().lock().unwrap_or_else(|e| e.into_inner()).insert(path.to_string(), Some(DesignSpeeds { top_kn, cruise_kn }));
+/// Most player designs whose speeds are kept (a session's edits of one hull stay far under it).
+const INLINE_SPEEDS_MAX: usize = 256;
+
+/// Speeds of a player's own design, measured once per design per process: keyed by its content hash, which
+/// covers the hull, the parts and the officer settings the cruise share comes from.
+fn inline_speeds(bp: &content::blueprint::Blueprint, data: &TheatreData) -> Option<DesignSpeeds> {
+    let key = format!("inline:{:?}", content::blueprint::io::compute_hash(bp));
+    if let Some(f) = speeds_cache().lock().unwrap_or_else(|e| e.into_inner()).get(&key) { return *f; }
+    let f = measure_speeds(bp, data);
+    let mut cache = speeds_cache().lock().unwrap_or_else(|e| e.into_inner());
+    if cache.keys().filter(|k| k.starts_with("inline:")).count() >= INLINE_SPEEDS_MAX { cache.retain(|k, _| !k.starts_with("inline:")); }
+    cache.insert(key, f);
+    f
 }
 
 fn combat_role(role: ClassRole) -> bool { !matches!(role, ClassRole::Freighter | ClassRole::Tanker | ClassRole::Civilian | ClassRole::Tender) }
@@ -1253,7 +1262,7 @@ impl<'a, 'd> Build<'a, 'd> {
     fn player_cruise_kn(&self) -> f64 {
         let data = self.data;
         self.s.seats.iter().filter_map(|p| p.hull.as_ref()).filter_map(|h| match h {
-            SeatHull::Campaign(rec) => measure_speeds(&rec.blueprint, data),
+            SeatHull::Campaign(rec) => inline_speeds(&rec.blueprint, data),
             SeatHull::Stock(path) => path.as_deref().and_then(|p| stock_speeds(p, data)),
         }).map(|f| f.cruise_kn).fold(f64::INFINITY, f64::min)
     }

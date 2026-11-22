@@ -447,3 +447,60 @@ fn gate_act1() {
     });
     assert!(!assert_gate || failed.is_empty(), "the Act 1 stock-officer gate fails at {seeds} seeds: {}", failed.join("; "));
 }
+
+/// What the L317 drop leaves of the L94 commitment (5 hulls and 4 x the act's tonnage cap per player). No
+/// physics: for each Act 1 operation (`BP_OPS`) and each drop count from 0 to `BP_DROPMAX` (12) it builds the
+/// instances the commitment gate builds (`sim-systems/tests/commitment_act1.rs`: a template on 200 seeds for 1
+/// and 2 players, an authored operation from a fresh campaign) and the gate's own sorties (`BP_SEEDS`, 20),
+/// and prints one `COMMIT` line with how many meet both multiples and the smallest hull count and tonnage.
+/// The largest count whose line says `gate1=ok` is the most hulls the fallback can drop from that operation
+/// with the commitment gate still passing.
+/// `BP_OPS=op.act1.minelaying cargo test --release -p sim-systems --lib drop_commitment_act1 -- --ignored --nocapture`
+#[test]
+#[ignore = "prints for a reader"]
+fn drop_commitment_act1() {
+    use super::super::super::opgen::{commitment_ok, generate, generate_standalone};
+    let shipped = data();
+    let filter = std::env::var("BP_OPS").unwrap_or_default();
+    let drop_max = env_u("BP_DROPMAX", 12) as u8;
+    let seeds = env_u("BP_SEEDS", 20) as u32;
+    let mut ids: Vec<OperationId> = shipped.campaign.operations.values().filter(|o| o.act == Act::Act1 && o.kind != OperationKind::Tutorial && o.id.as_str().contains(filter.as_str())).map(|o| o.id.clone()).collect();
+    ids.sort();
+    for id in &ids {
+        for drop in 0..=drop_max {
+            let mut campaign = (*shipped.campaign).clone();
+            if drop > 0 { campaign.rules.hostile_drop.insert(id.clone(), drop); }
+            let d = TheatreData { campaign: Arc::new(campaign), catalogue: shipped.catalogue.clone() };
+            let op = &d.campaign.operations[id];
+            let (mut n, mut ok, mut min_h, mut min_t) = (0u32, 0u32, u16::MAX, f64::INFINITY);
+            let mut tally = |g: &super::super::super::opgen::Generated, players: u8| {
+                n += 1;
+                if commitment_ok(g, Act::Act1, players, &d) { ok += 1; }
+                if players == 1 { min_h = min_h.min(g.committed_hulls); min_t = min_t.min(g.committed_tonnage_t); }
+            };
+            match op.kind {
+                OperationKind::Template(m) => {
+                    for players in 1..=2u8 {
+                        for seed in 0..200u64 {
+                            let g = generate_standalone(m, Act::Act1, players, seed, &DifficultySliders::default(), None, &d).expect("the template generates");
+                            tally(&g, players);
+                        }
+                    }
+                }
+                _ => {
+                    let starter = content::campaign::load::stock_blueprint(GATE_STARTER_DEFAULT).expect("the default starter");
+                    let new = NewCampaign { seed: 5, difficulty: DifficultySliders::default(), ironman: false, slot_name: "s".into(), players: vec![(1, "p".into(), starter)], start_act: Act::Act1 };
+                    let t = Theatre::new_campaign(new, d.clone());
+                    let g = generate(&t.state, &d, id, &[]).expect("the authored operation generates");
+                    tally(&g, 1);
+                }
+            }
+            // The gate's own sorties: the combatants left to fight.
+            let starter = op_starter(op, Act::Act1, &d);
+            let left: Vec<usize> = (0..seeds).filter_map(|s| winnability_config(id, Act::Act1, s, &starter, &d)).map(|c| c.vessels.iter().filter(|v| v.role == VesselRole::Combatant).count()).collect();
+            eprintln!("COMMIT op={} drop={drop} gate1={} met={ok}/{n} min_hulls_1p={min_h} min_tonnage_1p={min_t:.0} gate_combatants_min={} gate_combatants_max={}", id.as_str(), if ok == n { "ok" } else { "short" },
+                left.iter().min().copied().unwrap_or(0), left.iter().max().copied().unwrap_or(0));
+            if left.iter().all(|c| *c == 0) && ok < n { break; }
+        }
+    }
+}

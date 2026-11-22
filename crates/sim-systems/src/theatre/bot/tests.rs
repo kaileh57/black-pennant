@@ -323,6 +323,11 @@ fn the_gate_sails_the_fast_attack_craft_unless_it_cannot_pass_the_tags() {
     assert!(fitted(&fac, radar, Act::Act1, &d).is_none(), "the fast attack craft cannot be made to pass the 80 m2 cap");
     let s = op_starter(radar, Act::Act1, &d);
     assert!(s.header.name != fac.header.name && fits(&s, radar, Act::Act1, &d), "sails {}", s.header.name);
+    // A listed operation sails its listed starter when that passes the tags as built.
+    for (id, path) in GATE_STARTERS {
+        let (o, listed) = (op(id), stock(path));
+        if fits(&listed, o, Act::Act1, &d) { assert_eq!(op_starter(o, Act::Act1, &d), listed, "{id}"); }
+    }
     // Acts whose starters do not include the default go by their own list.
     let act2 = act_starters(Act::Act2, &d);
     let any2 = d.campaign.operations.values().filter(|o| o.act == Act::Act2 && o.tags.is_empty()).min_by(|a, b| a.id.cmp(&b.id));
@@ -333,7 +338,8 @@ fn the_gate_sails_the_fast_attack_craft_unless_it_cannot_pass_the_tags() {
 /// whether the player picture holds them, the player's tracks, every mount's engagement state and the
 /// emitters. `BP_OPS` (one operation id substring), `BP_SEED` (0), `BP_MIN` (45); `BP_DROP`, `BP_PILOT` and
 /// `BP_EMCON` as in `gate::gate_act1`. `BP_ALL` lists every other hull's position and status, `BP_GROUPS` every AI group's orders,
-/// mode and memory.
+/// mode and memory, `BP_HULL` how the player hull floats (height, heel, trim, water aboard). A prize is listed with its
+/// orders, captain and shaft power.
 /// `cargo test --release -p sim-systems --lib trace_act1 -- --ignored --nocapture`.
 #[test]
 #[ignore = "full physics; prints for a reader"]
@@ -360,6 +366,7 @@ fn trace_act1() {
     let mut pilot = Pilot::new(&prepared, &setup, &d).with_orders(gate::pilot_orders().1);
     let deps = crate::sim::SimDeps { catalogue: d.catalogue.clone(), campaign: d.campaign.clone(), designs: Default::default(), scripts: Box::new(crate::script::NullScriptHost), guest_gate_passed: false, budgets: Default::default(), ladder: Default::default() };
     eprintln!("{} seed {seed} starter {} sea {} vis {:.0} m time {:?} weather {:?} objective {:?}", op.id.as_str(), starter.header.name, prepared.weather.sea_state.0, prepared.weather.visibility_m, prepared.time_of_day, prepared.weather.kind, prepared.objective);
+    for (at_s, w) in &prepared.weather_changes { eprintln!("  weather turns at {at_s} s: {:?} sea {} vis {:.0} m", w.kind, w.sea_state.0, w.visibility_m); }
     for (i, v) in prepared.vessels.iter().enumerate() {
         eprintln!("  vessel {i}: side {} role {:?} class {:?} tag {:?} pos ({:.0}, {:.0}) arrives {} s", v.side.0, v.role, v.class.as_ref().map(|c| c.as_str()), v.tag, v.pos.x, v.pos.z, v.arrives_s);
     }
@@ -429,6 +436,20 @@ fn trace_act1() {
             // Prizes whatever side they are on now (a taken prize changes side and leaves the lists below).
             for v in sim.objectives.hulls.iter().filter(|h| h.role == VesselRole::Prize).filter_map(|h| sim.world().vessel(h.vessel)) {
                 eprintln!("    prize e{} side {} ({:.0}, {:.0}) {:?} speed {:.1} kn lost {:.3}", v.id.index, v.side.0, v.kin.pose.pos.x, v.kin.pose.pos.z, v.status, v.forward_speed() / sim_core::time::KN, v.cells_lost_fraction());
+                // What drives it: the orders its Helm holds, its captain, and the shaft power it has left.
+                if let Some(s) = sim.ships.get(v.id) {
+                    eprintln!("      orders speed {:?} route {:?} station {:?} formation {} | captain {:?} | shaft {:.0} kW", s.orders.speed_kn, s.orders.route.iter().map(|w| (w.x.round(), w.y.round())).collect::<Vec<_>>(), s.orders.station.map(|x| (x.0.x.round(), x.0.y.round())), s.orders.formation.is_some(),
+                        s.captain.as_ref().map(|c| (c.behaviour, c.mode, c.group, c.route.len())), v.propulsion_kw());
+                }
+            }
+            // `BP_HULL`: how the player hull floats (a hull lost with no hit on it).
+            if std::env::var("BP_HULL").is_ok() {
+                if let Some(v) = sim.world().vessel(own) {
+                    let (heel, trim) = v.heel_trim();
+                    let water: f64 = v.compartments.compartments.iter().map(|c| c.water_m3).sum();
+                    let wet = v.compartments.compartments.iter().filter(|c| c.water_m3 > 0.01).count();
+                    eprintln!("    hull y {:.2} m heel {:.1} trim {:.1} deg water {water:.1} m3 in {wet} of {} compartments mass {:.0} kg status {:?}", v.kin.pose.pos.y, heel.to_degrees(), trim.to_degrees(), v.compartments.compartments.len(), v.mass.mass_kg, v.status);
+                }
             }
             if std::env::var("BP_ALL").is_ok() {
                 let all: Vec<String> = sim.world().vessels().filter(|v| v.1.side != me).map(|v| format!("e{} ({:.0},{:.0}) {:?}", v.1.id.index, v.1.kin.pose.pos.x, v.1.kin.pose.pos.z, v.1.status)).collect();

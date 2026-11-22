@@ -715,10 +715,12 @@ impl Pilot {
 
     /// The point [`ESCORT_FLANK_M`] abeam of `at`, across the leg from the objective point to the objective's
     /// exit, on the side the hull came in from. An escort and a prize's captor sail and wait there, never on
-    /// the leg itself: an AI hull that finds another hull ahead on its route turns away and then takes its
-    /// planned route again from its first waypoint, so a defector whose escort sailed ahead of it, or waited
-    /// on the exit marker, shuttled between its anchorage and the escort and never reached the exit (traced
-    /// on the defector escort, 22 November 2026).
+    /// the leg itself. Observed on the defector escort with no hostile hull present (22 November 2026, seed
+    /// 0): with the escort sailing ahead of it and then waiting on the exit marker, the defector shuttled
+    /// between its anchorage and a point about 3 km short of the escort for 30 minutes and never reached the
+    /// exit; with the escort abeam it sails straight there. The cause inside the AI (it looks like the
+    /// planned route being taken again from its first waypoint after a turn away from a hull ahead) is not
+    /// traced.
     fn flank(&self, i: usize, at: DVec2) -> DVec2 {
         let Some(exit) = self.named_exit else { return at };
         let leg = (exit - self.objective_pos).normalize_or_zero();
@@ -883,7 +885,8 @@ impl Pilot {
     fn board(&mut self, i: usize, pos: DVec2, snap: &Snapshot, finished: &[(StationAction, Option<EntityId>)], tick: u64, out: &mut Vec<CommandEnvelope>) {
         let Some(ship) = snap.ship.as_ref() else { return };
         let running = ship.actions.iter().any(|a| a.action == StationAction::BoardAndCapture && matches!(a.state, ActionState::Running | ActionState::Paused));
-        let hostile_track = |id: TrackId| !id.is_none() && snap.tracks.iter().any(|t| t.id == id && t.stance != Stance::Friend);
+        // Never a Neutral hull: a decoy convoy sails hulls of the prize's own classes.
+        let hostile_track = |id: TrackId| !id.is_none() && snap.tracks.iter().any(|t| t.id == id && matches!(t.stance, Stance::Hostile | Stance::Suspect));
         let dist = |v: &crate::protocol::snapshot::VesselView| plane(v.kin.pose.pos).distance_squared(pos);
         // Every boarded hull goes home under its own Helm, once, when its boarding finishes.
         for e in prizes_due(finished, &self.hulls[i].prized) {
@@ -892,9 +895,14 @@ impl Pilot {
         }
         if !self.hulls[i].prized.is_empty() && matches!(self.objective, Objective::CutOut { .. }) { self.hulls[i].phase = Phase::Leaving; }
         if self.hulls[i].phase == Phase::Leaving { self.leave(i, pos, tick, out); return; }
-        // A disabled enemy hull in visual range: close and board.
+        // A disabled enemy hull in visual range: close and board. Only a hull whose track carries the
+        // objective's class (a prize is briefing-named, so its track does from first contact): a disabled
+        // escort is not the prize, and boarding one kept the hull alongside the convoy's guns for nothing.
+        let class_of = |id: TrackId| snap.tracks.iter().find(|t| t.id == id).and_then(|t| t.class.as_ref());
+        let is_prize = |v: &&crate::protocol::snapshot::VesselView| self.target_classes.is_empty() || class_of(v.track).is_some_and(|c| self.target_classes.contains(c));
         let target = snap.vessels.iter()
             .filter(|v| v.entity != ship.vessel && v.status == VesselStatus::Disabled && hostile_track(v.track) && !self.hulls[i].prized.contains(&v.entity))
+            .filter(is_prize)
             .min_by(|a, b| dist(a).total_cmp(&dist(b)).then(a.entity.cmp(&b.entity)));
         match target {
             Some(v) => {
@@ -1300,6 +1308,28 @@ mod tests {
         let abeam = p.flank(0, exit);
         assert!((abeam.distance(exit) - ESCORT_FLANK_M).abs() < 1e-6 && (abeam - exit).dot(exit - berth).abs() < 1e-3);
         assert!(after.iter().any(|c| matches!(c, Command::SetCourse { waypoints, .. } if waypoints[0] == abeam)), "{after:?}");
+        // A disabled escort beside the disabled prize: the boarding is started on the prize, the farther one.
+        let mut p = Pilot::new(&c, &SETUP, &d);
+        let other = ClassId::new("class.not_the_prize");
+        let disabled = |e: u64, at: DVec2, t: u32| { let mut v = snapshot(at, Vec::new(), Vec::new()).vessels.remove(0); v.entity = EntityId::from_u64(e); v.status = VesselStatus::Disabled; v.track = TrackId(t); v };
+        let boarding = steer_for(&mut p, 3, &[], |_, tick| {
+            let mut s = snapshot(short, vec![track(11, Stance::Hostile, TrackGrade::Fine, short + DVec2::new(200.0, 0.0), DVec2::ZERO, Some(other.clone()), tick), track(12, Stance::Suspect, TrackGrade::Fine, berth, DVec2::ZERO, class.clone(), tick)], Vec::new());
+            s.vessels.push(disabled(11, short + DVec2::new(200.0, 0.0), 11));
+            s.vessels.push(disabled(12, berth, 12));
+            s
+        });
+        let boarded: Vec<u32> = boarding.iter().filter_map(|c| match c { Command::StartAction { action: StationAction::BoardAndCapture, target: ActionTarget::Track(t) } => Some(t.0), _ => None }).collect();
+        assert_eq!(boarded, vec![12], "{boarding:?}");
+        // A disabled hull of no known class is not boarded either, nor a Neutral one of the prize's class (a
+        // decoy).
+        let mut p = Pilot::new(&c, &SETUP, &d);
+        let unknown = steer_for(&mut p, 3, &[], |_, tick| {
+            let mut s = snapshot(short, vec![track(13, Stance::Suspect, TrackGrade::Fine, short + DVec2::new(200.0, 0.0), DVec2::ZERO, None, tick), track(14, Stance::Neutral, TrackGrade::Fine, short + DVec2::new(-200.0, 0.0), DVec2::ZERO, class.clone(), tick)], Vec::new());
+            s.vessels.push(disabled(13, short + DVec2::new(200.0, 0.0), 13));
+            s.vessels.push(disabled(14, short + DVec2::new(-200.0, 0.0), 14));
+            s
+        });
+        assert!(unknown.iter().all(|c| !matches!(c, Command::StartAction { .. })), "{unknown:?}");
         // The pure rule: every finished boarding once, in order, less the hulls already ordered home.
         let (e1, e2, e3) = (EntityId::from_u64(1), EntityId::from_u64(2), EntityId::from_u64(3));
         let finished = [(StationAction::BoardAndCapture, Some(e1)), (StationAction::Photograph, Some(e2)), (StationAction::BoardAndCapture, Some(e3)), (StationAction::BoardAndCapture, Some(e1)), (StationAction::BoardAndCapture, None)];
