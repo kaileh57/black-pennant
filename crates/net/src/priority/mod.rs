@@ -81,9 +81,11 @@ impl PriorityAccumulator {
         let mut own = Vec::new();
         let mut due: Vec<(f32, ItemKey)> = Vec::new();
         let mut seen = std::collections::BTreeSet::new();
-        for (key, rel, shed) in items {
+        for (key, rel, shed, weapon) in items {
             if !seen.insert(key) { continue; }
-            let rate = if shed { 0.0 } else { rate_hz(&key, rel, &self.tuning, self.shedding) };
+            let mut rate = if shed { 0.0 } else { rate_hz(&key, rel, &self.tuning, self.shedding) };
+            // A weapon in flight is guided-missile state: 5 Hz (L926), never faster than its own body item.
+            if weapon { rate = rate.min(self.tuning.guided_body_hz as f32); }
             let step = rate / hz;
             self.step.insert(key, step);
             if is_own(&key, rel) {
@@ -135,7 +137,9 @@ impl PriorityAccumulator {
 /// - Bodies: `guided_body_hz` (5 Hz, L1421), or the distant rates for bodies beyond 10 km. Decoys:
 ///   `guided_body_hz`.
 /// - Tracks: distant 1 Hz, distant-fast 2 Hz (1 Hz while shedding), otherwise the 10 Hz track rate capped
-///   by `other_vessel_hz`.
+///   by `other_vessel_hz`. [`PriorityAccumulator::order`] caps tracks of weapons in flight at
+///   `guided_body_hz` (5 Hz, L926): a missile's track updates no faster than its replicated state, where
+///   the spec is silent on near weapon tracks.
 /// - Sections: `ship_status_hz` for the own ship status, `slow_section_hz` for the rest.
 pub fn rate_hz(key: &ItemKey, relevance: Relevance, tuning: &RateTuning, shedding: Shedding) -> f32 {
     let distant = |fast: bool| if fast { tuning.distant_fast_hz } else { tuning.distant_hz };
@@ -189,13 +193,14 @@ fn weight(key: &ItemKey, rel: Relevance) -> f32 {
 
 /// Every item of a snapshot with its relevance and whether its pose is shed. Decoys carry no relevance and
 /// rank as near items; sections rank by their own weights.
-fn items_of(snap: &Snapshot, shedding: Shedding) -> Vec<(ItemKey, Relevance, bool)> {
-    let mut out = Vec::with_capacity(snap.vessels.len() + snap.bodies.len() + snap.decoys.len() + snap.tracks.len() + 5);
-    out.extend(snap.vessels.iter().map(|v| (ItemKey::Vessel(v.entity), v.relevance, shed_pose(v, shedding))));
-    out.extend(snap.bodies.iter().map(|b| (ItemKey::Body(b.entity), b.relevance, false)));
-    out.extend(snap.decoys.iter().map(|d| (ItemKey::Decoy(d.entity), Relevance::Near, false)));
-    out.extend(snap.tracks.iter().map(|t| (ItemKey::Track(t.id), t.relevance, false)));
-    for s in Section::ALL { out.push((ItemKey::Section(s), Relevance::OwnSide, false)); }
+/// The last flag marks tracks of weapons (`Domain::Weapon`), which take the guided-missile rate.
+fn items_of(snap: &Snapshot, shedding: Shedding) -> Vec<(ItemKey, Relevance, bool, bool)> {
+    let mut out = Vec::with_capacity(snap.vessels.len() + snap.bodies.len() + snap.decoys.len() + snap.tracks.len() + 6);
+    out.extend(snap.vessels.iter().map(|v| (ItemKey::Vessel(v.entity), v.relevance, shed_pose(v, shedding), false)));
+    out.extend(snap.bodies.iter().map(|b| (ItemKey::Body(b.entity), b.relevance, false, false)));
+    out.extend(snap.decoys.iter().map(|d| (ItemKey::Decoy(d.entity), Relevance::Near, false, false)));
+    out.extend(snap.tracks.iter().map(|t| (ItemKey::Track(t.id), t.relevance, false, t.domain == content::enums::Domain::Weapon)));
+    for s in Section::ALL { out.push((ItemKey::Section(s), Relevance::OwnSide, false, false)); }
     out
 }
 
@@ -275,6 +280,25 @@ mod tests {
         s2.vessels.retain(|v| v.entity.index != 1);
         p.order(&s2);
         assert!(!p.acc.contains_key(&near));
+    }
+
+    #[test]
+    fn weapon_tracks_take_the_guided_missile_rate() {
+        let mut p = PriorityAccumulator::new(RateTuning::default());
+        let mut s = snap();
+        let weapon = |id, rel| TrackView { domain: content::enums::Domain::Weapon, relevance: rel, ..track(id) };
+        s.tracks = vec![weapon(20, Relevance::Engaged), weapon(21, Relevance::Near), weapon(22, Relevance::DistantFast), TrackView { relevance: Relevance::Engaged, ..track(23) }];
+        let mut counts = std::collections::BTreeMap::<ItemKey, u32>::new();
+        for tick in 0..300u64 {
+            let o = p.order(&s);
+            for k in &o { *counts.entry(*k).or_default() += 1; }
+            p.sent(&o, tick);
+        }
+        // 10 s: near and engaged weapons at 5 Hz (L926), distant ones keep their 2 Hz, a surface track 10 Hz.
+        assert_eq!(counts[&ItemKey::Track(TrackId(20))], 50);
+        assert_eq!(counts[&ItemKey::Track(TrackId(21))], 50);
+        assert_eq!(counts[&ItemKey::Track(TrackId(22))], 20);
+        assert_eq!(counts[&ItemKey::Track(TrackId(23))], 100);
     }
 
     #[test]

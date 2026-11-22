@@ -297,15 +297,65 @@ fn a_struck_then_captured_hull_counts_once() {
     ];
     let ships = crate::ship::ShipTable::default();
     let mut s = ObjectivesState::default();
-    refresh_hulls(&mut s, &w, &ships, &c, &[], 0.1);
+    refresh_hulls(&mut s, &w, &ships, &c, &[], 0.1, 0);
     assert_eq!(s.hulls.iter().filter(|h| h.enemy).count(), 2);
     w.set_struck(prize, true);
-    refresh_hulls(&mut s, &w, &ships, &c, &[], 0.1);
+    refresh_hulls(&mut s, &w, &ships, &c, &[], 0.1, 0);
     // Captured: the flag is cleared and the hull changes side.
     w.set_struck(prize, false);
     w.set_side(prize, SideId(0));
-    refresh_hulls(&mut s, &w, &ships, &c, &[], 0.1);
+    refresh_hulls(&mut s, &w, &ships, &c, &[], 0.1, 0);
     let r = build_result(&s, &w, &ships, &crate::specops::SpecOpsState::default(), &[], &[], &c, 0);
     assert_eq!(r.stats.enemy_struck, 1);
     assert!(s.hull(prize).is_some_and(|h| h.struck) && s.hull(other).is_some_and(|h| !h.struck));
+}
+
+#[test]
+fn disabled_player_hulls_end_the_sortie_after_five_minutes() {
+    let s300 = (PLAYER_DISABLED_DEFEAT_S * sim_core::time::TICK_HZ as f64) as u64;
+    let player = |i: u32| HullFacts { player: Some(PlayerSlot(i as u8)), role: VesselRole::PlayerHull, ..hull(i, false, 100.0, "") };
+    // One hull: disabled at tick 1000, still disabled one tick short of 300 s, then at 300 s.
+    let mut a = player(1);
+    note_status(&mut a, VesselStatus::Disabled, false, 1_000);
+    note_status(&mut a, VesselStatus::Disabled, false, 5_000);
+    assert_eq!(a.disabled_since, Some(1_000));
+    assert_eq!(player_hulls_out(std::slice::from_ref(&a), 1_000 + s300 - 1), None);
+    assert_eq!(player_hulls_out(std::slice::from_ref(&a), 1_000 + s300), Some(EndReason::PlayerHullsDisabled));
+    // A break (propulsion restored for one evaluation) restarts the count.
+    note_status(&mut a, VesselStatus::Active, false, 6_000);
+    assert_eq!(a.disabled_since, None);
+    note_status(&mut a, VesselStatus::Disabled, false, 7_000);
+    assert_eq!(player_hulls_out(std::slice::from_ref(&a), 1_000 + s300), None);
+    assert_eq!(player_hulls_out(std::slice::from_ref(&a), 7_000 + s300), Some(EndReason::PlayerHullsDisabled));
+    // Co-op: one hull still under way holds the sortie open; once it is lost, the disabled one decides it.
+    let mut b = player(2);
+    note_status(&mut b, VesselStatus::Active, false, 7_000);
+    let both = vec![a.clone(), b.clone()];
+    assert_eq!(player_hulls_out(&both, 7_000 + 10 * s300), None);
+    note_status(&mut b, VesselStatus::Lost(LossCause::Sunk), false, 8_000);
+    assert_eq!(b.disabled_since, None);
+    assert_eq!(player_hulls_out(&[a.clone(), b.clone()], 7_000 + s300 - 1), None);
+    assert_eq!(player_hulls_out(&[a.clone(), b.clone()], 7_000 + s300), Some(EndReason::PlayerHullsDisabled));
+    // Every hull lost is its own reason; enemy hulls and an empty list never decide.
+    let mut c = a.clone();
+    note_status(&mut c, VesselStatus::Lost(LossCause::Capsized), false, 9_000);
+    assert_eq!(player_hulls_out(&[c, b], 9_000), Some(EndReason::PlayerHullsLost));
+    let mut enemy = hull(9, true, 100.0, "");
+    note_status(&mut enemy, VesselStatus::Disabled, false, 0);
+    assert_eq!(player_hulls_out(&[enemy], 10 * s300), None);
+    assert_eq!(player_hulls_out(&[], 10 * s300), None);
+}
+
+#[test]
+fn disabled_defeat_shows_its_own_text() {
+    let c = config(Objective::DestroyAll, vec![GhostKind::NoKills], ModeRules::Objective);
+    let mut s = init(&c);
+    assert_eq!(views(&s, &c)[0].text.key.0, "objective.destroy_all");
+    s.end_reason = Some(EndReason::PlayerHullsDisabled);
+    let v = views(&s, &c);
+    assert_eq!(v[0].text.key.0, "objective.end.hulls_disabled");
+    assert_eq!(v[0].state, ObjectiveState::Failed);
+    assert!(text_keys().contains(&"objective.end.hulls_disabled"));
+    s.end_reason = Some(EndReason::TimeLimit);
+    assert_eq!(views(&s, &c)[0].text.key.0, "objective.destroy_all");
 }

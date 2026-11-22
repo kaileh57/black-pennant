@@ -320,6 +320,10 @@ pub const OWN_TRACK_RADIUS_M: f64 = 60.0;
 pub const FRIEND_MIN_ALONG_M: f64 = 100.0;
 pub const FRIEND_OVERSHOOT_M: f64 = 500.0;
 pub const FRIEND_LATERAL_M: f64 = 150.0;
+/// DECISION (owner ruling, 22 November 2026, reading L487 "nothing auto-engages a Neutral or Friend track" for
+/// guns as L483 reads it for missiles): an officer-fired gun holds while a live Neutral or Friend surface track's
+/// estimate lies this close (horizontally) to the target's predicted position.
+pub const GUN_CLEAR_OF_NEUTRAL_M: f64 = 500.0;
 /// Masking by another gun mount: a mount pivot within this lateral distance of the bore line, ahead by at most
 /// `MASK_REACH_M`, and less than `MASK_CLEARANCE_M` below the bore there, masks the shot.
 pub const MASK_RADIUS_M: f64 = 2.0;
@@ -421,6 +425,9 @@ struct AssignCtx<'a> {
     /// The tracks a seeker-basket test looks for, with their predictions at the tick: live Neutral tracks and
     /// the `friends`, in track order. Computed once here, not once per mount and candidate target.
     basket: Vec<(Stance, TrackId, DVec3)>,
+    /// Live Neutral surface tracks and Friend surface tracks of `friends`, predicted at the tick: the gun hold
+    /// near a target ([`GUN_CLEAR_OF_NEUTRAL_M`]).
+    surface_clear: Vec<(Stance, TrackId, DVec3)>,
 }
 
 impl<'a> AssignCtx<'a> {
@@ -441,7 +448,10 @@ impl<'a> AssignCtx<'a> {
         let basket = input.tracks.iter()
             .filter(|t| usable(t) && (t.stance == Stance::Neutral || (t.stance == Stance::Friend && friend_ids.contains(&t.id))))
             .map(|t| (t.stance, t.id, t.predict(input.tick))).filter(|b| b.2.is_finite()).collect();
-        Self { input, tuning, open_fire, fov_half_rad, friends, friend_ids, unranked_suspects, basket }
+        let surface_clear = input.tracks.iter()
+            .filter(|t| usable(t) && t.domain == Domain::Surface && (t.stance == Stance::Neutral || (t.stance == Stance::Friend && friend_ids.contains(&t.id))))
+            .map(|t| (t.stance, t.id, t.predict(input.tick))).filter(|b| b.2.is_finite()).collect();
+        Self { input, tuning, open_fire, fov_half_rad, friends, friend_ids, unranked_suspects, basket, surface_clear }
     }
 
     /// Best target for one mount, or the hold (track, reason) to report.
@@ -489,6 +499,13 @@ impl<'a> AssignCtx<'a> {
         };
         if is_gun(m.weapon) {
             self.gun_geometry(m, muzzle, tp, range)?;
+            // L487: no officer-fired gun shoots at a surface contact with a Neutral or Friend hull beside it.
+            if !pd && t.domain == Domain::Surface {
+                if let Some(&(stance, other, _)) = self.surface_clear.iter().filter(|b| b.1 != t.id)
+                    .find(|b| { let d = DVec2::new(b.2.x - tp.x, b.2.z - tp.z).length(); d.is_finite() && d <= GUN_CLEAR_OF_NEUTRAL_M }) {
+                    return Err(if stance == Stance::Neutral { HoldReason::NeutralInSeekerBasket { neutral: other } } else { HoldReason::FriendInLine { friend: other } });
+                }
+            }
             // The open-fire test of a default entry (DECISION, k2): the entry's range is the gauge's, solved
             // against the 40 m reference hull (L489); inside it the officer fires only while the predicted
             // single-round hit probability against this contact, with the errors its fire control really has,

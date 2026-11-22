@@ -166,8 +166,51 @@ fn hostile_contact_announces_then_moves_to_the_log() {
     assert_eq!(state(&m, 0), AlertState::LogOnly);
     step(&mut m, &[h], NEW_TRACK_S * S + 100);
     assert_eq!(m.alerts.len(), 1, "still live: not raised again");
-    assert_eq!(m.for_vessel(v(1)).len(), 1);
+    assert!(m.for_vessel(v(1)).is_empty(), "log-only items reach the log through events, not the strip list");
     step(&mut m, &[], NEW_TRACK_S * S + 101);
     assert!(m.for_vessel(v(1)).is_empty(), "rectified history is not repeated");
     assert_eq!(m.raised_in_window(v(1), NEW_TRACK_S * S + 101, 1200.0), 1);
+}
+
+#[test]
+fn cleared_alarms_go_to_the_log_after_their_hold() {
+    let mut m = AlertManager::default();
+    let w = c(1, AlertKind::WeaponInbound { track: TrackId(9) });
+    step(&mut m, &[w], 0);
+    let out = step(&mut m, &[], 10);
+    assert_eq!(out, vec![AlertChange::State(AlertId(0), AlertState::Cleared)]);
+    assert_eq!(m.for_vessel(v(1)).len(), 1, "Cleared shows on the strip");
+    assert!(step(&mut m, &[], 10 + CLEARED_HOLD_S * S - 1).is_empty());
+    let out = step(&mut m, &[], 10 + CLEARED_HOLD_S * S);
+    assert_eq!(out, vec![AlertChange::State(AlertId(0), AlertState::LogOnly)]);
+    assert!(m.for_vessel(v(1)).is_empty());
+    assert_eq!(m.alerts.len(), 1, "the log keeps it");
+}
+
+#[test]
+fn a_long_battles_replicated_alerts_stay_small() {
+    // Twenty minutes of a heavy battle, as the reference soak saw it: five fresh inbound weapons a second
+    // (each one an Alarm, rectified unacknowledged 4 s later: nobody acknowledges), and 100 Hostile contacts
+    // that live the whole time. Before Cleared alarms went to the log the list held every one of them
+    // (852 after three minutes of the soak, about 14.8 kB on the wire).
+    let mut m = AlertManager::default();
+    let hostiles: Vec<Condition> = (0..100).map(|t| c(1, AlertKind::NewHostileTrack { track: TrackId(10_000 + t) })).collect();
+    let mut worst = 0usize;
+    for sec in 0..1200u64 {
+        for sub in 0..S {
+            let tick = sec * S + sub;
+            let mut conds = hostiles.clone();
+            for k in sec.saturating_sub(3) * 5..=sec * 5 + 4 { conds.push(c(1, AlertKind::WeaponInbound { track: TrackId(k as u32) })); }
+            step(&mut m, &conds, tick);
+        }
+        let list = m.for_vessel(v(1));
+        // Sized as net's frames carry it: compact varint bincode per element.
+        use bincode::Options;
+        let opts = bincode::DefaultOptions::new().with_varint_encoding();
+        let bytes: usize = list.iter().map(|a| opts.serialized_size(a).unwrap() as usize + 1).sum();
+        worst = worst.max(bytes);
+    }
+    // One snapshot interval at the 256 kbps start cap is 1,066 bytes.
+    assert!(worst < 1_066, "alerts section peaked at {worst} bytes");
+    assert!(m.alerts.len() > 6_000, "the log keeps every alert");
 }

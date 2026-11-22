@@ -538,25 +538,39 @@ pub(crate) struct Situation<'a> {
 fn xz(v: DVec3) -> DVec2 { DVec2::new(v.x, v.z) }
 fn finite2(v: DVec2) -> bool { v.x.is_finite() && v.y.is_finite() }
 
+/// Longest effective range of a working gun and of a working anti-ship missile or torpedo launcher (point
+/// defence excluded), metres; 0 = none. `range_of` gives a mount's range (its doctrine entry, else the design's).
+///
+/// DECISION, u1: a launcher counts only while it can still fire (`engage::weapon_can_fire`: a round ready or
+/// reloading, and power). The Arrears (duel.auditor) launched its four missiles by 534 s and its striker tree
+/// then held at missile launch range, 13 km off, for the rest of the sortie with empty cells, so its 76 mm
+/// never came into range: the duel had no fight. An emptied striker now fights on as a combatant with its gun.
+pub(crate) fn weapon_ranges(mounts: &[crate::doctrine::MountInfo], parts: &[sim_core::parts::PartRuntime], range_of: impl Fn(&crate::doctrine::MountInfo) -> f64) -> (f64, f64) {
+    let (mut gun, mut missile) = (0.0f64, 0.0f64);
+    for m in mounts {
+        let part = parts.get(m.slot.index());
+        let working = part.is_some_and(|p| p.level != DamageLevel::Destroyed && p.health > 0.05);
+        if !working || m.point_defence { continue; }
+        let r = range_of(m);
+        if !r.is_finite() || r <= 0.0 { continue; }
+        match m.weapon {
+            WeaponClass::Gun => gun = gun.max(r),
+            WeaponClass::AntiShipMissile | WeaponClass::Torpedo if crate::engage::weapon_can_fire(part, parts) => missile = missile.max(r),
+            _ => {}
+        }
+    }
+    (gun, missile)
+}
+
 pub(crate) fn own_state(ship: &Ship, vessel: &Vessel, world: &World, c: &CaptainState, ctx: &SimCtx<'_>) -> OwnState {
     let pos = xz(vessel.kin.pose.pos);
     let heading = vessel.kin.pose.heading_rad();
     let status = match vessel.status { VesselStatus::Active => OwnStatus::Active, VesselStatus::Disabled => OwnStatus::Disabled, _ => OwnStatus::Lost };
     let health = hull_health(vessel, world.catalogue());
-    let mut gun = 0.0f64;
-    let mut missile = 0.0f64;
-    for m in &ship.design.mounts {
-        let working = vessel.parts.get(m.slot.index()).is_some_and(|p| p.level != DamageLevel::Destroyed && p.health > 0.05);
-        if !working || m.point_defence { continue; }
+    let (gun, missile) = weapon_ranges(&ship.design.mounts, &vessel.parts, |m| {
         let cat = if m.weapon == WeaponClass::Torpedo { TargetCategory::Subsurface } else { TargetCategory::Surface };
-        let r = ship.doctrine.get(m.slot, cat).map(|e| e.effective_range_m).unwrap_or(m.effective_range_m);
-        if !r.is_finite() || r <= 0.0 { continue; }
-        match m.weapon {
-            WeaponClass::Gun => gun = gun.max(r),
-            WeaponClass::AntiShipMissile | WeaponClass::Torpedo => missile = missile.max(r),
-            _ => {}
-        }
-    }
+        ship.doctrine.get(m.slot, cat).map(|e| e.effective_range_m).unwrap_or(m.effective_range_m)
+    });
     let sd = [ship.doctrine.self_defence_range_m, ship.settings.self_defence_range_m.unwrap_or(0.0), ctx.tuning.doctrine.self_defence_range_m].into_iter().find(|r| r.is_finite() && *r > 0.0).unwrap_or(4_000.0);
     let leader = c.mem.leader.filter(|l| *l != ship.vessel).and_then(|l| world.vessel(l)).filter(|v| v.side == ship.side && v.status == VesselStatus::Active).map(|v| (xz(v.kin.pose.pos), v.kin.pose.heading_rad())).filter(|(p, h)| finite2(*p) && h.is_finite());
     let t = &ship.design.turn;
@@ -1183,6 +1197,31 @@ mod tests {
         let gun = vec![mount(0, WeaponClass::Decoy, 2_000.0), mount(1, WeaponClass::Gun, 8_000.0)];
         let parts = vec![parts[0].clone(), part(1, PartState::Mount(MountState { ready_rounds: 10, ..Default::default() }))];
         assert!(strike_weapon_works(&gun, &parts), "a loaded, intact gun still works");
+    }
+
+    #[test]
+    fn an_emptied_launcher_gives_no_missile_range() {
+        use crate::doctrine::tests::mount;
+        use sim_core::parts::{MountState, PartState};
+        let part = |slot: u16, state: PartState| sim_core::parts::PartRuntime {
+            slot: PartSlot(slot), def: PartIdx(0), pos: Default::default(), rot: Default::default(), cells: Vec::new(), centre: DVec3::ZERO,
+            compartment: None, health: 1.0, level: Default::default(), links: Default::default(), priority: 0, state,
+        };
+        let launcher = |ready: u8, reload_ticks: u32| PartState::Launcher { ready, reload_ticks, interval_ticks: 0, train_rad: 0.0 };
+        let mounts = vec![mount(0, WeaponClass::AntiShipMissile, 24_000.0), mount(1, WeaponClass::Gun, 8_000.0)];
+        let gun = part(1, PartState::Mount(MountState { ready_rounds: 10, ..Default::default() }));
+        let range = |m: &crate::doctrine::MountInfo| m.effective_range_m;
+        assert_eq!(weapon_ranges(&mounts, &[part(0, launcher(2, 0)), gun.clone()], range), (8_000.0, 24_000.0));
+        assert_eq!(weapon_ranges(&mounts, &[part(0, launcher(0, 600)), gun.clone()], range), (8_000.0, 24_000.0), "a reloading launcher keeps its reach");
+        // The Arrears after its fourth missile: both cells empty, no reload. Its striker tree held at missile
+        // launch range for the rest of the duel; with no missile range it fights as a combatant on its gun.
+        assert_eq!(weapon_ranges(&mounts, &[part(0, launcher(0, 0)), gun], range), (8_000.0, 0.0));
+        let mut o = own();
+        o.missile_range_m = 0.0;
+        let mut c = new_captain(Behaviour::Striker, None, None, SurrenderRule::Never);
+        let p = run(&mut c, &o, &[contact(2, DVec2::new(0.0, -13_300.0), true)], &[], &DoctrineMods::default(), 10);
+        assert_eq!(p.mode, CaptainMode::Attacking);
+        assert_eq!(p.keep_range_m, Some(Some(0.7 * 8_000.0)), "closes to its gun's doctrine range");
     }
 
     fn run(c: &mut CaptainState, own: &OwnState, threats: &[Contact], inbound: &[Contact], mods: &DoctrineMods, now: u64) -> Plan {

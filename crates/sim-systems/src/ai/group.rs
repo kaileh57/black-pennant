@@ -584,7 +584,10 @@ pub(crate) fn update_core(state: &mut GroupState, members: &[Member], env: &Env<
     if !state.mem.withdraw_latched && state.mem.engaged && !convoy && !holds_ground && state.mem.peak >= 2 && active.len() * 2 <= state.mem.peak as usize {
         state.mem.withdraw_latched = true;
     }
-    if convoy && (hostile_range.is_some_and(|d| d <= SCATTER_M) || active.iter().any(|m| m.under_fire)) {
+    // An anchored group (a prize at its berth, a defector waiting for the rendezvous) holds its anchorage
+    // until its orders change: it never scatters.
+    let anchored = matches!(state.orders, Some(GroupOrders::Anchor));
+    if convoy && !anchored && (hostile_range.is_some_and(|d| d <= SCATTER_M) || active.iter().any(|m| m.under_fire)) {
         state.mem.scatter_until_tick = now + SCATTER_S * TICKS_PER_S;
     }
     let stays = matches!(state.orders, Some(GroupOrders::Anchor | GroupOrders::Transit { .. }));
@@ -1148,6 +1151,25 @@ mod tests {
         assert_eq!(c.mode, GroupMode::Scattered);
         run(&mut c, &ms, &env(&pic(vec![]), &t, &mods, 600 + 301 * 60), &mut PathPlanner::default());
         assert_eq!(c.mode, GroupMode::Standing);
+    }
+
+    #[test]
+    fn anchored_convoy_holds_its_anchorage() {
+        // A prize or a defector at anchor (convoy kind, Anchor orders) with a Hostile contact at 5 km and a
+        // captain under fire: it stays Standing on a one-point route at its anchorage.
+        let t = open();
+        let mods = DoctrineMods::default();
+        let mut c = new_group(&init(GroupOrders::Anchor, FleetKind::Convoy), vec![EntityId::from_u64(1)]);
+        let mut m = member(1, 100.0, 0.0);
+        m.under_fire = true;
+        let p = pic(vec![track(7, DVec2::new(0.0, -5_000.0), Stance::Hostile, Domain::Surface)]);
+        let mut planner = PathPlanner::default();
+        let d = run(&mut c, &[m], &env(&p, &t, &mods, 600), &mut planner);
+        assert_eq!(c.mode, GroupMode::Standing);
+        assert_eq!(c.mem.scatter_until_tick, 0);
+        assert!(d[0].1.route.len() == 1 && d[0].1.route[0].distance(DVec2::new(100.0, 0.0)) < 1.0 && d[0].1.speed_kn == HOLD_KN, "{:?}", d[0].1);
+        let d = run(&mut c, &[m], &env(&p, &t, &mods, 1_200), &mut planner);
+        assert_eq!((c.mode, d[0].1.mode), (GroupMode::Standing, GroupMode::Standing));
     }
 
     #[test]

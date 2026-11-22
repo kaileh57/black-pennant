@@ -308,3 +308,23 @@ fn forced_permission_never_fires_at_neutral() {
     let a = mount_assignment(&input, &mut fx.state, &TuningTable::default());
     assert_eq!(a[0].status, EngageStatus::Holding { track: TrackId(1), reason: HoldReason::Stance { have: Stance::Neutral, need: Stance::Hostile } });
 }
+
+#[test]
+fn gun_holds_with_a_neutral_or_friend_beside_the_target() {
+    let mut fx = Fx::new(vec![mount(2, WeaponClass::Gun, 8_000.0)], vec![gun_part(2)]);
+    let hostile = at(track(1, Stance::Hostile, IdRung::Type, TrackGrade::Fine, Domain::Surface), DVec3::new(5_000.0, 0.0, 0.0), DVec3::ZERO);
+    // A Neutral hull 300 m beyond and beside the target (off the line of fire): hold, naming the Neutral.
+    let neutral = |x: f64, z: f64| at(track(4, Stance::Neutral, IdRung::Type, TrackGrade::Fine, Domain::Surface), DVec3::new(x, 0.0, z), DVec3::ZERO);
+    let a = fx.run(&[hostile.clone(), neutral(5_000.0, 300.0)], 0, &[], &[]);
+    assert_eq!(a[0].status, EngageStatus::Holding { track: TrackId(1), reason: HoldReason::NeutralInSeekerBasket { neutral: TrackId(4) } });
+    // 600 m away it fires.
+    assert_eq!(fx.run(&[hostile.clone(), neutral(5_000.0, 600.0)], 6, &[], &[])[0].status, EngageStatus::Engaging { track: TrackId(1), reason: FireReason::Doctrine });
+    // A Friend surface hull 400 m beyond the target, outside the line-of-fire corridor's lateral test: hold.
+    let friend = at(track(2, Stance::Friend, IdRung::Exact, TrackGrade::Lock, Domain::Surface), DVec3::new(5_000.0, 0.0, -400.0), DVec3::ZERO);
+    assert_eq!(fx.run(&[hostile.clone(), friend], 12, &[], &[])[0].status, EngageStatus::Holding { track: TrackId(1), reason: HoldReason::FriendInLine { friend: TrackId(2) } });
+    // A Neutral aircraft overhead and a dropped Neutral track do not hold the gun.
+    let air = at(track(5, Stance::Neutral, IdRung::Type, TrackGrade::Fine, Domain::Air), DVec3::new(5_000.0, 300.0, 100.0), DVec3::ZERO);
+    let mut gone = neutral(5_000.0, 100.0);
+    gone.dropped_tick = Some(0);
+    assert!(matches!(fx.run(&[hostile, air, gone], 18, &[], &[])[0].status, EngageStatus::Engaging { .. }));
+}

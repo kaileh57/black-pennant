@@ -62,6 +62,11 @@ pub const SITE_RADIUS_M: f64 = 1_500.0;
 /// DECISION: a wreck that sank in water this shallow or less is grounded and salvageable (the 20 m despawn
 /// depth, L686).
 pub const SALVAGE_DEPTH_M: f64 = 20.0;
+/// DECISION (owner ruling, 22 November 2026; L537 is silent on what a disabled player hull does to a sortie): in
+/// objective mode the sortie is a defeat once every player hull is lost or has been disabled this long without
+/// a break. Five minutes leaves Damage Control time to restore propulsion; a hull that regains it restarts the
+/// count.
+pub const PLAYER_DISABLED_DEFEAT_S: f64 = 300.0;
 /// Objectives and end rules are evaluated at 10 Hz.
 const EVAL_HZ: u32 = 10;
 /// A kill is observed through a picture track updated this recently, in ticks (one second).
@@ -146,10 +151,31 @@ pub struct HullFacts {
     /// clears the world's flag, still counts in the Struck colours row.
     #[serde(default)]
     pub struck: bool,
+    /// Tick the hull's status last became Disabled; `None` while it is Active, lost or never disabled.
+    #[serde(default)]
+    pub disabled_since: Option<u64>,
 }
 impl HullFacts {
     pub fn out(&self) -> bool { self.lost || self.disabled }
     pub fn afloat(&self) -> bool { !self.lost }
+}
+
+/// Why an objective-mode sortie ended (set with the outcome).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EndReason {
+    ObjectiveDone,
+    ObjectiveFailed,
+    /// Every player hull was lost.
+    PlayerHullsLost,
+    /// Every player hull was lost or disabled for [`PLAYER_DISABLED_DEFEAT_S`] without a break, at least one
+    /// still afloat.
+    PlayerHullsDisabled,
+    TimeLimit,
+    Withdrew,
+}
+impl EndReason {
+    /// Player-facing text key for the reasons the objective text does not already say, `None` for the rest.
+    pub fn text_key(self) -> Option<&'static str> { match self { EndReason::PlayerHullsDisabled => Some("objective.end.hulls_disabled"), _ => None } }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -166,6 +192,9 @@ pub struct ObjectivesState {
     pub outcome: Option<Outcome>,
     pub winner: Option<SideId>,
     pub ended_tick: Option<u64>,
+    /// Why an objective-mode sortie ended; `None` until decided and in the other modes.
+    #[serde(default)]
+    pub end_reason: Option<EndReason>,
     /// Players who asked to withdraw.
     pub withdrawing: Vec<PlayerSlot>,
     /// Hull facts ascending by vessel.
@@ -688,7 +717,7 @@ pub fn evaluate(state: &mut ObjectivesState, world: &World, ships: &ShipTable, p
     let now_s = ctx.time_s();
     let markers = &world.terrain().map.markers;
 
-    refresh_hulls(state, world, ships, config, markers, dt);
+    refresh_hulls(state, world, ships, config, markers, dt, tick);
     contact_and_detection(state, pictures, config, tick, now_s);
     state.hold_text = Some((ctx.tuning.special_ops.hold_range_m, ctx.tuning.special_ops.hold_s));
     // Captured prizes are kills with fate Captured.
@@ -734,20 +763,16 @@ pub fn evaluate(state: &mut ObjectivesState, world: &World, ships: &ShipTable, p
 }
 
 /// Refresh positions, status and exits of every hull; bind hulls seen for the first time.
-fn refresh_hulls(state: &mut ObjectivesState, world: &World, ships: &ShipTable, config: &SortieConfig, markers: &[Marker], dt: f64) {
+fn refresh_hulls(state: &mut ObjectivesState, world: &World, ships: &ShipTable, config: &SortieConfig, markers: &[Marker], dt: f64, tick: u64) {
     for (_, v) in world.vessels() { if v.parent.is_none() { ensure_hull(state, v.id, world, ships, config); } }
     let exits: Vec<(String, DVec2)> = exit_names(markers).map(|m| (m.name.clone(), DVec2::from(m.pos_m))).filter(|(_, p)| p.x.is_finite() && p.y.is_finite()).collect();
     let catalogue = world.catalogue();
     let mut radar_on = false;
     let mut emitting = false;
     for h in state.hulls.iter_mut() {
-        let Some(v) = world.vessel(h.vessel) else { h.lost = true; continue };
+        let Some(v) = world.vessel(h.vessel) else { h.lost = true; h.disabled_since = None; continue };
         if v.struck { h.struck = true; }
-        match v.status {
-            VesselStatus::Lost(_) | VesselStatus::Wreck => h.lost = true,
-            VesselStatus::Disabled => h.disabled = true,
-            VesselStatus::Active => h.disabled = v.struck,
-        }
+        note_status(h, v.status, v.struck, tick);
         h.pos = [v.kin.pose.pos.x, v.kin.pose.pos.z];
         h.at_exits.clear();
         if !h.lost {
@@ -776,6 +801,28 @@ fn refresh_hulls(state: &mut ObjectivesState, world: &World, ships: &ShipTable, 
     }
     if radar_on { state.radiated = true; }
     if emitting { state.stats.radiating_s += dt as f32; }
+}
+
+/// Fold a vessel status into the hull facts at `tick`: lost latches, disabled follows the status (a struck hull
+/// counts as disabled), and the disabled-since tick runs only while the status stays Disabled. Pure.
+pub(crate) fn note_status(h: &mut HullFacts, status: VesselStatus, struck: bool, tick: u64) {
+    match status {
+        VesselStatus::Lost(_) | VesselStatus::Wreck => h.lost = true,
+        VesselStatus::Disabled => h.disabled = true,
+        VesselStatus::Active => h.disabled = struck,
+    }
+    h.disabled_since = if status == VesselStatus::Disabled && !h.lost { Some(h.disabled_since.unwrap_or(tick)) } else { None };
+}
+
+/// The players' side is out of the sortie at `tick`: every player hull lost (`PlayerHullsLost`), or every one
+/// lost or disabled for [`PLAYER_DISABLED_DEFEAT_S`] without a break (`PlayerHullsDisabled`). Co-op counts
+/// every player hull. Pure.
+pub(crate) fn player_hulls_out(hulls: &[HullFacts], tick: u64) -> Option<EndReason> {
+    let ph: Vec<&HullFacts> = hulls.iter().filter(|h| h.player.is_some() || h.role == VesselRole::PlayerHull).collect();
+    if ph.is_empty() { return None; }
+    if ph.iter().all(|h| h.lost) { return Some(EndReason::PlayerHullsLost); }
+    let dead = |h: &HullFacts| h.disabled_since.is_some_and(|t| Tick(tick.saturating_sub(t)).seconds() >= PLAYER_DISABLED_DEFEAT_S);
+    if ph.iter().all(|h| h.lost || dead(h)) { Some(EndReason::PlayerHullsDisabled) } else { None }
 }
 
 /// Does any enemy picture hold a non-Friend live track on a player hull now (contact), and when first.
@@ -823,28 +870,33 @@ fn decide(state: &mut ObjectivesState, outcome: Outcome, winner: Option<SideId>,
     state.ended_tick = Some(tick);
 }
 
+/// [`decide`] with the objective-mode end reason.
+fn decide_why(state: &mut ObjectivesState, why: EndReason, outcome: Outcome, winner: Option<SideId>, tick: u64) {
+    if state.outcome.is_some() { return; }
+    state.end_reason = Some(why);
+    decide(state, outcome, winner, tick);
+}
+
 fn end_rules(state: &mut ObjectivesState, world: &World, pictures: &Pictures, config: &SortieConfig, tick: u64, now_s: f64) {
     let time_up = config.time_limit_s.map_or(false, |s| now_s >= s as f64);
-    let player_hulls: Vec<&HullFacts> = state.hulls.iter().filter(|h| h.player.is_some() || h.role == VesselRole::PlayerHull).collect();
-    let all_players_lost = !player_hulls.is_empty() && player_hulls.iter().all(|h| h.lost);
     match &config.rules {
         ModeRules::Objective => {
             match primary_state(state) {
-                ObjectiveState::Done => { decide(state, Outcome::Victory, first_player_side(config), tick); return; }
-                ObjectiveState::Failed => { decide(state, Outcome::Defeat, first_enemy_side(config), tick); return; }
+                ObjectiveState::Done => { decide_why(state, EndReason::ObjectiveDone, Outcome::Victory, first_player_side(config), tick); return; }
+                ObjectiveState::Failed => { decide_why(state, EndReason::ObjectiveFailed, Outcome::Defeat, first_enemy_side(config), tick); return; }
                 _ => {}
             }
-            if all_players_lost { decide(state, Outcome::Defeat, first_enemy_side(config), tick); return; }
-            if time_up { decide(state, Outcome::Withdrawn, None, tick); return; }
+            if let Some(why) = player_hulls_out(&state.hulls, tick) { decide_why(state, why, Outcome::Defeat, first_enemy_side(config), tick); return; }
+            if time_up { decide_why(state, EndReason::TimeLimit, Outcome::Withdrawn, None, tick); return; }
             // Withdrawal: every player with a hull afloat asked, and those hulls are clear of contact.
             let afloat: Vec<PlayerSlot> = state.hulls.iter().filter(|h| h.afloat()).filter_map(|h| h.player).collect();
             if !afloat.is_empty() && afloat.iter().all(|p| state.withdrawing.contains(p)) {
                 // A withdrawing hull that reaches an exit marker has left the area, contact or not.
                 let out = state.hulls.iter().filter(|h| h.afloat() && h.player.is_some()).all(|h| !h.at_exits.is_empty());
-                if out { decide(state, Outcome::Withdrawn, None, tick); return; }
+                if out { decide_why(state, EndReason::Withdrew, Outcome::Withdrawn, None, tick); return; }
                 if clear_of_contact(state, world, pictures, config, tick, true) {
                     let since = *state.clear_since.get_or_insert(tick);
-                    if Tick(tick.saturating_sub(since)).seconds() >= CLEAR_HOLD_S { decide(state, Outcome::Withdrawn, None, tick); }
+                    if Tick(tick.saturating_sub(since)).seconds() >= CLEAR_HOLD_S { decide_why(state, EndReason::Withdrew, Outcome::Withdrawn, None, tick); }
                 } else { state.clear_since = None; }
             } else { state.clear_since = None; }
         }
@@ -948,7 +1000,12 @@ pub fn views(state: &ObjectivesState, config: &SortieConfig) -> Vec<ObjectiveVie
     let mut v = Vec::with_capacity(1 + state.ghosts.len());
     let hold = state.hold_text.unwrap_or_else(|| { let t = content::tuning::SpecialOpsTuning::default(); (t.hold_range_m, t.hold_s) });
     let (text, st, progress, marker) = match (&config.rules, state.primary.as_ref()) {
-        (ModeRules::Objective, Some(p)) => (objective_text(&p.objective, p.progress, hold), p.state, p.progress, objective_marker(&p.objective, config)),
+        // A sortie lost to disabled hulls says so in the primary objective's place: the sortie-end screen lists
+        // the objectives' last texts.
+        (ModeRules::Objective, Some(p)) => match state.end_reason.and_then(|r| r.text_key().map(|k| (r, k))) {
+            Some((EndReason::PlayerHullsDisabled, k)) => (Msg::new(k).num(PLAYER_DISABLED_DEFEAT_S, Unit::Seconds), ObjectiveState::Failed, p.progress, objective_marker(&p.objective, config)),
+            _ => (objective_text(&p.objective, p.progress, hold), p.state, p.progress, objective_marker(&p.objective, config)),
+        },
         (ModeRules::Elimination, _) => (Msg::new("objective.elimination"), mode_state(state), 0.0, None),
         (ModeRules::Escort { required_fraction, exit, .. }, _) => (Msg::new("objective.pvp_escort").num((required_fraction.clamp(0.0, 1.0) * 100.0).round(), Unit::Percent), mode_state(state), 0.0, marker_pos(&config.map.markers, exit)),
         (ModeRules::Sandbox, _) => (Msg::new("objective.sandbox"), ObjectiveState::Hidden, 0.0, None),
@@ -1125,7 +1182,7 @@ pub fn text_keys() -> Vec<&'static str> {
         "objective.photograph", "objective.survive", "objective.survive.exit", "objective.cut_out",
         "objective.ghost.no_radar", "objective.ghost.no_losses", "objective.ghost.never_detected", "objective.ghost.capture_ace",
         "objective.ghost.no_kills", "objective.ghost.under_time", "objective.ghost.no_hull_damage",
-        "objective.elimination", "objective.pvp_escort", "objective.sandbox",
+        "objective.elimination", "objective.pvp_escort", "objective.sandbox", "objective.end.hulls_disabled",
         "objective.side.team_a", "objective.side.team_b", "objective.side.players", "objective.side.convoy", "objective.side.combine",
         "objective.side.civilian", "objective.side.protected",
     ]

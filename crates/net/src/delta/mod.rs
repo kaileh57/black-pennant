@@ -996,6 +996,50 @@ mod tests {
     }
 
     #[test]
+    fn a_new_alert_reaches_the_client_within_one_slow_section_period() {
+        use sim_systems::alerts::{AlertChange, AlertManager, Condition};
+        use sim_systems::protocol::alert::AlertKind;
+        // A long battle's alert list (five inbound weapons a second for ten minutes, none acknowledged), then
+        // 20 hulls and 12 tracks in frames held to the 256 kbps start cap with acks 6 frames late. A newly
+        // raised alert must be on the client within one 2 Hz slow-section period (15 frames).
+        let own = EntityId { index: 0, generation: 1 };
+        let mut m = AlertManager::default();
+        let mut out: Vec<AlertChange> = Vec::new();
+        let hz = sim_core::TICK_HZ as u64;
+        for sec in 0..600u64 {
+            for sub in 0..hz {
+                let conds: Vec<Condition> = (sec.saturating_sub(3) * 5..=sec * 5 + 4).map(|k| Condition { vessel: own, kind: AlertKind::WeaponInbound { track: TrackId(k as u32) } }).collect();
+                m.update(&conds, sec * hz + sub, &mut out);
+            }
+        }
+        let quiet_from = 600 * hz;
+        let mut enc = SnapshotEncoder::new();
+        let mut dec = SnapshotDecoder::new();
+        let mut acc = PriorityAccumulator::new(RateTuning::fallback_20hz());
+        let mut acks: VecDeque<SnapshotAck> = VecDeque::new();
+        let budget = 256_000 / 8 / 30;
+        let mut raised_at: Option<u64> = None;
+        let mut seen_at: Option<u64> = None;
+        for f in 0..300u64 {
+            let tick = quiet_from + f * 2;
+            let conds: Vec<Condition> = if f >= 150 { vec![Condition { vessel: own, kind: AlertKind::SteeringLost }] } else { vec![] };
+            m.update(&conds, tick, &mut out);
+            if f == 150 { raised_at = Some(f); }
+            let mut snap = world(tick, 20);
+            snap.alerts = m.for_vessel(own);
+            let order = acc.order(&snap);
+            let frame = enc.encode(&snap, &order, budget);
+            acc.sent(&frame.sent, tick);
+            let d = dec.decode(&frame.bytes).unwrap().unwrap();
+            if seen_at.is_none() && d.snapshot.alerts.iter().any(|a| matches!(a.kind, AlertKind::SteeringLost)) { seen_at = Some(f); }
+            acks.push_back(dec.ack());
+            if acks.len() > 6 { enc.on_ack(acks.pop_front().unwrap()); }
+        }
+        let (r, s) = (raised_at.unwrap(), seen_at.expect("the new alert reached the client"));
+        assert!(s - r <= 15, "new alert took {} frames", s - r);
+    }
+
+    #[test]
     fn hostile_frames_are_errors_not_panics() {
         let mut enc = SnapshotEncoder::new();
         let snap = world(0, 4);

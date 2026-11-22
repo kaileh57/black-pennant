@@ -26,6 +26,7 @@ objective.ghost.no_hull_damage,Optional condition,Take no hull damage
 objective.elimination,PvP elimination goal,Sink or disable every ship of the other team
 objective.pvp_escort,"PvP escort goal; {0} is a percentage","Get {0} of the convoy's tonnage through the exit, or stop it"
 objective.sandbox,Sandbox has no goal,Free play: no objective
+objective.end.hulls_disabled,"Shown in the primary objective's place when the sortie ends because every player ship was lost or dead in the water; {0} duration",Every ship was sunk or dead in the water for {0}: the sortie is lost
 objective.side.team_a,Name of the first PvP or sandbox team,Team 1
 objective.side.team_b,Name of the second PvP or sandbox team,Team 2
 objective.side.players,Name of the players' side,Players

@@ -73,8 +73,8 @@ jobs:
     if: github.event_name != 'schedule'
     name: server soak (linux)
     runs-on: ubuntu-24.04
-    # The bandwidth gates (vessel_bytes_per_update, client_p95_kbps) fail today; the run still reports every
-    # gate. Drop continue-on-error when they pass.
+    # The client_p95_kbps bandwidth gate fails today; the run still reports every gate. Drop
+    # continue-on-error when it passes.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4

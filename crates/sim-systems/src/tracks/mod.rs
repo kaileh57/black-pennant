@@ -1164,6 +1164,8 @@ pub(crate) fn local_track_core(detections: &[Detection], sensor: SensorRef, prev
 }
 
 #[cfg(test)]
+mod probe;
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::sensors::{measurement_error, Evidence};

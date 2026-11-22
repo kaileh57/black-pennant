@@ -27,8 +27,13 @@
 //!   stay there; log-only and shelved-at-birth items are not first annunciations and do not count;
 //! - every live Hostile contact is a condition; its Caution moves to the log `NEW_TRACK_S` after it was
 //!   raised and stays there while the track lives, so a track that turns Hostile late still announces once;
-//! - `for_vessel` returns the live alerts and the Cleared ones; rectified history stays in `alerts` and
-//!   reaches clients through the alert events;
+//! - `for_vessel` returns the live alerts that are not log-only, and the Cleared ones; rectified and
+//!   log-only history stays in `alerts` and reaches clients through the alert events (the log, L1687);
+//! - a Cleared alert (a rectified, unacknowledged Emergency or Alarm) shows "Cleared" for
+//!   [`CLEARED_HOLD_S`], at most [`CLEARED_MAX`] per vessel (oldest first out; the strip shows five plus
+//!   "+N"), and then goes to the log unread, as lower priorities do at once. L1687 does not say
+//!   how long Cleared lasts; acknowledging one at a time (no acknowledge-all) could otherwise never keep up
+//!   with a battle's inbound-weapon alarms, and the replicated alert list would grow without bound;
 //! - acknowledge without an id skips Cautions (they need none) and takes Cleared alerts too, which dismisses
 //!   them to the log; Cautions can still be acknowledged by id;
 //! - shelving lasts `AlertBudget::shelve_s`; at expiry an item whose absorber is still live shelves again,
@@ -51,6 +56,10 @@ pub const BUFFER_WARNING_S: f64 = 10.0;
 pub const SHED_WARNING_COUNT: u16 = 3;
 /// Seconds within which a returning condition reopens its old alert.
 pub const REOPEN_S: u64 = 30;
+/// A Cleared alert shows this long after it was rectified, then goes to the log unread.
+pub const CLEARED_HOLD_S: u64 = 30;
+/// At most this many Cleared alerts show per vessel; past it the oldest go to the log first.
+pub const CLEARED_MAX: usize = 10;
 /// A Hostile-contact alert stays on the strip this long, then goes to the log while the track lives.
 pub const NEW_TRACK_S: u64 = 30;
 /// Magazines below this fraction of their rounds report low ammunition.
@@ -171,6 +180,9 @@ pub struct AlertManager {
     pub(crate) recent: Vec<u32>,
     #[serde(default)]
     pub(crate) layouts: Vec<Layout>,
+    /// Indices into `alerts` of Cleared alerts still showing, ascending by rectification.
+    #[serde(default)]
+    pub(crate) cleared: Vec<u32>,
 }
 
 /// Change the manager made this tick; the Sim turns each into a `SimEvent` for the vessel's player.
@@ -217,6 +229,22 @@ impl AlertManager {
             touched.insert(vessel);
         }
         self.live = still_live;
+        // Cleared alerts go to the log unread once they have shown for `CLEARED_HOLD_S`.
+        let hold = CLEARED_HOLD_S * hz;
+        for i in std::mem::take(&mut self.cleared) {
+            let idx = i as usize;
+            if self.meta[idx].live || self.alerts[idx].state != AlertState::Cleared { continue; }
+            if self.meta[idx].rectified_tick + hold <= tick { self.set_state(idx, AlertState::LogOnly, out); } else { self.cleared.push(i); }
+        }
+        let mut count: BTreeMap<EntityId, usize> = BTreeMap::new();
+        for &i in &self.cleared { *count.entry(self.alerts[i as usize].vessel).or_default() += 1; }
+        if count.values().any(|&n| n > CLEARED_MAX) {
+            for i in std::mem::take(&mut self.cleared) {
+                let idx = i as usize;
+                let n = count.get_mut(&self.alerts[idx].vessel).expect("counted above");
+                if *n > CLEARED_MAX { *n -= 1; self.set_state(idx, AlertState::LogOnly, out); } else { self.cleared.push(i); }
+            }
+        }
         // Hostile-contact Cautions announce a contact; after `NEW_TRACK_S` they stay live in the log only.
         let aged = NEW_TRACK_S * hz;
         for i in self.live.clone() {
@@ -296,7 +324,7 @@ impl AlertManager {
     /// list stays bounded however long the sortie runs.
     pub fn for_vessel(&self, vessel: EntityId) -> Vec<AlertView> {
         let mut v: Vec<AlertView> = self.alerts.iter().enumerate()
-            .filter(|(i, a)| a.vessel == vessel && (self.meta.get(*i).map(|m| m.live).unwrap_or(true) || a.state == AlertState::Cleared))
+            .filter(|(i, a)| a.vessel == vessel && ((self.meta.get(*i).map(|m| m.live).unwrap_or(true) && a.state != AlertState::LogOnly) || a.state == AlertState::Cleared))
             .map(|(_, a)| *a).collect();
         v.sort_by_key(|a| a.id);
         v
@@ -326,10 +354,11 @@ impl AlertManager {
 
     fn ensure_meta(&mut self) {
         let n = self.alerts.len() as u32;
-        if self.meta.len() == self.alerts.len() && self.live.iter().chain(&self.recent).all(|&i| i < n) { return; }
+        if self.meta.len() == self.alerts.len() && self.live.iter().chain(&self.recent).chain(&self.cleared).all(|&i| i < n) { return; }
         // Restored from data without bookkeeping: rebuild it from the views.
         self.meta = self.alerts.iter().map(|a| AlertMeta { key: key_of(&a.kind), live: matches!(a.state, AlertState::Unacknowledged | AlertState::Acknowledged | AlertState::Shelved), acked: a.state == AlertState::Acknowledged, rectified_tick: 0, prior: AlertState::Unacknowledged }).collect();
         self.live = (0..self.alerts.len() as u32).filter(|&i| self.meta[i as usize].live).collect();
+        self.cleared = (0..self.alerts.len() as u32).filter(|&i| self.alerts[i as usize].state == AlertState::Cleared).collect();
         self.recent.clear();
         self.next_id = self.next_id.max(self.alerts.iter().map(|a| a.id.0 + 1).max().unwrap_or(0));
     }
@@ -366,6 +395,7 @@ impl AlertManager {
             AlertState::Cleared => AlertState::Cleared,
             _ => AlertState::LogOnly,
         };
+        if state == AlertState::Cleared && !self.cleared.contains(&(idx as u32)) { self.cleared.push(idx as u32); }
         self.set_state(idx, state, out);
     }
 

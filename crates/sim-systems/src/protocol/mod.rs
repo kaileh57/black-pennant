@@ -33,4 +33,4 @@ pub use text::*;
 
 /// Protocol version. A join with a different version is refused with a message naming both (L1003).
 /// Also stamps keyframes (`content::save::SortieCheckpoint::keyframe_format`) and replays.
-pub const PROTOCOL_VERSION: u32 = 1;
+pub const PROTOCOL_VERSION: u32 = 2;
