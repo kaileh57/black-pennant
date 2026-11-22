@@ -118,6 +118,28 @@ pub(crate) fn rank(b: Band, selected: bool) -> i64 {
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Row { pub index: usize, pub id: TrackId, pub band: Band, pub key: f64, pub g: Geometry }
 
+/// Whether a track belongs in the track list, its counts and selection stepping: every track except the
+/// own side's weapons in flight (Friend in the Weapon domain). The side picture keeps them so officers never
+/// fire on them; the plot still draws them. The list is for contacts (decision, L106 is silent).
+pub(crate) fn listed(t: &TrackView) -> bool { !(t.stance == Stance::Friend && t.domain == Domain::Weapon) }
+
+/// The track list's rows ([`listed`] tracks only) in `sort` order: what `track_table` returns and
+/// `select_step` walks (in threat order).
+pub(crate) fn list_rows(tracks: &[TrackView], own: Option<&Own>, tick: u64, sort: &str, descending: bool) -> Vec<Row> {
+    let mut r = rows(tracks, own, tick);
+    r.retain(|row| tracks.get(row.index).is_some_and(listed));
+    order(&mut r, sort, descending);
+    r
+}
+
+/// The list header's counts over [`listed`] tracks: (total live, hostile, suspect, neutral, friend, inbound,
+/// last known).
+pub(crate) fn list_counts(tracks: &[TrackView]) -> [i64; 7] {
+    let live = || tracks.iter().filter(|t| !t.last_known && listed(t));
+    let stance = |st: Stance| live().filter(|t| t.stance == st).count() as i64;
+    [live().count() as i64, stance(Stance::Hostile), stance(Stance::Suspect), stance(Stance::Neutral), stance(Stance::Friend), live().filter(|t| t.inbound).count() as i64, tracks.iter().filter(|t| t.last_known && listed(t)).count() as i64]
+}
+
 pub(crate) fn rows(tracks: &[TrackView], own: Option<&Own>, tick: u64) -> Vec<Row> {
     tracks.iter().enumerate().map(|(index, t)| {
         let g = geometry(t, own);
@@ -170,14 +192,6 @@ impl BpHud {
         let ship = self.ship()?;
         let v = self.own_view()?;
         Some(Own { pos: flat(v.kin.pose.pos), vel: flat(v.kin.lin_vel), envelope_m: if ship.longest_envelope_m.is_finite() { ship.longest_envelope_m.max(0.0) as f64 } else { 0.0 } })
-    }
-
-    /// Rows of the picture in threat order.
-    fn threat_rows(&self) -> Vec<Row> {
-        let Some(s) = self.snap() else { return Vec::new() };
-        let mut r = rows(&s.tracks, self.own_geometry().as_ref(), s.tick);
-        order(&mut r, "threat", false);
-        r
     }
 
     fn track_dict(&self, t: &TrackView, row: &Row, lk: &dyn crate::text::Lookup) -> VarDictionary {
@@ -275,8 +289,7 @@ impl BpHud {
         let arg = match key { "threat" => 0, "range" => 1, "bearing" => 2, _ => 3 } * 2 + descending as i64;
         self.cached("track_table", arg, &[Section::Tracks], |h| {
             let Some(s) = h.snap() else { return Array::new() };
-            let mut r = rows(&s.tracks, h.own_geometry().as_ref(), s.tick);
-            order(&mut r, key, descending);
+            let r = list_rows(&s.tracks, h.own_geometry().as_ref(), s.tick, key, descending);
             let all = h.all_tracks();
             r.iter().filter_map(|row| all.get(row.index)).collect()
         })
@@ -286,17 +299,10 @@ impl BpHud {
     #[func]
     fn track_counts(&self) -> VarDictionary {
         self.cached("track_counts", 0, &[Section::Tracks], |h| {
-            let tracks = h.snap().map_or(&[][..], |s| &s.tracks[..]);
-            let live = || tracks.iter().filter(|t| !t.last_known);
-            let stance = |st: Stance| live().filter(|t| t.stance == st).count() as i64;
+            let [total, hostile, suspect, neutral, friend, inbound, last_known] = list_counts(h.snap().map_or(&[][..], |s| &s.tracks[..]));
             d! {
-                "total" => live().count() as i64,
-                "hostile" => stance(Stance::Hostile),
-                "suspect" => stance(Stance::Suspect),
-                "neutral" => stance(Stance::Neutral),
-                "friend" => stance(Stance::Friend),
-                "inbound" => live().filter(|t| t.inbound).count() as i64,
-                "last_known" => tracks.iter().filter(|t| t.last_known).count() as i64,
+                "total" => total, "hostile" => hostile, "suspect" => suspect, "neutral" => neutral,
+                "friend" => friend, "inbound" => inbound, "last_known" => last_known,
             }
         })
     }
@@ -322,7 +328,8 @@ impl BpHud {
         // The own hull's own track (the side's datalink holds it) is no contact: the track list leaves it
         // out, so stepping skips it too.
         let own = self.own_view().map_or(TrackId::NONE, |v| v.track);
-        let ids: Vec<TrackId> = self.threat_rows().iter().map(|r| r.id).filter(|id| own.is_none() || *id != own).collect();
+        let ids: Vec<TrackId> = self.snap().map_or_else(Vec::new, |s| list_rows(&s.tracks, self.own_geometry().as_ref(), s.tick, "threat", false))
+            .iter().map(|r| r.id).filter(|id| own.is_none() || *id != own).collect();
         let next = step_selection(&ids, self.selected, step);
         self.select_track(crate::convert::track_to_gd(next));
         crate::convert::track_to_gd(self.selected)
@@ -447,6 +454,26 @@ mod tests {
         order(&mut r4, "threat", false);
         assert_eq!(r4.iter().map(|r| r.id.0).collect::<Vec<_>>(), vec![6, 7, 8]);
         assert!(r4.iter().all(|r| r.band == Band::HostileOutside));
+    }
+
+    #[test]
+    fn own_weapons_stay_out_of_the_track_list() {
+        let mut missile = track(3, Stance::Friend, IdRung::Exact, 600.0, 0.0);
+        missile.domain = Domain::Weapon;
+        let mut inbound = track(4, Stance::Hostile, IdRung::Class, 900.0, 0.0);
+        inbound.domain = Domain::Weapon;
+        let ally = track(5, Stance::Friend, IdRung::Exact, 2_000.0, 0.0);
+        assert!(!listed(&missile), "an own missile in flight is no contact");
+        assert!(listed(&inbound) && listed(&ally), "inbound weapons and allied hulls stay listed");
+        // As the list, its counts and selection stepping see the picture.
+        let picture = vec![track(2, Stance::Hostile, IdRung::Class, 3_500.0, 0.0), missile, track(4, Stance::Friend, IdRung::Exact, 120.0, 0.0), inbound, ally];
+        let mut picture = picture;
+        picture[2].domain = Domain::Weapon;
+        picture[3].id = TrackId(6);
+        let ids: Vec<TrackId> = list_rows(&picture, Some(&OWN), 0, "threat", false).iter().map(|r| r.id).collect();
+        assert_eq!(ids, [TrackId(6), TrackId(2), TrackId(5)], "the hostile weapon, the hostile hull, the allied hull; no own missiles");
+        assert_eq!(list_counts(&picture)[..3], [3, 2, 0], "3 contacts, 2 Hostile");
+        assert_eq!(step_selection(&ids, TrackId::NONE, 1), TrackId(6));
     }
 
     #[test]

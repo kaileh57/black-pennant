@@ -359,3 +359,33 @@ fn disabled_defeat_shows_its_own_text() {
     s.end_reason = Some(EndReason::TimeLimit);
     assert_eq!(views(&s, &c)[0].text.key.0, "objective.destroy_all");
 }
+
+#[test]
+fn a_site_is_destroyed_by_its_share_of_cells_lost() {
+    let markers = vec![marker(MarkerKind::DepotSite, "depot", 0.0, 0.0)];
+    let obj = Objective::DestroySite { marker: "depot".into() };
+    let mut site = HullFacts { role: VesselRole::Site, tag: "depot".into(), ..hull(4, true, 900.0, "depot") };
+    let eval = |h: &HullFacts| eval_objective(&obj, &EvalFacts { hulls: std::slice::from_ref(h), markers: &markers, ..Default::default() });
+    assert_eq!(eval(&site), (ObjectiveState::Active, 0.0));
+    // Progress rises with the share of cells destroyed.
+    site.cells_lost = 0.4 * SITE_DESTROYED_CELLS;
+    let (s, p) = eval(&site);
+    assert_eq!(s, ObjectiveState::Active);
+    assert!((p - 0.4).abs() < 1e-9, "{p}");
+    // Propulsion gone (disabled) or colours struck does not destroy a site.
+    site.disabled = true;
+    site.struck = true;
+    assert_eq!(eval(&site).0, ObjectiveState::Active);
+    site.disabled = false;
+    site.struck = false;
+    // The stated share does, and so does sinking.
+    site.cells_lost = SITE_DESTROYED_CELLS;
+    assert_eq!(eval(&site), (ObjectiveState::Done, 1.0));
+    let mut sunk = HullFacts { cells_lost: 0.0, lost: true, ..site.clone() };
+    assert_eq!(eval(&sunk), (ObjectiveState::Done, 1.0));
+    // Two site hulls: both must go; progress is their mean.
+    sunk.lost = false;
+    sunk.vessel = e(5);
+    let two = vec![site.clone(), sunk];
+    assert_eq!(eval_objective(&obj, &EvalFacts { hulls: &two, markers: &markers, ..Default::default() }), (ObjectiveState::Active, 0.5));
+}

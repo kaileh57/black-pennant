@@ -77,3 +77,21 @@ fn targets_are_capped_and_kept_off_land_and_inside_the_map() {
     assert_eq!(stock_key("./blueprints/starters/fac22.bp.ron"), "starters/fac22.bp.ron");
 }
 
+
+/// Every skirmish template builds at Act 1, the only act this build ships (L2283), with Act 1 classes alone.
+#[test]
+fn every_template_builds_an_act_one_skirmish_with_act_one_classes() {
+    let bp = canonical(testkit::starter());
+    let campaign = std::sync::Arc::new(content::campaign::load::shipped_campaign().clone());
+    for template in MissionType::ALL {
+        let setup = SkirmishSetup { template, act: Act::Act1, enemy_per_player: 3, difficulty: Default::default(), conditions: conditions(), blueprint: "starters/fac22.bp.ron".into() };
+        let config = skirmish_config(&setup, &bp, &player(), &campaign, &testkit::catalogue()).unwrap_or_else(|m| panic!("{template:?}: {m:?}"));
+        let own = config.players.iter().find(|p| p.slot == PlayerSlot(0)).expect("seated").side;
+        assert!(config.vessels.iter().any(|v| v.side != own), "{template:?}: there is an enemy");
+        for v in &config.vessels {
+            let Some(class) = v.class.as_ref() else { continue };
+            let def = campaign.classes.get(class).unwrap_or_else(|| panic!("{template:?}: {class}"));
+            assert_eq!(def.act, Act::Act1, "{template:?}: {class} is an {:?} class", def.act);
+        }
+    }
+}

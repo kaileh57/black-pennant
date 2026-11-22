@@ -13,6 +13,9 @@
 //!   Ironman; the newest 20 are kept), `copy` (a co-op member's copy), `suspend` (one in all).
 //! - Every full save chains: `Theatre::to_save` advances the sequence and stores the previous hash.
 //! - `load_slot` on the suspend file resumes it, as `resume_suspend` does.
+//! - Loading the suspend slot deletes it once the resumed sortie shows its first picture (`watch_sortie`),
+//!   not at once: a resume that never starts keeps the sortie in the slot. Quitting before then writes the
+//!   slot again and cancels the delete.
 //! - A new campaign is written to disk at once; if that fails the campaign does not start.
 //! - Members never write full saves of their own: `save_now` refuses them (`campaign.reject.not_host`),
 //!   and their copies arrive from the host.
@@ -132,8 +135,8 @@ impl BpCampaign {
         let found = store::find_suspend(&root, &mut self.run.slot_cache.borrow_mut());
         found.map_or(Variant::nil(), |s| super::dicts::save_slot_dict(&s).to_variant())
     }
-    /// Resume the suspended sortie: loads the theatre, deletes the slot (advancing the sequence) and hands
-    /// the checkpoint to the session.
+    /// Resume the suspended sortie: loads the theatre (advancing the sequence) and hands the checkpoint to the
+    /// session. The slot is deleted once the resumed sortie shows its first picture.
     #[func]
     fn resume_suspend(&mut self) -> bool {
         let root = saves_root();
@@ -349,10 +352,11 @@ impl BpCampaign {
         if Self::session_busy() { return Err(Msg::new("campaign.new.busy")); }
         let save = store::read_suspend(file)?;
         let (theatre, checkpoint) = sim_systems::theatre::saves::resume_suspend(save, super::theatre_data());
-        // Loading the suspend slot consumes it (L828).
-        if !store::delete(file) { return Err(Msg::new("campaign.save.write_failed")); }
         self.close_inner(true);
         self.reset_run();
+        // Loading the suspend slot consumes it (L828), but only once the resumed sortie shows its first
+        // picture (`watch_sortie`): a resume that fails to start keeps the sortie in the slot.
+        self.run.resumed_from = Some(file.to_path_buf());
         self.backend = Some(Backend::Local(Box::new(theatre)));
         if let Some(t) = self.local_mut() { let _ = t.drain_events(); }
         let hour = self.state().map_or(0, |s| s.hour);

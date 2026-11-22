@@ -304,3 +304,24 @@ fn every_key_has_an_english_row() {
         assert!(lk.0.contains_key(k), "{k}");
     }
 }
+
+/// Host overload steps read in plain words: no rung or step numbers, and the compression-ceiling step says what
+/// it does.
+#[test]
+fn ladder_steps_read_in_plain_words() {
+    let lk = crate::text::tests::CsvLookup::load();
+    let mut c = core();
+    let mut out = Vec::new();
+    c.walk(&[ev(1, SimEvent::LadderStep { rung: 0, sub_step: 0, up: true }), ev(2, SimEvent::LadderStep { rung: 2, sub_step: 1, up: true }), ev(3, SimEvent::LadderStep { rung: 2, sub_step: 0, up: false }), ev(4, SimEvent::LadderStep { rung: 0, sub_step: 0, up: false })], None, SessionState::InSortie, SessionKind::Skirmish, &mut out);
+    let lines: Vec<String> = logs(&out).iter().map(|d| crate::text::msg_text(&lk, &d.text)).collect();
+    assert_eq!(lines, [
+        "Host busy. Top time compression lowered.",
+        "Host busy. Unseen ships simplified at any range.",
+        "Host load easing. Unseen ships beyond 5 km simplified for now.",
+        "Host load easing.",
+    ]);
+    for r in 0..=5u8 { for s in 0..=5u8 { for up in [true, false] {
+        let t = crate::text::msg_text(&lk, &ladder_msg(r, s, up));
+        assert!(!t.contains('{') && !t.contains("log.") && !t.contains("step "), "{r}.{s} {up}: {t}");
+    } } }
+}

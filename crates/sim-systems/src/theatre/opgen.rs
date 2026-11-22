@@ -65,9 +65,25 @@
 //! - Missing markers are synthesised deterministically (player spawn west, enemy spawn east, objective
 //!   markers near the centre, exits near the player side); synthesised markers are added to the sortie map.
 //!   A map with an unusable size becomes a 40 km open-water square.
-//! - The players spawn on the line from the first objective toward the map's player spawn marker, at the
+//! - The players spawn on the line from the objective point toward the map's player spawn marker, at the
 //!   operation's approach distance times [`approach_scale`], clamped inside the map. Campaign sorties have no
-//!   time limit (the objective or a withdrawal ends them).
+//!   time limit (the objective or a withdrawal ends them). The objective point is the objective's own marker,
+//!   else the map's first objective-kind marker; a cutting-out measures from the marker its prize lies at.
+//! - Exit legs (22 November 2026, the L317 and L81 gate): an extraction, an escort, a cutting-out and a feint
+//!   end at an exit, and none of them can finish there before its hold, rendezvous or boarding. Their exits
+//!   lie at most [`EXIT_LEG_FRACTION`] of the approach distance from the objective point, on a straight leg
+//!   with at least [`EXIT_LEG_DEPTH_M`] of water (the exit turns about the objective point in 15 degree steps
+//!   until the leg is clear). Other objectives keep their exits at the approach distance or where the node
+//!   map puts them. An extraction or a feint on a map with no exit marker gets the default one.
+//! - Convoy start (same date): a group in transit, and the escort that sails with it, starts on the lane so
+//!   that it passes the point nearest the objective as the players arrive there:
+//!   `approach x convoy speed / player speed` short of that point, clamped to the lane. Convoy speed is the
+//!   group AI's ([`CONVOY_SPEED_FRACTION`] of its slowest hull's top speed), player speed the slowest fielded
+//!   hull's Helm cruise, so the start depends on the design the player brings.
+//! - Emission state at the start: a player hull sails in at the operation's authored recommendation only. A
+//!   recommendation the briefing infers from ghost conditions is shown and not applied.
+//! - A destroy-group objective's hulls are named by the briefing (Exact at first contact, L475) and declared
+//!   Hostile (L498), so Gunnery engages them without a designation.
 //! - No two hulls start inside each other: a group whose formation would put a hull within [`SPAWN_CLEAR_M`]
 //!   of a hull already placed (players, tender, site, earlier groups) slides sideways across its heading in
 //!   [`GROUP_SHIFT_M`] steps, alternating right and left, until every member is clear. Without this two
@@ -103,6 +119,21 @@ const MARGIN_M: f64 = 1_000.0;
 const DEFAULT_MAP_M: f64 = 40_000.0;
 const WEATHER_BLOCK_H: u64 = 6;
 const RECORD_MAX_DAMAGE: f64 = 0.4;
+/// DECISION (22 November 2026): exits of an extraction, escort, cutting-out or feint lie at most this share of
+/// the approach distance from the objective point, on a leg with at least this much water.
+pub const EXIT_LEG_FRACTION: f64 = 0.5;
+pub const EXIT_LEG_DEPTH_M: f64 = 3.0;
+/// Samples of an exit leg checked for depth, and the exit's turn about the objective point per try.
+const EXIT_LEG_SAMPLES: u32 = 200;
+const EXIT_TURN_DEG: f64 = 15.0;
+const EXIT_TURN_STEPS: u32 = 6;
+/// A convoy's transit speed as a share of its slowest hull's top speed (the group AI's rule, `ai::group`),
+/// and the Helm's default cruise share (`officers::helm`).
+pub const CONVOY_SPEED_FRACTION: f64 = 0.75;
+const HELM_CRUISE_FRACTION: f64 = 0.7;
+/// Convoy speed over player speed when either cannot be measured, and the bounds of a measured ratio.
+const CONVOY_LEAD_RATIO: f64 = 0.75;
+const CONVOY_LEAD_RATIO_BOUNDS: (f64, f64) = (0.3, 1.2);
 
 // Draw purposes (the `a` word of generator keys).
 const P_SLOT: u64 = 1;
@@ -479,6 +510,40 @@ pub(crate) fn class_facts(data: &TheatreData, class: &ClassId) -> Option<ClassFa
 #[cfg(test)]
 pub(crate) fn set_blueprint_facts(path: &str, tonnage_t: f64, cost: u32) {
     facts_cache().lock().unwrap_or_else(|e| e.into_inner()).insert(path.to_string(), Some(ClassFacts { tonnage_t, cost }));
+}
+
+/// Top speed and Helm cruise speed of a design, in knots.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct DesignSpeeds { pub top_kn: f64, pub cruise_kn: f64 }
+
+fn speeds_cache() -> &'static Mutex<BTreeMap<String, Option<DesignSpeeds>>> {
+    static CACHE: OnceLock<Mutex<BTreeMap<String, Option<DesignSpeeds>>>> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(BTreeMap::new()))
+}
+
+/// Speeds of a blueprint from the hydro prediction the sim's own turn model uses (`ship::design`): top speed,
+/// and the cruise the Helm orders (the design's `helm.cruise` share, else the default).
+fn measure_speeds(bp: &content::blueprint::Blueprint, data: &TheatreData) -> Option<DesignSpeeds> {
+    let prefab = sim_core::vessel::build_prefab(bp, &data.catalogue);
+    let (top, _) = sim_core::hydro::predict_speed_turn(&prefab, &data.catalogue, &data.catalogue.tuning.buoyancy);
+    let top_kn = top / sim_core::time::KN;
+    if !(top_kn.is_finite() && top_kn > 0.5) { return None; }
+    let share = bp.officers.sliders.get(crate::officers::helm::SLIDER_CRUISE).copied().filter(|f| f.is_finite() && *f > 0.0 && *f <= 1.0).unwrap_or(HELM_CRUISE_FRACTION);
+    Some(DesignSpeeds { top_kn, cruise_kn: top_kn * share })
+}
+
+/// Speeds of the stock blueprint at `path`, measured once per process.
+pub(crate) fn stock_speeds(path: &str, data: &TheatreData) -> Option<DesignSpeeds> {
+    if let Some(f) = speeds_cache().lock().unwrap_or_else(|e| e.into_inner()).get(path) { return *f; }
+    let f = content::campaign::load::stock_blueprint(path).ok().and_then(|bp| measure_speeds(&bp, data));
+    speeds_cache().lock().unwrap_or_else(|e| e.into_inner()).insert(path.to_string(), f);
+    f
+}
+
+/// Test seam: record the speeds of a blueprint path without loading it.
+#[cfg(test)]
+pub(crate) fn set_blueprint_speeds(path: &str, top_kn: f64, cruise_kn: f64) {
+    speeds_cache().lock().unwrap_or_else(|e| e.into_inner()).insert(path.to_string(), Some(DesignSpeeds { top_kn, cruise_kn }));
 }
 
 fn combat_role(role: ClassRole) -> bool { !matches!(role, ClassRole::Freighter | ClassRole::Tanker | ClassRole::Civilian | ClassRole::Tender) }
@@ -1130,6 +1195,10 @@ impl<'a, 'd> Build<'a, 'd> {
             self.add_marker(MarkerKind::EnemySpawn, &f.marker, p, 270.0);
         }
         for exit in objective_exits(&self.s.op.objective) { self.add_marker(MarkerKind::Exit, &exit, [-0.9 * hx, -0.5 * hz], 270.0); }
+        // An extraction and a feint name no exit and end at any: make sure one exists.
+        if matches!(self.s.op.objective, Objective::Extract { .. } | Objective::Feint { .. }) && !self.map.markers.iter().any(|m| m.kind == MarkerKind::Exit) {
+            self.add_marker(MarkerKind::Exit, "exit", [-0.9 * hx, -0.5 * hz], 270.0);
+        }
         if !self.map.markers.iter().any(|m| m.kind == MarkerKind::ConvoyEntry) { self.add_marker(MarkerKind::ConvoyEntry, "convoy_entry", [0.2 * hx, -0.9 * hz], 180.0); }
         if !self.map.markers.iter().any(|m| m.kind == MarkerKind::ConvoyExit) { self.add_marker(MarkerKind::ConvoyExit, "convoy_exit", [0.2 * hx, 0.9 * hz], 180.0); }
     }
@@ -1158,10 +1227,35 @@ impl<'a, 'd> Build<'a, 'd> {
             .or_else(|| self.map.markers.iter().find(|m| matches!(m.kind, MarkerKind::Objective | MarkerKind::DepotSite | MarkerKind::RadarSite | MarkerKind::Berth)).map(|m| m.name.clone()))
     }
 
+    /// The marker a cutting-out's prize lies at (its force entry's marker: the berth), which may be kilometres
+    /// from the map's first objective-kind marker.
+    fn prize_marker_name(&self) -> Option<String> {
+        let Objective::CutOut { tag, .. } = &self.s.op.objective else { return None };
+        self.s.op.force.iter().find(|f| !tag.is_empty() && f.tag == *tag).map(|f| f.marker.clone()).filter(|n| self.marker(n).is_some())
+    }
+
     fn objective_point(&self) -> [f64; 2] {
-        self.objective_pos_name().and_then(|n| self.marker(&n).map(|m| m.pos_m))
+        self.prize_marker_name().or_else(|| self.objective_pos_name()).and_then(|n| self.marker(&n).map(|m| m.pos_m))
             .or_else(|| self.s.op.force.first().and_then(|f| self.marker(&f.marker)).map(|m| m.pos_m))
             .unwrap_or([0.0, 0.0])
+    }
+
+    /// Convoy speed over player speed for the convoy start: the group AI's transit speed of these hulls over
+    /// the Helm cruise of the slowest fielded player hull.
+    fn convoy_speed_ratio(&self, members: &[usize], player_cruise_kn: f64) -> f64 {
+        let data = self.data;
+        let convoy = members.iter().filter_map(|i| self.units.get(*i)).filter_map(|u| data.campaign.classes.get(&u.class)).filter_map(|d| stock_speeds(&d.blueprint, data)).map(|f| f.top_kn).fold(f64::INFINITY, f64::min) * CONVOY_SPEED_FRACTION;
+        let ratio = convoy / player_cruise_kn;
+        if ratio.is_finite() && ratio > 0.0 { ratio.clamp(CONVOY_LEAD_RATIO_BOUNDS.0, CONVOY_LEAD_RATIO_BOUNDS.1) } else { CONVOY_LEAD_RATIO }
+    }
+
+    /// Helm cruise of the slowest fielded player hull, in knots (infinite when none can be measured).
+    fn player_cruise_kn(&self) -> f64 {
+        let data = self.data;
+        self.s.seats.iter().filter_map(|p| p.hull.as_ref()).filter_map(|h| match h {
+            SeatHull::Campaign(rec) => measure_speeds(&rec.blueprint, data),
+            SeatHull::Stock(path) => path.as_deref().and_then(|p| stock_speeds(p, data)),
+        }).map(|f| f.cruise_kn).fold(f64::INFINITY, f64::min)
     }
 
     // ---- final assembly ----
@@ -1193,7 +1287,25 @@ impl<'a, 'd> Build<'a, 'd> {
         // pulled exit cut hunter-group survival's 900 s to minutes), and a pulled exit is kept only when it
         // still lies at least the approach distance from the player spawn; otherwise the exit stays where the
         // theatre data puts it. The shipped generator and the winnability harness build the same map.
-        if !matches!(s.op.objective, Objective::Survive { .. }) {
+        // DECISION (22 November 2026): an extraction, an escort, a cutting-out and a feint cannot finish at an
+        // exit before the hold, the rendezvous or the boarding, so for them the spawn guard does not apply and
+        // the exit comes in to `EXIT_LEG_FRACTION` of the approach on a leg with water under it (the guard
+        // left their exits 25 to 29 km from the objective, which no Act 1 starter sails inside 45 minutes).
+        let exit_leg = matches!(s.op.objective, Objective::Extract { .. } | Objective::Escort { .. } | Objective::CutOut { .. } | Objective::Feint { .. });
+        if exit_leg {
+            let reach = EXIT_LEG_FRACTION * approach;
+            let (hx, hz) = self.half();
+            let terrain = sim_core::terrain::Terrain::new(self.map.clone());
+            let mut moved: Vec<(usize, [f64; 2])> = Vec::new();
+            for (k, m) in self.map.markers.iter().enumerate() {
+                if m.kind != MarkerKind::Exit { continue; }
+                let (ex, ez) = (m.pos_m[0] - obj[0], m.pos_m[1] - obj[1]);
+                let d = libm::sqrt(ex * ex + ez * ez);
+                if !(d.is_finite() && reach.is_finite() && reach > 0.0 && d > reach) { continue; }
+                moved.push((k, exit_on_clear_leg(obj, [ex / d, ez / d], reach, &self.map, &terrain, hx, hz)));
+            }
+            for (k, p) in moved { self.map.markers[k].pos_m = p; }
+        } else if !matches!(s.op.objective, Objective::Survive { .. }) {
             let reach = approach.max(t);
             let (hx, hz) = self.half();
             let mut moved: Vec<(usize, [f64; 2])> = Vec::new();
@@ -1298,6 +1410,8 @@ impl<'a, 'd> Build<'a, 'd> {
         let enemy_emcon = s.cards.iter().filter_map(|id| c.cards.get(id)).find_map(|d| d.effect.enemy_emcon);
         let mut group_ids: Vec<Option<GroupId>> = vec![None; self.groups.len()];
         let player_pos = spawn;
+        // Measured at most once per generation, and only when a convoy sails.
+        let player_cruise: std::cell::OnceCell<f64> = std::cell::OnceCell::new();
         for (gi, g) in self.groups.iter().enumerate() {
             let members: Vec<usize> = (0..self.units.len()).filter(|i| self.units[*i].group == gi).collect();
             if members.is_empty() && g.bodies.is_empty() { continue; }
@@ -1311,8 +1425,27 @@ impl<'a, 'd> Build<'a, 'd> {
             } else if anchor.1 != 0.0 { anchor.1 } else { heading_deg([player_pos[0] - anchor.0[0], player_pos[1] - anchor.0[1]]) };
             let orders = g.orders.clone().unwrap_or_else(|| default_orders(g, &self.map, &s.op.objective, &self.groups));
             let speed = match &orders { GroupOrders::Transit { .. } | GroupOrders::Escort { .. } => 10.0, GroupOrders::Patrol { .. } => 12.0, GroupOrders::Hunt | GroupOrders::Flee { .. } => 16.0, GroupOrders::Guard { .. } | GroupOrders::Search { .. } => 6.0, _ => 0.0 };
-            let start = match (&orders, g.kind) {
-                (GroupOrders::Transit { from, .. }, _) => self.marker(from).map(|m| m.pos_m).unwrap_or(anchor.0),
+            // A convoy starts on its lane where it will pass the point nearest the objective as the players get
+            // there; its escort starts with it (see the module docs).
+            let lane_start = |o: &GroupOrders, members: &[usize]| -> Option<[f64; 2]> {
+                let GroupOrders::Transit { from, to } = o else { return None };
+                let a = self.marker(from)?.pos_m;
+                let Some(b) = self.marker(to).map(|m| m.pos_m) else { return Some(a) };
+                let len = libm::sqrt(d2(a, b));
+                if !(len.is_finite() && len > 1.0) { return Some(a); }
+                let u = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+                let nearest = ((obj[0] - a[0]) * u[0] + (obj[1] - a[1]) * u[1]).clamp(0.0, len);
+                let cruise = *player_cruise.get_or_init(|| self.player_cruise_kn());
+                let at = (nearest - approach * self.convoy_speed_ratio(members, cruise)).clamp(0.0, len);
+                Some([a[0] + u[0] * at, a[1] + u[1] * at])
+            };
+            let start = match &orders {
+                GroupOrders::Transit { .. } => lane_start(&orders, &members).unwrap_or(anchor.0),
+                GroupOrders::Escort { tag } => self.groups.iter().enumerate().find(|(_, x)| x.tag == *tag && matches!(x.kind, FleetKind::Convoy | FleetKind::DecoyConvoy) && x.side == g.side)
+                    .and_then(|(ci, x)| {
+                        let convoy: Vec<usize> = (0..self.units.len()).filter(|i| self.units[*i].group == ci).collect();
+                        lane_start(&x.orders.clone().unwrap_or_else(|| default_orders(x, &self.map, &s.op.objective, &self.groups)), &convoy)
+                    }).unwrap_or(anchor.0),
                 _ => anchor.0,
             };
             let offsets = formation_offsets(g.formation, members.len(), heading);
@@ -1333,9 +1466,11 @@ impl<'a, 'd> Build<'a, 'd> {
                 let u = &self.units[*ui];
                 let Some(def) = c.classes.get(&u.class) else { continue };
                 let p = spots[k];
+                // The hulls a destroy-group objective names are the briefing's targets: declared Hostile (L498).
+                let target = matches!(&s.op.objective, Objective::DestroyGroup { tag, .. } if !tag.is_empty() && *tag == u.tag);
                 let declared = match (u.side, u.stance) {
                     (Side::Combine, Stance::Neutral) | (Side::Civilian, _) | (Side::Protected, _) => Some(Stance::Neutral),
-                    _ if s.op.declared_hostile.contains(&u.class) => Some(Stance::Hostile),
+                    _ if s.op.declared_hostile.contains(&u.class) || target => Some(Stance::Hostile),
                     _ => None,
                 };
                 config.vessels.push(VesselInit {
@@ -1401,13 +1536,20 @@ impl<'a, 'd> Build<'a, 'd> {
         oob.dedup();
         civ.sort();
         civ.dedup();
-        let named: Vec<u16> = config.vessels.iter().enumerate().filter(|(_, v)| matches!(v.role, VesselRole::Prize | VesselRole::Site) || (v.group.is_some_and(|g| config.groups.iter().any(|x| x.id == g && x.ace.is_some())) && v.class.as_ref().is_some_and(|cl| config.groups.iter().filter_map(|x| x.ace.as_ref()).any(|a| c.aces.get(a).is_some_and(|d| &d.ship == cl))))).map(|(i, _)| i as u16).collect();
+        // Named hulls (Exact at first association, L475): prizes, sites, ace flagships and the hulls a
+        // destroy-group objective is about.
+        let destroy_tag = match &s.op.objective { Objective::DestroyGroup { tag, .. } if !tag.is_empty() => Some(tag.as_str()), _ => None };
+        let named: Vec<u16> = config.vessels.iter().enumerate().filter(|(_, v)| matches!(v.role, VesselRole::Prize | VesselRole::Site) || (v.side == combine && v.declared == Some(Stance::Hostile) && destroy_tag == Some(v.tag.as_str())) || (v.group.is_some_and(|g| config.groups.iter().any(|x| x.id == g && x.ace.is_some())) && v.class.as_ref().is_some_and(|cl| config.groups.iter().filter_map(|x| x.ace.as_ref()).any(|a| c.aces.get(a).is_some_and(|d| &d.ship == cl))))).map(|(i, _)| i as u16).collect();
         let esm_sites: Vec<[f64; 2]> = self.map.markers.iter().filter(|m| m.kind == MarkerKind::RadarSite).map(|m| m.pos_m).collect();
         let recommended = s.op.recommended_emcon.or_else(|| s.op.ghosts.iter().any(|g| matches!(g.kind, GhostKind::NoRadarEmissions | GhostKind::NeverDetected)).then_some(Emcon::Silent));
-        // DECISION: player hulls sail in at the briefing's recommended emission state, so an operation whose
-        // ghost conditions ask for silence does not fail them in its first seconds; the player radiates by
-        // choice (the emission control key), and a design's own setting applies when nothing is recommended.
-        if let Some(e) = recommended {
+        // DECISION: player hulls sail in at the operation's authored emission state, so an operation built
+        // around silence does not fail its ghost conditions in its first seconds; the player radiates by choice
+        // (the emission control key), and a design's own setting applies when nothing is authored.
+        // DECISION (22 November 2026, L507 and L317): a recommendation inferred from ghost conditions is shown
+        // in the briefing and not applied. Applied, it left the stock Sensors officer silent in 14 of the 18
+        // Act 1 operations, six of which need gunfire to finish, and in Silent the guns hold for want of a
+        // track graded Fine (L484).
+        if let Some(e) = s.op.recommended_emcon {
             for v in config.vessels.iter_mut().filter(|v| v.role == VesselRole::PlayerHull) { v.emcon = Some(e); }
         }
         config.intel = SortieIntel { order_of_battle: oob, civilian: civ, declared_hostile: s.op.declared_hostile.clone(), named, esm_sites, recommended_emcon: recommended };
@@ -1426,7 +1568,7 @@ impl<'a, 'd> Build<'a, 'd> {
         let mut briefing_map = config.map.clone();
         {
             let mut named: Vec<String> = objective_exits(&s.op.objective);
-            if let Some(n) = self.objective_pos_name() { named.push(n); }
+            if let Some(n) = self.prize_marker_name().or_else(|| self.objective_pos_name()) { named.push(n); }
             named.extend(s.op.force.iter().map(|f| f.marker.clone()));
             let convoy = matches!(s.op.objective, Objective::DestroyGroup { .. } | Objective::Escort { .. } | Objective::Photograph { .. });
             let wants = |k: MarkerKind| match k {
@@ -1446,6 +1588,32 @@ impl<'a, 'd> Build<'a, 'd> {
         };
         Generated { config, briefing, committed_hulls: committed_hulls.min(u16::MAX as usize) as u16, committed_tonnage_t: committed_tonnage, hull_records: records }
     }
+}
+
+/// Shallow samples (less than [`EXIT_LEG_DEPTH_M`] of water) on the straight leg from `a` to `b`.
+pub(crate) fn shallow_samples(terrain: &sim_core::terrain::Terrain, a: [f64; 2], b: [f64; 2]) -> u32 {
+    (0..=EXIT_LEG_SAMPLES).filter(|k| {
+        let f = f64::from(*k) / f64::from(EXIT_LEG_SAMPLES);
+        terrain.height_at(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f) > -EXIT_LEG_DEPTH_M
+    }).count() as u32
+}
+
+/// An exit `reach` from the objective point along `dir`, on a leg with water under it: the first of the
+/// bearings 0, +15, -15, ... +90, -90 degrees off `dir` whose exit (clamped inside the map and pushed off any
+/// island) is no farther than `reach` and has no shallow sample on its leg; when none is clear, the one with
+/// the fewest shallow samples (ties to the smaller turn).
+fn exit_on_clear_leg(obj: [f64; 2], dir: [f64; 2], reach: f64, map: &MapDef, terrain: &sim_core::terrain::Terrain, hx: f64, hz: f64) -> [f64; 2] {
+    let mut best: Option<((bool, u32), [f64; 2])> = None;
+    for n in 0..=2 * EXIT_TURN_STEPS {
+        let turn = (if n % 2 == 1 { 1.0 } else { -1.0 }) * f64::from(n.div_ceil(2)) * EXIT_TURN_DEG.to_radians();
+        let (sn, cs) = (libm::sin(turn), libm::cos(turn));
+        let d = [dir[0] * cs - dir[1] * sn, dir[0] * sn + dir[1] * cs];
+        let p = avoid_islands(clamp_in([obj[0] + d[0] * reach, obj[1] + d[1] * reach], hx, hz), map, hx, hz);
+        let score = (d2(p, obj) > (reach + 1.0) * (reach + 1.0), shallow_samples(terrain, obj, p));
+        if score == (false, 0) { return p; }
+        if best.as_ref().is_none_or(|b| score < b.0) { best = Some((score, p)); }
+    }
+    best.map_or([obj[0] + dir[0] * reach, obj[1] + dir[1] * reach], |b| b.1)
 }
 
 fn site_rank(role: ClassRole) -> u8 { match role { ClassRole::Tender => 0, ClassRole::Freighter => 1, ClassRole::Tanker => 2, _ => 3 } }
@@ -1779,48 +1947,94 @@ pub(crate) mod tests {
         for h in &hulls { assert!(g.hull_records.contains(h)); }
     }
 
-    /// Real data, every Act 1 operation on every node map it can be generated on (an authored map or node, the
-    /// nodes its template fits, and every node for hunter-group survival and ace duels, which follow a group):
-    /// each exit is either where the theatre data puts it or at least the approach distance from the player
-    /// spawn, and hunter-group survival's exit never moves (DECISION r3 in `finish`).
-    #[test]
-    fn act1_exits_stay_at_least_the_approach_from_the_spawn() {
+    fn real_data() -> TheatreData {
         let catalogue = std::sync::Arc::new(content::catalogue::Catalogue::load_embedded().unwrap());
         let campaign = std::sync::Arc::new(content::campaign::load::load_embedded(&catalogue).unwrap());
-        let data = TheatreData { campaign: campaign.clone(), catalogue };
+        TheatreData { campaign, catalogue }
+    }
+
+    /// Every node map an Act 1 operation can be generated on: its authored map or node, the nodes its template
+    /// fits, and every node for hunter-group survival and ace duels, which follow a group.
+    fn act1_maps<'d>(op: &OperationDef, data: &'d TheatreData) -> Vec<(Option<&'d content::campaign::NodeDef>, MapDef)> {
         let c = &data.campaign;
-        let mut ops: Vec<&OperationDef> = c.operations.values().filter(|o| o.act == Act::Act1 && o.kind != OperationKind::Tutorial).collect();
+        if let Some(m) = &op.map { return vec![(None, m.clone())]; }
+        if let Some(id) = &op.node { return c.theatre.nodes.iter().filter(|n| &n.id == id).map(|n| (Some(n), n.map.clone())).collect(); }
+        c.theatre.nodes.iter().filter(|n| match op.kind {
+            OperationKind::Template(MissionType::HunterGroupSurvival) | OperationKind::AceDuel(_) => true,
+            OperationKind::Template(t) => fits(t, &n.kind, has_traffic(data, &n.id)),
+            _ => fits(MissionType::Feint, &n.kind, has_traffic(data, &n.id)),
+        }).map(|n| (Some(n), n.map.clone())).collect()
+    }
+
+    fn act1_ops(data: &TheatreData) -> Vec<&OperationDef> {
+        let mut ops: Vec<&OperationDef> = data.campaign.operations.values().filter(|o| o.act == Act::Act1 && o.kind != OperationKind::Tutorial).collect();
         ops.sort_by(|a, b| a.id.cmp(&b.id));
+        ops
+    }
+
+    fn act1_spec<'a>(op: &'a OperationDef, node: Option<&'a content::campaign::NodeDef>, map: MapDef, seed: u64, starter: &str, data: &'a TheatreData) -> Spec<'a> {
+        let region = node.and_then(|n| data.campaign.theatre.regions.iter().find(|r| r.id == n.region));
+        let seats = vec![Seat { slot: PlayerSlot(0), client_id: 0, name: String::new(), hull: Some(SeatHull::Stock(Some(starter.to_string()))) }];
+        Spec {
+            op, act: Act::Act1, seed, hour: 12, weather: WeatherState::default(), map, region, region_id: region.map(|r| r.id.clone()), node: node.map(|n| n.id.clone()),
+            seats, difficulty: DifficultySliders::NORMAL, ironman: false, enemy_per_player: None, alert: 0, cards: Vec::new(), rung: 0, state: None,
+        }
+    }
+
+    const PATROL: &str = "starters/patrol15.bp.ron";
+    const FAC: &str = "starters/fac22.bp.ron";
+
+    fn approach_of(op: &OperationDef, data: &TheatreData) -> f64 { (if op.approach_m.is_finite() && op.approach_m > 0.0 { op.approach_m } else { 10_000.0 }) * approach_scale(op, data) }
+
+    /// Real data, every Act 1 operation on every node map it can be generated on.
+    /// - An extraction, an escort, a cutting-out and a feint: every exit lies within half the approach distance
+    ///   of the objective point, on a straight leg with at least 3 m of water at every sample, and the map has
+    ///   an exit (DECISION of 22 November 2026 in `finish`).
+    /// - Every other objective: each exit is either where the theatre data puts it or at least the approach
+    ///   distance from the player spawn, and hunter-group survival's exit never moves (DECISION r3).
+    #[test]
+    fn act1_exits_follow_the_objective_and_the_spawn_guard() {
+        let data = real_data();
         let mut checked = 0u32;
+        let mut legs = 0u32;
+        let mut pulled = 0u32;
         let mut hunter_maps = 0u32;
-        for op in ops {
-            let maps: Vec<(Option<&content::campaign::NodeDef>, MapDef)> = if let Some(m) = &op.map { vec![(None, m.clone())] } else if let Some(id) = &op.node {
-                c.theatre.nodes.iter().filter(|n| &n.id == id).map(|n| (Some(n), n.map.clone())).collect()
-            } else {
-                c.theatre.nodes.iter().filter(|n| match op.kind {
-                    OperationKind::Template(MissionType::HunterGroupSurvival) | OperationKind::AceDuel(_) => true,
-                    OperationKind::Template(t) => fits(t, &n.kind, has_traffic(&data, &n.id)),
-                    _ => fits(MissionType::Feint, &n.kind, has_traffic(&data, &n.id)),
-                }).map(|n| (Some(n), n.map.clone())).collect()
-            };
+        for op in act1_ops(&data) {
+            let maps = act1_maps(op, &data);
             assert!(!maps.is_empty(), "{} has no map to generate on", op.id.as_str());
             let survive = matches!(op.objective, Objective::Survive { .. });
+            let exit_leg = matches!(op.objective, Objective::Extract { .. } | Objective::Escort { .. } | Objective::CutOut { .. } | Objective::Feint { .. });
             for (node, map) in maps {
-                let region = node.and_then(|n| c.theatre.regions.iter().find(|r| r.id == n.region));
-                let seats = vec![Seat { slot: PlayerSlot(0), client_id: 0, name: String::new(), hull: Some(SeatHull::Stock(starter_path(&data, Act::Act1))) }];
-                let spec = Spec {
-                    op, act: Act::Act1, seed: 3, hour: 12, weather: WeatherState::default(), map, region, region_id: region.map(|r| r.id.clone()), node: node.map(|n| n.id.clone()),
-                    seats, difficulty: DifficultySliders::NORMAL, ironman: false, enemy_per_player: None, alert: 0, cards: Vec::new(), rung: 0, state: None,
-                };
+                let spec = act1_spec(op, node, map, 3, PATROL, &data);
                 // The exits as the theatre data puts them (the node map's own, else the generator's default).
                 let mut before = Build { s: &spec, data: &data, r: Rng { seed: spec.seed }, map: sanitize_map(&spec.map), units: Vec::new(), groups: Vec::new(), draws: 0, variants: false };
                 before.ensure_markers(objective_marker_name(&op.objective).as_deref());
                 let g = build(&spec, &data);
                 let v = g.config.players[0].vessel.expect("a fielded hull") as usize;
                 let spawn = [g.config.vessels[v].pos.x, g.config.vessels[v].pos.z];
-                let approach = if op.approach_m.is_finite() && op.approach_m > 0.0 { op.approach_m } else { 10_000.0 } * approach_scale(op, &data);
+                let approach = approach_of(op, &data);
                 let where_ = node.map_or("authored map", |n| n.id.as_str());
-                for m in g.config.map.markers.iter().filter(|m| m.kind == MarkerKind::Exit) {
+                let exits: Vec<&Marker> = g.config.map.markers.iter().filter(|m| m.kind == MarkerKind::Exit).collect();
+                if exit_leg {
+                    assert!(!exits.is_empty(), "{} on {where_}: no exit to leave by", op.id.as_str());
+                    let obj = g.briefing.route[1];
+                    let terrain = sim_core::terrain::Terrain::new(g.config.map.clone());
+                    let reach = EXIT_LEG_FRACTION * approach;
+                    for m in exits {
+                        let d = libm::sqrt(d2(m.pos_m, obj));
+                        assert!(d <= reach + 1.0, "{} on {where_}: exit {} is {d:.0} m from the objective point, over half the approach {approach:.0} m", op.id.as_str(), m.name);
+                        let shallow = shallow_samples(&terrain, obj, m.pos_m);
+                        assert_eq!(shallow, 0, "{} on {where_}: the leg from {obj:?} to exit {} at {:?} has {shallow} samples under 3 m of water", op.id.as_str(), m.name, m.pos_m);
+                        if before.map.markers.iter().find(|b| b.name == m.name).map(|b| b.pos_m) != Some(m.pos_m) { pulled += 1; }
+                        legs += 1;
+                    }
+                    // The same map whatever the seed and the hull: the exit depends on the map and the objective.
+                    let other = build(&act1_spec(op, node, spec.map.clone(), 77, FAC, &data), &data);
+                    let exit_of = |g: &Generated| g.config.map.markers.iter().filter(|m| m.kind == MarkerKind::Exit).map(|m| m.pos_m).collect::<Vec<_>>();
+                    assert_eq!(exit_of(&g), exit_of(&other), "{} on {where_}", op.id.as_str());
+                    continue;
+                }
+                for m in exits {
                     let src = before.map.markers.iter().find(|b| b.name == m.name).map(|b| b.pos_m).expect("every exit comes from the data or the defaults");
                     let unmoved = src == m.pos_m;
                     if survive { assert!(unmoved, "{} on {where_}: Survive exit {} moved from {src:?} to {:?}", op.id.as_str(), m.name, m.pos_m); }
@@ -1836,6 +2050,134 @@ pub(crate) mod tests {
             }
         }
         assert!(checked > 0);
+        assert!(legs > 0 && pulled > 0, "{legs} exit legs checked, {pulled} pulled in");
         assert!(hunter_maps > 0, "hunter_survival was checked on cove.wren");
+    }
+
+    /// Real data: a convoy in transit starts on its lane `approach x convoy speed / player speed` short of the
+    /// lane point nearest the objective, and its escort starts with it. 200 seeds per map (the convoy's classes
+    /// are drawn), with the fast attack craft, whose 19 kn cruise against a 14.6 kn convoy puts the convoy
+    /// raid's start about 10.8 km up the lane.
+    #[test]
+    fn act1_convoys_start_where_they_meet_the_players() {
+        let data = real_data();
+        let fac = stock_speeds(FAC, &data).expect("the fast attack craft has a speed");
+        assert!((18.0..=20.0).contains(&fac.cruise_kn), "fast attack craft cruise {:.1} kn", fac.cruise_kn);
+        let (mut checked, mut moved, mut escorts) = (0u32, 0u32, 0u32);
+        for id in ["op.act1.convoy_raid", "op.act1.prize_capture", "op.act1.story.kessel_toll"] {
+            let op = &data.campaign.operations[&OperationId::new(id)];
+            for (node, map) in act1_maps(op, &data) {
+                let where_ = node.map_or("authored map", |n| n.id.as_str());
+                for seed in 0..200u64 {
+                    let g = build(&act1_spec(op, node, map.clone(), seed, FAC, &data), &data);
+                    let c = &g.config;
+                    let find = |k: MarkerKind| c.map.markers.iter().find(|m| m.kind == k).map(|m| m.pos_m).expect("lane markers");
+                    let (a, b) = (find(MarkerKind::ConvoyEntry), find(MarkerKind::ConvoyExit));
+                    let len = libm::sqrt(d2(a, b));
+                    let u = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
+                    let along = |p: [f64; 2]| (p[0] - a[0]) * u[0] + (p[1] - a[1]) * u[1];
+                    let obj = g.briefing.route[1];
+                    let nearest = along(obj).clamp(0.0, len);
+                    let approach = approach_of(op, &data);
+                    let leader = |gid: GroupId| c.vessels.iter().find(|v| v.group == Some(gid)).map(|v| [v.pos.x, v.pos.z]).expect("a group has a hull");
+                    let mut convoy_at: BTreeMap<String, f64> = BTreeMap::new();
+                    for gr in c.groups.iter().filter(|x| matches!(x.orders, GroupOrders::Transit { .. })) {
+                        let slowest = c.vessels.iter().filter(|v| v.group == Some(gr.id)).filter_map(|v| v.class.as_ref()).filter_map(|cl| stock_speeds(&data.campaign.classes[cl].blueprint, &data)).map(|f| f.top_kn).fold(f64::INFINITY, f64::min);
+                        let lead = approach * (slowest * CONVOY_SPEED_FRACTION / fac.cruise_kn).clamp(CONVOY_LEAD_RATIO_BOUNDS.0, CONVOY_LEAD_RATIO_BOUNDS.1);
+                        let want = (nearest - lead).clamp(0.0, len);
+                        let at = along(leader(gr.id));
+                        assert!((at - want).abs() <= 400.0, "{id} on {where_} seed {seed}: group {:?} starts {at:.0} m up the lane, expected {want:.0} m (lead {lead:.0} m, nearest point {nearest:.0} m)", gr.tag);
+                        if gr.kind == FleetKind::Convoy && id == "op.act1.convoy_raid" && gr.tag == "convoy" {
+                            assert!((10_000.0..=11_600.0).contains(&lead), "{id} on {where_} seed {seed}: lead {lead:.0} m is not near the 10.8 km of a 14.6 kn convoy and a 19 kn raider");
+                        }
+                        if want > 1_000.0 { moved += 1; }
+                        convoy_at.insert(gr.tag.clone(), at);
+                        checked += 1;
+                    }
+                    for gr in &c.groups {
+                        let GroupOrders::Escort { tag } = &gr.orders else { continue };
+                        let Some(want) = convoy_at.get(tag) else { continue };
+                        let at = along(leader(gr.id));
+                        assert!((at - want).abs() <= 2_500.0, "{id} on {where_} seed {seed}: escort {:?} starts {at:.0} m up the lane, its convoy {want:.0} m", gr.tag);
+                        escorts += 1;
+                    }
+                }
+            }
+        }
+        assert!(checked > 0 && moved > 0 && escorts > 0, "{checked} convoys checked, {moved} started up the lane, {escorts} escorts");
+    }
+
+    /// Real data: the player hull sails in at the operation's authored emission state and at no inferred one,
+    /// while the briefing still recommends Silent wherever a ghost condition forbids emissions or detection.
+    #[test]
+    fn act1_spawn_emission_state_is_the_authored_one() {
+        let data = real_data();
+        let (mut authored, mut inferred) = (Vec::new(), 0u32);
+        for op in act1_ops(&data) {
+            let (node, map) = act1_maps(op, &data).into_iter().next().expect("a map");
+            let g = build(&act1_spec(op, node, map, 3, FAC, &data), &data);
+            let hull = &g.config.vessels[g.config.players[0].vessel.expect("a fielded hull") as usize];
+            assert_eq!(hull.emcon, op.recommended_emcon, "{}: the hull sails in at the authored setting only", op.id.as_str());
+            let forbids = op.ghosts.iter().any(|x| matches!(x.kind, GhostKind::NoRadarEmissions | GhostKind::NeverDetected));
+            let shown = op.recommended_emcon.or(forbids.then_some(Emcon::Silent));
+            assert_eq!((g.briefing.recommended_emcon, g.config.intel.recommended_emcon), (shown, shown), "{}: the briefing's recommendation", op.id.as_str());
+            if op.recommended_emcon.is_some() { authored.push(op.id.as_str().to_string()); } else if forbids { inferred += 1; }
+        }
+        // The operations a stock hull finishes without gunfire keep their authored silence; the rest sail in
+        // at the design's own setting.
+        assert_eq!(authored, ["op.act1.agent_extraction", "op.act1.minelaying", "op.act1.photo_reconnaissance", "op.act1.story.quiet_hand"]);
+        assert!(inferred >= 6, "{inferred} operations recommend Silent without applying it");
+    }
+
+    /// Real data: the hulls a destroy-group objective names are briefing-named (Exact at first contact, L475)
+    /// and declared Hostile (L498); no other objective names its convoy.
+    #[test]
+    fn act1_destroy_group_hulls_are_named_and_declared_hostile() {
+        let data = real_data();
+        let mut seen = 0u32;
+        for op in act1_ops(&data) {
+            let Objective::DestroyGroup { tag, .. } = &op.objective else { continue };
+            let (node, map) = act1_maps(op, &data).into_iter().next().expect("a map");
+            for seed in 0..20u64 {
+                let g = build(&act1_spec(op, node, map.clone(), seed, FAC, &data), &data);
+                let combine = g.config.sides.iter().find(|s| s.faction == Faction::Combine).expect("the Combine").id;
+                let targets: Vec<usize> = g.config.vessels.iter().enumerate().filter(|(_, v)| v.side == combine && v.tag == *tag).map(|(i, _)| i).collect();
+                assert!(!targets.is_empty(), "{} seed {seed}: no hull carries {tag:?}", op.id.as_str());
+                for i in targets {
+                    assert_eq!(g.config.vessels[i].declared, Some(Stance::Hostile), "{} seed {seed}: vessel {i}", op.id.as_str());
+                    assert!(g.config.intel.named.contains(&(i as u16)), "{} seed {seed}: vessel {i} is not named", op.id.as_str());
+                    seen += 1;
+                }
+                // Escorts and decoys are not the objective's: they are not named for it.
+                for (i, v) in g.config.vessels.iter().enumerate().filter(|(_, v)| v.role == VesselRole::Combatant && v.tag != *tag && v.side == combine) {
+                    let ace = v.group.is_some_and(|gid| g.config.groups.iter().any(|x| x.id == gid && x.ace.is_some()));
+                    assert!(ace || !g.config.intel.named.contains(&(i as u16)), "{} seed {seed}: vessel {i} ({:?}) is named", op.id.as_str(), v.tag);
+                }
+            }
+        }
+        assert!(seen > 0);
+    }
+
+    /// Real data: a cutting-out measures from the marker its prize lies at (the berth), so the briefing route
+    /// ends there and the spawn lies on the line through it; every other objective keeps its point.
+    #[test]
+    fn act1_cutting_out_measures_from_the_prize() {
+        let data = real_data();
+        let mut seen = 0u32;
+        for op in act1_ops(&data) {
+            let Objective::CutOut { tag, .. } = &op.objective else { continue };
+            let marker = &op.force.iter().find(|f| f.tag == *tag).expect("the prize's force entry").marker;
+            for (node, map) in act1_maps(op, &data) {
+                let where_ = node.map_or("authored map", |n| n.id.as_str());
+                let g = build(&act1_spec(op, node, map, 3, FAC, &data), &data);
+                let berth = g.config.map.markers.iter().find(|m| m.name == *marker).expect("the prize's marker").pos_m;
+                assert_eq!(g.briefing.route[1], berth, "{} on {where_}: the route ends at the prize", op.id.as_str());
+                let prize = g.config.vessels.iter().find(|v| v.role == VesselRole::Prize).expect("a prize");
+                assert!(libm::sqrt(d2([prize.pos.x, prize.pos.z], berth)) <= 1_500.0, "{} on {where_}: the prize lies at its marker", op.id.as_str());
+                assert!((g.briefing.distance_km * 1000.0 - libm::sqrt(d2(g.briefing.route[0], berth))).abs() < 1.0, "{} on {where_}: the approach is measured to the prize", op.id.as_str());
+                seen += 1;
+            }
+        }
+        assert!(seen > 0);
     }
 }

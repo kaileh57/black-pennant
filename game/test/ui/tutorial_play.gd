@@ -224,9 +224,18 @@ func _drag_beam() -> void:
 	await _wait(0.3)
 	_mouse_button(from, true)
 	await _wait(0.1)
+	_log("beam press: dragging %s" % str(dock.get(&"_handle_drag")))
 	var at := from
+	# Right, as the step says, while the view has room; at UI scale 200% the view is narrow, so the drag
+	# carries on upward ("up or to the right") instead of leaving the view.
+	var view: Rect2 = _overlay().call(&"_host_rect", ^"Scroll/Frame/Body/Centre/Stage")
 	for i: int in 60:
-		at += Vector2(6.0, 0.0)
+		if not view.has_area() or at.x + 6.0 <= view.end.x - 12.0:
+			at += Vector2(6.0, 0.0)
+		elif at.y - 6.0 >= view.position.y + 12.0:
+			at += Vector2(0.0, -6.0)
+		else:
+			break
 		_mouse_move(at, true)
 		await _wait(0.05)
 		if _gauge_check("float") == "pass":

@@ -1210,6 +1210,15 @@ impl ServerSession {
             Some(r)
         } else { None };
         self.held_events = initial;
+        // A Sim restored from a checkpoint remembers the sequence numbers of the session that took it; this
+        // session's clients number from 1 again, so their commands go above that floor (else `Duplicate`).
+        for p in sim.players() {
+            let floor = sim.command_seq_floor(p.slot);
+            if floor == 0 { continue; }
+            let e = self.seq_base.entry(p.slot).or_insert(0);
+            *e = (*e).max(floor);
+            for peer in self.peers.values_mut().filter(|q| q.slot == Some(p.slot)) { peer.seq_base = peer.seq_base.max(floor); }
+        }
         self.sim = Some(sim);
         self.phase = SessionPhase::Loading;
         self.tick_accumulator = 0.0;

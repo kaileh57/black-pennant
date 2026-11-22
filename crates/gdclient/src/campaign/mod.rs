@@ -128,6 +128,9 @@ pub(crate) struct CampaignRun {
     pub proposals: BTreeMap<u32, Proposal>,
     /// The launched sortie: when, at which theatre hour, whether the session was seen running.
     pub sortie: Option<SortieWatch>,
+    /// The suspend file this sortie was resumed from. It is deleted once the resumed sortie shows its first
+    /// picture, so a resume that fails keeps the sortie; quitting clears it with the rest of the run.
+    pub resumed_from: Option<std::path::PathBuf>,
     /// Theatre hour the after-action report's first events happened at.
     pub report_hour: u64,
     /// Parts made fieldable by the last operation.
@@ -687,7 +690,7 @@ impl BpCampaign {
         }
     }
     pub(crate) fn names<'a>(&self, data: &'a TheatreData) -> words::Names<'a> {
-        words::Names { campaign: &data.campaign, catalogue: &data.catalogue, players: self.state().map(|s| s.players.iter().map(|p| p.name.clone()).collect()).unwrap_or_default() }
+        words::Names { campaign: &data.campaign, catalogue: &data.catalogue, players: self.state().map(|s| s.players.iter().map(|p| p.name.clone()).collect()).unwrap_or_default(), act: self.state().map(|s| s.act) }
     }
     /// This machine's player in the theatre.
     pub(crate) fn local_slot(&self) -> PlayerSlot {
@@ -964,6 +967,11 @@ impl BpCampaign {
         // A sortie resumed or re-hosted without a launch from here is watched from now.
         let w = self.run.sortie.get_or_insert(SortieWatch { launched_s: now, hour, seen_running: false, finished_s: None });
         if matches!(state, SessionState::Loading | SessionState::InSortie | SessionState::Ended) { w.seen_running = true; }
+        if state == SessionState::InSortie {
+            if let Some(path) = self.run.resumed_from.take() {
+                if !store::delete(&path) { godot_warn!("campaign: the resumed suspend save could not be deleted: {}", path.display()); }
+            }
+        }
         let (launched, seen) = (w.launched_s, w.seen_running);
 
         let finished = services.handoff.borrow().finished.as_ref().filter(|f| f.kind == SessionKind::Campaign).map(|f| (f.summary.outcome, f.result.as_ref().map(|r| r.outcome)));
@@ -999,6 +1007,8 @@ impl BpCampaign {
         }
         self.pump();
         self.run.sortie = None;
+        // A resumed sortie that never ran leaves its suspend save in the slot, to be resumed again.
+        self.run.resumed_from = None;
         self.reject(why);
         self.set_phase(CampaignPhase::Chart);
         self.coop_send_chart(None);

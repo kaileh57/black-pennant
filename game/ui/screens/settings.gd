@@ -22,7 +22,8 @@ extends Control
 ## - Controls: the bindings page (`settings_bindings`).
 ## - Graphics: what automatic quality picked and why (`Quality.detect_result`).
 ## - Privacy: what a crash report holds; Send and Don't send start or stop reporting at once (L1334).
-## - Playtest: copy the timing log (L80) and the diagnostics to the clipboard.
+## - Playtest: copy the playtest report (L2209), the timing log (L80), the operation log and the
+##   diagnostics to the clipboard.
 ## UI scale changes only when a slider drag ends, so the slider never moves under the pointer.
 
 const Kit := preload("res://ui/screens/menu_kit.gd")
@@ -352,6 +353,10 @@ func _add_extras(section: StringName) -> void:
 			_extras.add_child(held)
 		&"playtest":
 			var row := Kit.hbox(3)
+			var copy_report := Kit.inline_button("settings_ui.playtest.copy_report")
+			copy_report.name = &"CopyReport"
+			copy_report.pressed.connect(_copy_text.bind(&"playtest_report_text", &"settings_ui.playtest.report_copied"))
+			_extra_help(copy_report, &"settings_ui.playtest.copy_report.help")
 			var copy_log := Kit.inline_button("settings_ui.playtest.copy_log")
 			copy_log.pressed.connect(_copy_text.bind(&"timing_log_text", &"settings_ui.playtest.log_copied"))
 			_extra_help(copy_log, &"settings_ui.playtest.copy_log.help")
@@ -364,18 +369,22 @@ func _add_extras(section: StringName) -> void:
 			var open_logs := Kit.inline_button("settings_ui.playtest.open_logs")
 			open_logs.pressed.connect(_open_log_folder)
 			_extra_help(open_logs, &"settings_ui.playtest.open_logs.help")
-			# Two rows of two, so the page still fits at 200% interface scale.
+			# Rows of at most two, so the page still fits at 200% interface scale. The whole report
+			# (L2209) comes first; the logs it is made of follow.
 			var row2 := Kit.hbox(3)
-			for b: Control in [copy_log, copy_ops]:
+			var row3 := Kit.hbox(3)
+			for b: Control in [copy_report, copy_log]:
 				row.add_child(b)
-			for b: Control in [copy_diag, open_logs]:
+			for b: Control in [copy_ops, copy_diag]:
 				row2.add_child(b)
-			Kit.chain_horizontal([copy_log, copy_ops])
-			Kit.chain_horizontal([copy_diag, open_logs])
-			for b: Control in [copy_log, copy_ops, copy_diag, open_logs]:
+			row3.add_child(open_logs)
+			Kit.chain_horizontal([copy_report, copy_log])
+			Kit.chain_horizontal([copy_ops, copy_diag])
+			for b: Control in [copy_report, copy_log, copy_ops, copy_diag, open_logs]:
 				_page_focus.append(b)
 			_extras.add_child(row)
 			_extras.add_child(row2)
+			_extras.add_child(row3)
 			_status = Kit.label("", &"Body", true)
 			_status.visible = false
 			_extras.add_child(_status)

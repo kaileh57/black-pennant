@@ -6,7 +6,7 @@ extends Control
 ## One column, no section labels (L1578 bans them on menus): groups are separated by space only.
 ## The first button is the one thing the player most likely wants, drawn taller, with one support
 ## line under it:
-## 1. a suspended sortie: Resume sortie (loading it deletes the suspend save, L826);
+## 1. a suspended sortie: Resume sortie (L826; the suspend save is deleted once the sortie runs);
 ## 2. a first launch (tutorial never finished, no campaign yet): Start the tutorial (L254);
 ## 3. the newest loadable campaign: Continue <name>;
 ## 4. otherwise: Start a campaign.

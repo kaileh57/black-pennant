@@ -35,8 +35,15 @@ log.pacing.rate,"HUD log; {0} time compression factor",Time rate {0}x
 log.pacing.blocked,"HUD log; {0} why time compression is held",{0}
 log.pacing.unblocked,HUD log,Time compression available
 log.pacing.scale,"HUD log; {0} simulation speed as a percentage",Simulation running at {0} of real time
-log.pacing.ladder_up,"HUD log; host overload ladder; {0} rung, {1} step",Host load rising: step {0}.{1}
-log.pacing.ladder_down,"HUD log; host overload ladder; {0} rung, {1} step",Host load easing: step {0}.{1}
+log.pacing.load_up,"HUD log; the host simplified the simulation to keep up; {0} what it simplified",Host busy. {0}.
+log.pacing.load_down,"HUD log; the host undid one simplification; {0} the step still in force",Host load easing. {0} for now.
+log.pacing.load_down_clear,"HUD log; the host undid a time compression limit or its last simplification",Host load easing.
+log.pacing.step.compression,"Host overload step, after Host busy. or before for now",Top time compression lowered
+log.pacing.step.kinematic_far,"Host overload step, after Host busy. or before for now",Unseen ships beyond 5 km simplified
+log.pacing.step.kinematic_all,"Host overload step, after Host busy. or before for now",Unseen ships simplified at any range
+log.pacing.step.projectiles_1500,"Host overload step, after Host busy. or before for now","Shells in flight capped at 1,500"
+log.pacing.step.projectiles_1000,"Host overload step, after Host busy. or before for now","Shells in flight capped at 1,000"
+log.pacing.step.time_scale,"Host overload step, after Host busy. or before for now",Game slowed below real time
 log.network.joined,"HUD log; {0} player name",{0} joined
 log.network.dropped,"HUD log; {0} player name",{0} dropped; officers in command
 log.network.left,"HUD log; {0} player name",{0} left

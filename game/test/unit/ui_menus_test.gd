@@ -295,6 +295,15 @@ func _settings_checks() -> void:
 	_ok(privacy.selected == -1, "crash reports not asked selects nothing")
 	_ok(privacy.text == tr(&"settings_ui.option.unset"), "and says so in words: '%s'" % privacy.text)
 	_ok((screen.get(&"_extras") as Node).get_child_count() >= 1, "privacy lists what a report holds")
+	# Playtest: the session report (DESIGN.md L2209) has its own copy control, first on the page.
+	screen.call(&"_show_section", &"playtest")
+	var copy_report := (screen.get(&"_extras") as Node).find_child("CopyReport", true, false) as Button
+	_ok(copy_report != null and tr(copy_report.text) == tr(&"settings_ui.playtest.copy_report"), "Playtest has Copy playtest report")
+	_ok((screen.get(&"_page_focus") as Array).has(copy_report), "it is in the page's focus order")
+	if copy_report != null:
+		copy_report.pressed.emit()
+		var status := screen.get(&"_status") as Label
+		_ok(status != null and status.visible and status.text in [tr(&"settings_ui.playtest.report_copied"), tr(&"settings_ui.playtest.nothing_to_copy")], "pressing it says what happened")
 	# Every page builds, and each focusable control has explicit Up and Down neighbours.
 	for section: StringName in expected:
 		screen.call(&"_show_section", section)
@@ -574,8 +583,23 @@ func _setup_checks() -> void:
 	var presets: Array[Dictionary] = []
 	for p: Variant in content.call(&"difficulty_presets"):
 		presets.append(p)
+	# This build ships Act 1 alone (DESIGN.md L2283): Content names one cap, and the act list has one row.
+	var shipped: Array[float] = []
+	for c: float in content.call(&"act_caps") as PackedFloat32Array:
+		shipped.append(c)
+	_ok(shipped == [150.0], "Content offers Act 1's cap alone")
+	skirmish.call(&"fill", templates, presets, shipped)
+	_ok((skirmish.get(&"_act") as OptionButton).item_count == 1, "skirmish offers Act 1 alone")
+	skirmish.call(&"fill", templates, presets, [] as Array[float])
+	_ok((skirmish.get(&"_act") as OptionButton).item_count == 1, "no caps still offers Act 1 alone")
+	# A later release ships more acts: one row per cap.
 	var caps: Array[float] = [150.0, 400.0, 900.0, 1800.0]
 	skirmish.call(&"fill", templates, presets, caps)
+	_ok((skirmish.get(&"_act") as OptionButton).item_count == 4, "one act row per shipped cap")
+	var lobby := _instance("lobby")
+	lobby.call(&"fill_choices", templates, presets, shipped)
+	_ok((lobby.get(&"_act") as OptionButton).item_count == 1, "the lobby's skirmish offers Act 1 alone")
+	lobby.queue_free()
 	var picker: Node = skirmish.get(&"_picker")
 	var designs: Array[Dictionary] = [
 		{"path": "stock:starters/fac_22", "stock": true, "info": {"name": "Fast attack craft", "length_m": 22.0, "displacement_t": 120.0}},

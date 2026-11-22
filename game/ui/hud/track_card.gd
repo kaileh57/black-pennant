@@ -13,7 +13,8 @@ extends Control
 ## - ID rung as zero to four bars and the word, with the class once known, and what moved it up the
 ##   last rung (L477: an emitter match, a visual sighting, an acoustic signature).
 ## - Facts with units: bearing and range, course and speed, height or depth, closest approach,
-##   quality grade, sources, weapon range, struck colours, radiating, inbound, age of a last-known mark.
+##   quality grade, sources, weapon range, radiating, inbound, age of a last-known mark. Struck
+##   colours joins the stance word ("Hostile. Struck colours", L2542), so it is always above the fold.
 ## - The shrinking candidate list and the evidence that climbed each rung, from
 ##   `Orders.query_track_card` (asked on selection and again when the rung or stance moves, at most
 ##   once a second). Until the reply arrives the card shows the candidate count it already has; no
@@ -294,7 +295,9 @@ func _render() -> void:
 		return
 	var stance := clampi(Kit.get_int(t, "stance", 2), 0, 3)
 	_stance.theme_type_variation = STANCE_VARIATIONS[stance]
-	_stance.text = _word(&"stance", stance)
+	# A struck track says so on the stance line, near the top, so the card never needs a scroll to
+	# show it (it used to be a fact line, below the fold at 200% interface scale).
+	_stance.text = tr(&"hud_tracks.card.stance_struck").format([_word(&"stance", stance)]) if Kit.get_bool(t, "struck") else _word(&"stance", stance)
 	var reason: Variant = _card.get("stance_reason", t.get("stance_reason", {}))
 	_stance_reason.text = _Text.resolve(reason)
 	_stance_reason.visible = not _stance_reason.text.is_empty()
@@ -343,8 +346,6 @@ func _fact_lines(t: Dictionary) -> PackedStringArray:
 	var envelope := Kit.get_float(t, "envelope_m", 0.0)
 	if envelope > 0.0:
 		lines.append(tr(&"hud_tracks.card.envelope").format([_tx(&"range", [envelope])]))
-	if Kit.get_bool(t, "struck"):
-		lines.append(tr(&"hud_tracks.card.struck"))
 	if Kit.get_bool(t, "emitting"):
 		lines.append(tr(&"hud_tracks.card.emitting"))
 	if Kit.get_bool(t, "inbound"):

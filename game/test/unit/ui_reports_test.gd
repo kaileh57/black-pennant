@@ -453,6 +453,16 @@ func _test_after_action() -> void:
 	var doctrine: VBoxContainer = screen.get_node("Margin/Column/Scroll/Body/Side/Doctrine")
 	var gauges := doctrine.find_children("*", "Control", false, false).filter(func(n: Node) -> bool: return n.get_script() == load("res://ui/widgets/gauge.gd"))
 	_check(gauges.size() == 2, "one gauge per tally: %d" % gauges.size())
+	# The session's playtest report (DESIGN.md L2209) can be copied from here too, beside the one action.
+	var copy := screen.get_node_or_null("Margin/Column/Footer/CopyReport") as Button
+	var copy_status := screen.get_node_or_null("Margin/Column/Footer/CopyStatus") as Label
+	_check(copy != null and TranslationServer.translate(copy.text) == TranslationServer.translate(&"settings_ui.playtest.copy_report") and copy_status != null and not copy_status.visible, "the footer offers Copy playtest report")
+	_check(copy != null and copy.get_index() < (screen.get_node("Margin/Column/Footer/Close") as Node).get_index(), "it sits before Return to the chart table")
+	if copy != null:
+		copy.pressed.emit()
+		var said := [TranslationServer.translate(&"settings_ui.playtest.report_copied"), TranslationServer.translate(&"settings_ui.playtest.nothing_to_copy")]
+		_check(copy_status.visible and said.has(copy_status.text), "pressing it says what happened: " + copy_status.text)
+		_check(not _campaign.calls.has(["close_after_action"]), "copying does not leave the report")
 	(screen.get_node("Margin/Column/Footer/Close") as Button).pressed.emit()
 	_check(_campaign.calls.has(["close_after_action"]), "close returns to the chart table")
 	screen.call(&"show_report", {}, Kit_dicts([]), Kit_dicts([]))

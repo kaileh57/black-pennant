@@ -77,3 +77,30 @@ fn mutated_starters_never_panic_the_editor() {
         }
     }
 }
+
+/// A surface gun without a director in its kit is the normal stock fit (every gun kit is built so): no note
+/// for it. Point-defence and SAM mounts without one still get the tier 3 note.
+#[test]
+fn stock_surface_guns_raise_no_director_note() {
+    use crate::editor::notes::{NoteKind, NoteTier};
+    use content::graph::WeaponClass;
+    let cat = content::catalogue::catalogue();
+    let mut guns = 0;
+    let mut lock_note = false;
+    for path in STARTERS {
+        let bp = content::campaign::load::stock_blueprint(path).unwrap_or_else(|e| panic!("{path}: {e:?}"));
+        let d = design(&bp, cat);
+        let g = all_gauges(&bp, &d, 400.0, 120.0, cat);
+        let notes = ship_notes(&bp, &d, &g, None, &[], cat);
+        for m in d.mounts.iter().filter(|m| m.weapon == WeaponClass::Gun && m.director.is_none()) {
+            guns += 1;
+            assert!(!notes.iter().any(|n| n.kind == NoteKind::NoDirector && n.part == Some(m.slot)), "{path}: gun {:?} has a director note", m.slot);
+        }
+        for m in d.mounts.iter().filter(|m| matches!(m.weapon, WeaponClass::Sam | WeaponClass::PointDefenceGun | WeaponClass::PointDefenceMissile) && m.director.is_none()) {
+            lock_note = true;
+            assert!(notes.iter().any(|n| n.kind == NoteKind::NoDirector && n.part == Some(m.slot) && n.tier == NoteTier::CannotWork), "{path}: {:?} keeps its note", m.slot);
+        }
+    }
+    assert!(guns >= 6, "the starters carry directorless guns: {guns}");
+    assert!(lock_note, "the destroyer's SAM mounts keep the tier 3 note");
+}

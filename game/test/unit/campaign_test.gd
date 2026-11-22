@@ -91,14 +91,17 @@ func _process(_delta: float) -> bool:
 				if not _campaign.resume_suspend():
 					_fail("resume_suspend refused: %s" % str(_rejected))
 					return _finish()
-				if _campaign.suspend_slot() != null:
-					_fail("resuming did not consume the suspend slot")
+				# The slot is consumed once the resumed sortie shows its first picture, not before (L828).
+				if _campaign.suspend_slot() == null:
+					_fail("resuming deleted the suspend slot before the sortie ran")
 				if _campaign.phase() != Bp.PHASE_SORTIE:
 					_fail("phase after resuming is %d" % _campaign.phase())
 				_next(4)
 		4:
 			if _session.state() == Bp.SESSION_IN_SORTIE and since > 30:
 				print("campaign_test: resumed sortie running; withdrawing")
+				if _campaign.suspend_slot() != null:
+					_fail("the running resumed sortie did not consume the suspend slot")
 				if not _check.stop_sortie(Bp.OUTCOME_WITHDRAWN):
 					_fail("stop_sortie was not sent")
 				_next(5)

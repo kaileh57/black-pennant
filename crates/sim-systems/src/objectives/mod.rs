@@ -31,7 +31,8 @@
 //! - A Victory brings home every afloat prize under sail (the area is won). Survivor records list enemy
 //!   hulls with a hull record that were neither lost nor captured, Disabled ones included.
 //! - The minefield of a mine-laying objective counts player mines within [`MINEFIELD_RADIUS_M`] of its marker;
-//!   a site objective counts Site-role hulls within [`SITE_RADIUS_M`] of its marker.
+//!   a site objective counts Site-role hulls within [`SITE_RADIUS_M`] of its marker, each destroyed when lost or
+//!   when it has lost [`SITE_DESTROYED_CELLS`] of its cells.
 use crate::ai::commander::CommanderState;
 use crate::prelude::*;
 use crate::protocol::config::{Faction, KillFate, KillRecord, ModeRules, Outcome, PlayerResult, PrizeRecord, SideDef, SortieConfig, SortieResult, SortieStats, SortieSummary, SurvivorRecord, VesselRole};
@@ -59,6 +60,14 @@ pub const CLEAR_HOLD_S: f64 = 10.0;
 pub const MINEFIELD_RADIUS_M: f64 = 2_000.0;
 /// DECISION: radius around a site objective's marker in which Site-role hulls belong to the site.
 pub const SITE_RADIUS_M: f64 = 1_500.0;
+/// DECISION (owner ruling of 22 November 2026 to make site destruction a rule a player can see): a site is
+/// destroyed when it is lost or has lost this share of its original cells (destroyed cells, L561), and its
+/// objective progress is the share lost over this. Its propulsion does not count: a moored depot hulk or radar
+/// tender that loses its engines still holds its stores and its radar, and propulsion was the lottery that
+/// decided one magazine in some seeds and not in others. Sites never strike (L2539). The value is set below
+/// the smallest share one 400-round magazine of the patrol boat starter took off the site in the twelve
+/// logged sorties that emptied it into a site (0.3%, depot strike seed 1 with every droppable hostile removed).
+pub const SITE_DESTROYED_CELLS: f64 = 0.0025;
 /// DECISION: a wreck that sank in water this shallow or less is grounded and salvageable (the 20 m despawn
 /// depth, L686).
 pub const SALVAGE_DEPTH_M: f64 = 20.0;
@@ -151,6 +160,9 @@ pub struct HullFacts {
     /// clears the world's flag, still counts in the Struck colours row.
     #[serde(default)]
     pub struck: bool,
+    /// Share of the hull's original cells destroyed (0 to 1), at the last evaluation.
+    #[serde(default)]
+    pub cells_lost: f64,
     /// Tick the hull's status last became Disabled; `None` while it is Active, lost or never disabled.
     #[serde(default)]
     pub disabled_since: Option<u64>,
@@ -595,9 +607,7 @@ pub(crate) fn eval_objective(obj: &Objective, f: &EvalFacts<'_>) -> (ObjectiveSt
             let at = marker_pos(f.markers, marker);
             let mut site: Vec<&HullFacts> = f.hulls.iter().filter(|h| h.role == VesselRole::Site && at.map_or(true, |p| p.distance(DVec2::from(h.pos)) <= SITE_RADIUS_M)).collect();
             if site.is_empty() { site = f.hulls.iter().filter(|h| h.enemy && !marker.is_empty() && h.tag == *marker).collect(); }
-            let total = site.len() as f64;
-            let down = site.iter().filter(|h| h.out()).count() as f64;
-            (if !site.is_empty() && down >= total { Done } else { Active }, ratio(down, total))
+            (site_state(&site), site_progress(&site))
         }
         Objective::Extract { marker, .. } => {
             let at = marker_pos(f.markers, marker);
@@ -663,6 +673,18 @@ pub(crate) fn eval_objective(obj: &Objective, f: &EvalFacts<'_>) -> (ObjectiveSt
     };
     // Losing more passengers than the briefing allows fails the operation (L794).
     match f.allowed_losses { Some(a) if f.passengers_lost > a as u16 => (Failed, res.1), _ => res }
+}
+
+/// How far one site hull is destroyed (0 to 1): 1 when lost, else its destroyed cells over
+/// [`SITE_DESTROYED_CELLS`]. Disabled (no propulsion) and struck do not count. Pure.
+pub(crate) fn site_hull_progress(h: &HullFacts) -> f64 {
+    if h.lost { return 1.0; }
+    let c = if h.cells_lost.is_finite() { h.cells_lost.max(0.0) } else { 0.0 };
+    (c / SITE_DESTROYED_CELLS).clamp(0.0, 1.0)
+}
+fn site_progress(site: &[&HullFacts]) -> f64 { if site.is_empty() { 0.0 } else { site.iter().map(|h| site_hull_progress(h)).sum::<f64>() / site.len() as f64 } }
+fn site_state(site: &[&HullFacts]) -> ObjectiveState {
+    if !site.is_empty() && site.iter().all(|h| h.lost || h.cells_lost >= SITE_DESTROYED_CELLS - 1e-12) { ObjectiveState::Done } else { ObjectiveState::Active }
 }
 
 /// Ghost-condition state during play. Pure. `ace` is (captured, lost) of the ace's hull if known.
@@ -773,6 +795,8 @@ fn refresh_hulls(state: &mut ObjectivesState, world: &World, ships: &ShipTable, 
         let Some(v) = world.vessel(h.vessel) else { h.lost = true; h.disabled_since = None; continue };
         if v.struck { h.struck = true; }
         note_status(h, v.status, v.struck, tick);
+        let lost_share = v.cells_lost_fraction();
+        if lost_share.is_finite() { h.cells_lost = h.cells_lost.max(lost_share.clamp(0.0, 1.0)); }
         h.pos = [v.kin.pose.pos.x, v.kin.pose.pos.z];
         h.at_exits.clear();
         if !h.lost {

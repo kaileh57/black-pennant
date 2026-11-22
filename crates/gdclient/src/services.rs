@@ -87,8 +87,9 @@ pub fn services() -> Rc<Services> { SERVICES.with(|s| s.clone()) }
 impl Services {
     /// The part catalogue, shared with the simulation threads. Loads the embedded data on first call.
     pub fn catalogue(&self) -> Arc<Catalogue> { self.catalogue.get_or_init(|| Arc::new(content::catalogue::catalogue().clone())).clone() }
-    /// Campaign data (theatre, classes, operations, aces, cards, difficulty presets), loaded on first call.
-    pub fn campaign(&self) -> Arc<CampaignData> { self.campaign.get_or_init(|| Arc::new(content::campaign::load::campaign().clone())).clone() }
+    /// Campaign data (theatre, classes, operations, aces, cards, difficulty presets), loaded on first call, with
+    /// only the act rows this build ships (`content::campaign::load::shipped_campaign`: Act 1 in 0.1.0).
+    pub fn campaign(&self) -> Arc<CampaignData> { self.campaign.get_or_init(|| Arc::new(content::campaign::load::shipped_campaign().clone())).clone() }
     /// Fresh simulation dependencies with default budgets, an empty design cache and the build's script host
     /// (`script::new_host`: the Luau host when built with the `luau` feature, else the null host).
     pub fn sim_deps(&self) -> SimDeps {

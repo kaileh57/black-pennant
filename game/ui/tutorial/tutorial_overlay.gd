@@ -145,6 +145,9 @@ var _target_rect := Rect2()
 var _target_rects: Array[Rect2] = []
 ## The step whose target was last scrolled into view, so a list is scrolled once, not held.
 var _scrolled_key := ""
+## The step and page layout whose tight-dock page scroll was set, so the card never fights the player's own
+## scrolling.
+var _tight_scroll_key := ""
 ## The hull station whose handle a handle step points at (`Bp.NONE`: the dock's choice).
 var _point_station := -1
 ## The card is placed again when this changes (a target appearing or going, a new step, a resize).
@@ -776,6 +779,12 @@ func _place_card() -> void:
 		_card.position = at.round()
 		_pointer.queue_redraw()
 		return
+	if _dock_tight():
+		_set_card_tight(false)
+		at = _place_tight(screen, size)
+		_card.position = at.round()
+		_pointer.queue_redraw()
+		return
 	var fold := coach.has_area() and _view_below_fold(screen)
 	_set_card_tight(fold)
 	if fold:
@@ -815,6 +824,92 @@ func _place_card() -> void:
 		at = place_beside(bounds, t, size, candidates, avoid, rest)
 	_card.position = at.round()
 	_pointer.queue_redraw()
+
+
+## The dock is narrow and short at once (UI scale 200% on 1920 x 1080): its gauge strip shows names and
+## checks only, and the 3D view, the strip and the build dock all fit on the 960 x 540 canvas with at most a
+## short scroll. There is no free band for the card, so it goes where the step needs nothing.
+func _dock_tight() -> bool:
+	var host := _host()
+	var strip := host.get_node_or_null(^"Scroll/Frame/Gauges") if host != null else null
+	return strip != null and bool(strip.get(&"headline")) and _host_rect(^"Scroll/Frame/Body/Centre/Stage").has_area() and not _in_basin()
+
+
+## In the tight dock: the page first scrolls (once per step) just far enough to show the whole 3D view, and no
+## further than the gauge strip's top. The card then keeps clear of the view, the framed control, the gauge
+## the step watches (Float on the beam step), the framed controls themselves (on the kits
+## step: the rows of the kits it waits for) and the view's hint, nearest the top of the build dock.
+func _place_tight(screen: Rect2, size: Vector2) -> Vector2:
+	var host := _host()
+	var scroll := host.get_node_or_null(^"Scroll") as ScrollContainer if host != null else null
+	var stage_node := host.get_node_or_null(^"Scroll/Frame/Body/Centre/Stage") as Control if host != null else null
+	var strip := host.get_node_or_null(^"Scroll/Frame/Gauges") as Control if host != null else null
+	# Once per step and page layout (the view's place on the page, which the dock's tab switch for the step
+	# moves a frame later), never in answer to the player's own scrolling.
+	var key := "%s|%d" % [_step_key, roundi(_screen_rect(stage_node).position.y + scroll.scroll_vertical) if stage_node != null and scroll != null else -1]
+	if scroll != null and stage_node != null and strip != null and _tight_scroll_key != key:
+		_tight_scroll_key = key
+		# In page units (screen position plus the scroll), so placing again never scrolls twice.
+		var at := float(scroll.scroll_vertical)
+		var bottom := _screen_rect(stage_node).end.y + at - screen.end.y
+		var strip_top := _screen_rect(strip).position.y + at - screen.position.y
+		scroll.scroll_vertical = ceili(clampf(bottom, 0.0, maxf(strip_top, 0.0)))
+	var firm: Array[Rect2] = []
+	for r: Rect2 in [_host_rect(^"Scroll/Frame/Body/Centre/Stage"), _host_rect(^"Scroll/Frame/Body/Centre/Stage/Hint")]:
+		if r.has_area():
+			firm.append(r)
+	if _target_rect.has_area():
+		firm.append(_target_rect.grow(BOX_GROW))
+	for id: Variant in _step.get("watch", PackedStringArray()):
+		for c: Control in _find_targets(host, String(id)):
+			var r := _clipped_rect(c)
+			if r.has_area():
+				firm.append(r)
+	var gauges := _host_rect(^"Scroll/Frame/Gauges")
+	var pref := Vector2(screen.position.x + EDGE, (gauges.end.y if gauges.has_area() else screen.position.y) + GAP * 0.5)
+	# The card as wide as the view's column first; when that leaves no clear spot, as wide as the screen,
+	# which makes it shorter (fewer lines) so it fits the band over the top bar and the gauge strip.
+	var found := tight_spot(screen, size, firm, pref)
+	if found[1] > 0.5:
+		var chrome := size.x - _text.custom_minimum_size.x
+		var wide := screen.size.x - EDGE * 2.0
+		_text.custom_minimum_size.x = maxf(TEXT_MIN_W * 0.75, wide - chrome)
+		_card.custom_minimum_size.x = wide
+		_card.reset_size()
+		# Wrapped labels report their new height only after the next layout pass, so the shorter height is
+		# measured from the fonts here.
+		var wide_size := Vector2(wide, size.y - _wrapped_saving(size.x - chrome, wide - chrome))
+		var second := tight_spot(screen, wide_size, firm, pref)
+		if second[1] < found[1]:
+			_card.size = wide_size
+			return second[0]
+		_text.custom_minimum_size.x = size.x - chrome
+		_card.custom_minimum_size.x = size.x
+		_card.reset_size()
+		_card.size = size
+	return found[0]
+
+
+## How much shorter the card's wrapped lines get when their measure grows from `from_w` to `to_w`.
+func _wrapped_saving(from_w: float, to_w: float) -> float:
+	var saved := 0.0
+	for l: Label in [_text, _kits, _after_line]:
+		if l == null or not l.is_visible_in_tree() or l.text.is_empty():
+			continue
+		var font := l.get_theme_font(&"font")
+		var fs := l.get_theme_font_size(&"font_size")
+		if font == null:
+			continue
+		var a := font.get_multiline_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, maxf(from_w, 1.0), fs).y
+		var b := font.get_multiline_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, maxf(to_w, 1.0), fs).y
+		saved += maxf(a - b, 0.0)
+	return saved
+
+
+## Where the card goes on the tight dock: `[position, cost]`, clear of every `firm` rect (cost 0) when any
+## spot is, nearest `pref`; else the spot covering least of them. Also the test entry point.
+static func tight_spot(screen: Rect2, size: Vector2, firm: Array[Rect2], pref: Vector2) -> Array:
+	return basin_spot(screen, size, [], Rect2(), [], pref, firm)
 
 
 ## The compact dock (UI scale 200%) pushes the 3D view below the fold: less than this share of the screen's

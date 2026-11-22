@@ -9,6 +9,9 @@ settings_ui.bindings.open,Button on the Controls page that opens the bindings pa
 settings_ui.bindings.help,Help line for the bindings button; first line 12 words or fewer,"Rebind every action on keyboard, mouse and gamepad."
 settings_ui.privacy.holds,Privacy page line above the list of what a crash report holds,A crash report holds:
 settings_ui.option.unset,Closed list text when a setting has no value yet (crash reports before the player answers),Not chosen yet
+settings_ui.playtest.copy_report,Button that copies the whole session playtest report to the clipboard,Copy playtest report
+settings_ui.playtest.copy_report.help,Help line for the copy playtest report button; first line 12 words or fewer,"Copies this session's report: build, loop times and logs. Nothing is sent."
+settings_ui.playtest.report_copied,Line shown after the playtest report was copied,Playtest report copied to the clipboard. Nothing was sent.
 settings_ui.playtest.copy_log,Button that copies the playtest timing log to the clipboard,Copy timing log
 settings_ui.playtest.copy_log.help,Help line for the copy timing log button; first line 12 words or fewer,"Copies loop and step times as plain text, for the playtest issue form."
 settings_ui.playtest.log_copied,Line shown after the timing log was copied,Timing log copied to the clipboard. Nothing was sent.

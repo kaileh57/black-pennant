@@ -315,9 +315,16 @@ fn operations_are_well_formed() {
             _ => None,
         };
         if let Some(a) = need { assert!(o.actions.contains(&a), "{id} needs {a:?}"); }
-        // Ghost conditions that forbid emissions come with a recommended setting (L507).
+        // Ghost conditions that forbid emissions come with a recommended setting (L507). The generator infers
+        // Silent for the briefing from the condition itself, so the authored value only has to agree with it.
         if o.ghosts.iter().any(|g| g.kind == content::campaign::GhostKind::NoRadarEmissions) {
-            assert_eq!(o.recommended_emcon, Some(Emcon::Silent), "{id}: recommend an emission setting");
+            assert!(matches!(o.recommended_emcon, None | Some(Emcon::Silent)), "{id}: the authored setting contradicts the ghost condition");
+        }
+        // The authored setting is the one the player hull sails in at. An objective that needs gunfire is never
+        // authored Silent: the stock Gunnery officer fires only on a track graded Fine (L484), which a silent
+        // hull does not get before visual range (the L317 gate, decision of 22 November 2026).
+        if matches!(o.objective, Objective::DestroyAll | Objective::DestroyGroup { .. } | Objective::DestroySite { .. } | Objective::Capture { .. } | Objective::CutOut { .. }) {
+            assert_ne!(o.recommended_emcon, Some(Emcon::Silent), "{id}: a gunfire objective sails in at the design's own setting");
         }
         // An ace duel's objective is the ace's own group.
         if let OperationKind::AceDuel(ace) = &o.kind {

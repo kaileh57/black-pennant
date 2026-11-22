@@ -491,6 +491,16 @@ pub(crate) fn starter_paths(acts: &[content::campaign::ActDef], act: Option<Act>
     list.iter().flat_map(|a| a.starters.iter()).filter(|p| seen.insert(normalize_stock(p))).cloned().collect()
 }
 
+/// The acts that have a row in `acts`, in act order: the acts this build ships when `acts` is the shipped
+/// campaign's (Act 1 alone in 0.1.0). Never empty: Act 1 when no row is present.
+pub(crate) fn shipped_acts(acts: &[content::campaign::ActDef]) -> Vec<Act> {
+    let mut out: Vec<Act> = acts.iter().map(|a| a.act).collect();
+    out.sort();
+    out.dedup();
+    if out.is_empty() { out.push(Act::Act1); }
+    out
+}
+
 /// Stock path form: forward slashes, no leading `./` or `blueprints/` (as `content` keys them).
 pub(crate) fn normalize_stock(path: &str) -> String {
     let p = path.trim().replace('\\', "/");

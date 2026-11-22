@@ -218,6 +218,24 @@ func _card_checks() -> void:
 	card.call(&"_render")
 	_expect(not (card.get_node("Scroll/Column/Overrides") as Control).visible and facts.visible, "a dropped track keeps only its note and Close")
 	card.set(&"_dropped", false)
+	# A struck track says so on the stance line (L2542), which sits above the card's fold even at 200%
+	# interface scale: 960 x 540 logical, where the card's scroll is at most 45% of the height.
+	card.call(&"show_track", _track(413, Bp.STANCE_HOSTILE, {"struck": true, "emitting": true, "inbound": true, "envelope_m": 3000.0}), {})
+	var stance := card.get_node("Scroll/Column/Stance") as Label
+	_expect(stance.text.contains(tr(&"hud_tracks.card.stance_struck").format([""]).strip_edges().trim_prefix(".").strip_edges()), "the stance line says Struck colours: %s" % stance.text)
+	_expect(not facts.text.contains("Struck"), "the facts do not repeat it")
+	var column := card.get_node("Scroll/Column") as VBoxContainer
+	var above := 0.0
+	for child: Node in column.get_children():
+		var c := child as Control
+		if c == null or not c.visible:
+			continue
+		above += c.get_combined_minimum_size().y + float(column.get_theme_constant(&"separation"))
+		if c == stance:
+			break
+	_expect(above <= 540.0 * 0.45, "the struck line is inside the first %.0f px of the card at 200%% (%.0f)" % [540.0 * 0.45, above])
+	card.call(&"show_track", _track(412, Bp.STANCE_HOSTILE), {})
+	_expect(not stance.text.contains("Struck"), "an unstruck track's stance line is the word alone: %s" % stance.text)
 
 
 # --- plot ----------------------------------------------------------------------------------------

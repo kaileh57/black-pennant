@@ -125,3 +125,20 @@ fn embedded_data_loads_or_names_its_problem() {
         Err(e) => assert!(!e.to_string().is_empty()),
     }
 }
+
+/// This build plays Act 1 only (L2283): the shipped data has the Act 1 row alone, while the full embedded
+/// data keeps all four rows for the later acts' tests.
+#[test]
+fn shipped_campaign_stops_at_act_one() {
+    use crate::enums::Act;
+    let full = campaign();
+    assert_eq!(full.acts.iter().map(|a| a.act).collect::<Vec<_>>(), Act::ALL, "every act row still loads");
+    let s = shipped_campaign();
+    assert_eq!(s.acts.iter().map(|a| a.act).collect::<Vec<_>>(), vec![Act::Act1]);
+    assert!(s.acts.iter().all(|a| a.phase <= SHIPPED_PHASE));
+    assert_eq!(s.operations.len(), full.operations.len(), "later operations stay; only their act rows go");
+    // A row's phase decides, not its act number.
+    let mut d = data();
+    d.acts[0].phase = Phase::Act2;
+    assert!(shipped(&d).acts.is_empty());
+}

@@ -17,8 +17,9 @@ const Kit := preload("res://ui/screens/menu_kit.gd")
 const ConditionsPanel := preload("res://ui/screens/conditions_panel.gd")
 const DesignPicker := preload("res://ui/screens/design_picker.gd")
 
-const ACT_COUNT := 4
-const FALLBACK_CAPS: Array[float] = [150.0, 400.0, 900.0, 1800.0]
+## Act 1's cap: the act list when Content gives none. Content.act_caps names one cap per act this
+## build ships (Act 1 alone in 0.1.0), and the act list has one row per cap.
+const FALLBACK_CAPS: Array[float] = [150.0]
 ## Enemy hulls per player: at least 1 (Session); 5 is the campaign's one-against-many multiple.
 const ENEMY_MIN := 1
 const ENEMY_MAX := 20
@@ -162,11 +163,11 @@ func _row(label_key: String, control: Control) -> HBoxContainer:
 
 
 ## Fill the choices from plain data (also the test entry point). Empty lists fall back to what the
-## spec fixes (four acts and their caps); an empty template list leaves Start refused.
+## spec fixes (Act 1 and its cap); an empty template list leaves Start refused. One act row per cap.
 func fill(templates: Array[Dictionary], presets: Array[Dictionary], caps: Array[float]) -> void:
 	_templates = templates
 	_presets = Kit.difficulty_order(presets)
-	_caps = caps if caps.size() >= ACT_COUNT else FALLBACK_CAPS.duplicate()
+	_caps = caps.duplicate() if not caps.is_empty() else FALLBACK_CAPS.duplicate()
 	_template_list.clear()
 	for t: Dictionary in _templates:
 		var i := _template_list.add_item(tr(StringName(Kit.get_str(t, "name"))))
@@ -174,7 +175,7 @@ func fill(templates: Array[Dictionary], presets: Array[Dictionary], caps: Array[
 	if _templates.is_empty():
 		_template_text.text = tr(&"skirmish.templates.empty")
 	_act.clear()
-	for a in ACT_COUNT:
+	for a in _caps.size():
 		_act.add_item(tr(&"skirmish.act.row").format([tr(StringName("units.word.act.%d" % (a + 1))), Kit.number(_caps[a], &"t", 0)]), a)
 	_difficulty.clear()
 	if _presets.is_empty():
@@ -194,7 +195,7 @@ func _restore_choice() -> void:
 			row = i
 	if not _templates.is_empty():
 		_template_list.select(row)
-	_act.select(clampi(Kit.get_int(last_choice, "act", 0), 0, ACT_COUNT - 1))
+	_act.select(clampi(Kit.get_int(last_choice, "act", 0), 0, _caps.size() - 1))
 	_enemies.value = clampi(Kit.get_int(last_choice, "enemy_per_player", ENEMY_DEFAULT), ENEMY_MIN, ENEMY_MAX)
 	var preset := Kit.get_str(last_choice, "preset", "normal")
 	_difficulty.select(0)
@@ -241,7 +242,7 @@ static func enemy_text(n: int) -> String:
 
 
 func _on_act() -> void:
-	var a := clampi(_act.get_selected_id(), 0, ACT_COUNT - 1)
+	var a := clampi(_act.get_selected_id(), 0, _caps.size() - 1)
 	_picker.set_cap(_caps[a] if a < _caps.size() else 0.0)
 	_refresh_start()
 
@@ -294,7 +295,7 @@ func setup_dict() -> Dictionary:
 			difficulty[k] = preset[k]
 	var out := {
 		"template": Kit.get_int(t, "template", 0),
-		"act": clampi(_act.get_selected_id(), 0, ACT_COUNT - 1),
+		"act": clampi(_act.get_selected_id(), 0, _caps.size() - 1),
 		"enemy_per_player": int(_enemies.value),
 		"difficulty": difficulty,
 		"blueprint": _picker.selected_path(),

@@ -5,6 +5,7 @@
 //! text keys, player names as untranslated names.
 use content::campaign::{CampaignData, ConstraintTag, GhostKind, RangeBand, Reward, TallyKey};
 use content::catalogue::Catalogue;
+use content::enums::Act;
 use content::ids::{AceId, CardId, ClassId, OperationId, PartId, PlayerSlot, RegionId, TextKey, TheatreNodeId};
 use content::part::PartTag;
 use content::save::{IntelSpend, TheatreAction};
@@ -17,6 +18,14 @@ pub(crate) struct Names<'a> {
     pub catalogue: &'a Catalogue,
     /// Player names by theatre slot.
     pub players: Vec<String>,
+    /// The act in play, when a campaign is open (names the end of this build on an act's end).
+    pub act: Option<Act>,
+}
+
+/// True when no act after `act` ships in this build (`campaign.acts` is the shipped list) and `act` does not
+/// open the open theatre: the act's end is the end of this build's campaign.
+pub(crate) fn last_shipped_act(campaign: &CampaignData, act: Act) -> bool {
+    !campaign.acts.iter().any(|a| a.act > act) && !campaign.acts.iter().any(|a| a.act == act && a.opens_open_theatre) && act != Act::Act4
 }
 
 fn key(k: &TextKey) -> MsgArg { MsgArg::Key(k.clone()) }
@@ -89,7 +98,10 @@ pub(crate) fn interrupt_msg(i: &Interrupt, n: &Names) -> Msg {
         Interrupt::HunterGroupWarning { hours: h } => m("campaign.interrupt.hunter_group_warning").arg(hours(*h as u64)),
         Interrupt::CardArriving { region, card, hours: h } => m("campaign.interrupt.card_arriving").arg(n.card(card)).arg(n.region(region)).arg(hours(*h as u64)),
         Interrupt::ClockLow { days_left } => m("campaign.interrupt.clock_low").num(finite(*days_left).max(0.0), Unit::None),
-        Interrupt::ActEnded => m("campaign.interrupt.act_ended"),
+        Interrupt::ActEnded => match n.act.filter(|a| last_shipped_act(n.campaign, *a)) {
+            Some(a) => m("campaign.interrupt.build_end").arg(act_number(a)),
+            None => m("campaign.interrupt.act_ended"),
+        },
         Interrupt::HullReady(p) => m("campaign.interrupt.hull_ready").arg(n.player(*p)),
         Interrupt::Paused => m("campaign.interrupt.paused"),
     }
@@ -205,7 +217,9 @@ pub(crate) fn event_msg(e: &TheatreEvent, hour: u64, n: &Names) -> Msg {
         E::CardArrived { region, card } => ek("card_arrived").arg(n.card(card)).arg(n.region(region)),
         E::ClockPushedBack { days, .. } => ek("clock_pushed_back").arg(hours((finite(*days).max(0.0) * 24.0).round() as u64)),
         E::ClockExpired => ek("clock_expired"),
+        E::ActLost { act } if last_shipped_act(n.campaign, *act) => ek("act_lost_build_end").arg(act_number(*act)),
         E::ActLost { act } => ek("act_lost").arg(act_number(*act)),
+        E::ActWon { act } if last_shipped_act(n.campaign, *act) => ek("act_won_build_end").arg(act_number(*act)),
         E::ActWon { act } => ek("act_won").arg(act_number(*act)),
         E::ActStarted { act, retreat } => if *retreat { ek("act_started_retreat").arg(act_number(*act)) } else { ek("act_started").arg(act_number(*act)) },
         E::OpenTheatreOpened => ek("open_theatre_opened"),
@@ -390,11 +404,11 @@ pub(crate) fn text_keys() -> Vec<String> {
     for r in [TheatreReject::NotHost, TheatreReject::NotEnoughSalvage, TheatreReject::NotEnoughIntel, TheatreReject::NotAtCove, TheatreReject::HullNotReady, TheatreReject::OperationNotOffered, TheatreReject::ForcedOperationPending, TheatreReject::IronmanLocked, TheatreReject::OverTonnageCap, TheatreReject::InvalidBlueprint, TheatreReject::NoSuchProposal, TheatreReject::UnknownTarget, TheatreReject::CampaignOver] {
         keys.push(reject_msg(r).key.as_str().to_string());
     }
-    for k in ["arrived", "refit_done", "wait_done", "operation_offered", "forced_operation", "hunter_group_warning", "card_arriving", "clock_low", "act_ended", "hull_ready", "paused"] {
+    for k in ["arrived", "refit_done", "wait_done", "operation_offered", "forced_operation", "hunter_group_warning", "card_arriving", "clock_low", "act_ended", "build_end", "hull_ready", "paused"] {
         keys.push(format!("campaign.interrupt.{k}"));
     }
     for k in EVENT_KINDS { keys.push(format!("campaign.event.{k}")); }
-    for k in ["sextant_placed", "hunter_group_sortied_ace", "act_started_retreat", "proposal_accepted", "proposal_declined"] { keys.push(format!("campaign.event.{k}")); }
+    for k in ["sextant_placed", "hunter_group_sortied_ace", "act_started_retreat", "act_won_build_end", "act_lost_build_end", "proposal_accepted", "proposal_declined"] { keys.push(format!("campaign.event.{k}")); }
     for c in [AlertCause::ObservedKill, AlertCause::UnobservedKillNoticed, AlertCause::Sighting, AlertCause::Evidence, AlertCause::QuietDecay, AlertCause::ActStart, AlertCause::SextantSunk] { keys.push(cause_key(c).to_string()); }
     for b in [RangeBand::Close, RangeBand::Medium, RangeBand::Long, RangeBand::BeyondHorizon] { keys.push(format!("campaign.word.range.{}", range_word(b))); }
     for k in ["method", "range", "time", "emission"] { keys.push(format!("campaign.tally.{k}")); }

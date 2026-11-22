@@ -423,3 +423,95 @@ fn test_link_flag_parses_round_trip_and_loss() {
     assert!((p.jitter_ms - 30.0).abs() < 1e-3);
     for bad in ["", "100", "100,x", "-1,2", "100,150", "1,2,3,4"] { assert!(parse_test_link(bad).is_none(), "{bad}"); }
 }
+
+// ---- Resume from a checkpoint (suspend save) ----
+
+/// A campaign sortie config from a fresh theatre: the first template on offer, accepted solo.
+fn campaign_config(client_id: u64) -> sim_systems::protocol::SortieConfig {
+    use sim_systems::ids::PlayerMask;
+    use content::save::TheatreAction;
+    use sim_systems::theatre::{NewCampaign, Theatre, TheatreCommand, TheatreData};
+    let data = TheatreData { campaign: testkit::campaign(), catalogue: testkit::catalogue() };
+    let new = NewCampaign { seed: 7, difficulty: content::campaign::DifficultySliders::NORMAL, ironman: false, slot_name: "t".into(), players: vec![(client_id, "Lantern".into(), testkit::starter())], start_act: content::enums::Act::Act1 };
+    let mut t = Theatre::new_campaign(new, data);
+    let op = t.state.offered.iter().find(|o| matches!(t.data().campaign.operations[*o].kind, content::campaign::OperationKind::Template(_))).cloned().expect("a template on offer");
+    t.command(PlayerSlot(0), true, PlayerMask(0).with(PlayerSlot(0)), TheatreCommand::Propose(TheatreAction::AcceptOperation(op.clone()))).expect("accepted");
+    t.start_sortie(&op, &[PlayerSlot(0)]).expect("the sortie starts")
+}
+
+fn campaign_setup(client_id: u64) -> LobbySetup {
+    LobbySetup {
+        mode: GameMode::Campaign, ruleset: Ruleset::default(), seed: 7,
+        players: vec![sim_systems::modes::LobbyPlayer { slot: PlayerSlot(0), client_id, name: "Lantern".into(), team: 0, blueprint: None, ready: true, complexity: 0.0 }],
+        skirmish: None, weather: WeatherKind::Clear, sea_state: SeaState(2), time_of_day: TimeOfDay::Day, map: None, at_1_0: false,
+    }
+}
+
+/// Start a local loopback sortie from `sim` (the session's offline flow: welcome first, then the sortie, the
+/// client reporting loaded) and pump `passes` times. Returns both ends and everything the client received.
+fn run_local(clock: &ManualClock, sim: sim_systems::Sim, passes: usize) -> (NetHost, NetLink, LinkInbox) {
+    let opts = options(clock, 100, "Lantern");
+    let packed: Vec<_> = sim.config().blueprints.iter().map(|b| content::share::pack(&content::blueprint::Shareable::Ship(Box::new(b.clone())))).collect();
+    let (mut host, mut link) = loopback(&opts, campaign_setup(100), 1_000, false, testkit::pool(), temp_dir("resume"), &packed);
+    let mut inbox = LinkInbox::default();
+    let mut events = Vec::new();
+    for _ in 0..50 {
+        pump(clock, &mut host, &mut events, &mut [(&mut link, &mut inbox)]);
+        if welcome_slot(&inbox).is_some() { break; }
+    }
+    host.start_sortie(sim).expect("the sortie starts");
+    for _ in 0..passes {
+        pump(clock, &mut host, &mut events, &mut [(&mut link, &mut inbox)]);
+        if inbox.session.iter().any(|e| matches!(e, ClientEvent::SortieLoading(_))) { link.send(ClientMsg::Lobby(LobbyRequest::SetReady(true))); }
+        inbox.session.clear();
+    }
+    (host, link, inbox)
+}
+
+fn pump_n(clock: &ManualClock, host: &mut NetHost, link: &mut NetLink, inbox: &mut LinkInbox, n: usize) {
+    let mut events = Vec::new();
+    for _ in 0..n { pump(clock, host, &mut events, &mut [(&mut *link, &mut *inbox)]); }
+}
+
+fn rejections(inbox: &LinkInbox) -> Vec<String> {
+    inbox.events.iter().filter(|e| matches!(e.event, sim_systems::protocol::SimEvent::CommandRejected { .. })).map(|e| format!("{:?}", e.event)).collect()
+}
+
+/// A campaign sortie paused, checkpointed (Save and leave) and resumed on a fresh local session, twice: the
+/// resumed client learns its own hull, its commands are not taken for duplicates of the first session's,
+/// the sortie unpauses and runs on, and a sortie resumed once suspends and resumes again.
+#[test]
+fn a_resumed_sortie_shows_its_own_hull_takes_commands_and_suspends_again() {
+    use sim_systems::protocol::{Command, SimEvent};
+    let _serial = testkit::serial();
+    let clock = ManualClock::new();
+    let mut sim = sim_systems::Sim::new(campaign_config(100), testkit::deps()).expect("the sortie builds");
+    for round in 0..3 {
+        let (mut host, mut link, mut inbox) = run_local(&clock, sim, 120);
+        let frame = inbox.frame.clone().expect("frames arrive");
+        let own = inbox.events.iter().filter_map(|e| if let SimEvent::EntityRevealed(i) = &e.event { Some(i) } else { None }).find(|i| i.player == Some(PlayerSlot(0)));
+        assert!(own.is_some_and(|i| !i.blueprint.is_empty()), "round {round}: the client is told its own hull and design");
+        assert!(inbox.events.iter().any(|e| matches!(e.event, SimEvent::SortieStarted { .. })), "round {round}: sortie start");
+        assert!(frame.snapshot.ship.is_some(), "round {round}: the frame carries the own ship");
+        if round > 0 {
+            assert!(frame.snapshot.pacing.paused, "round {round}: a sortie suspended while paused comes back paused");
+            assert!(inbox.events.iter().any(|e| matches!(&e.event, SimEvent::PacingChanged(p) if p.paused)), "round {round}: the client is told it is paused");
+            link.send(ClientMsg::Command(Command::Pause(false)));
+        }
+        let before = host.sim().expect("running").tick().0;
+        pump_n(&clock, &mut host, &mut link, &mut inbox, 90);
+        let after = host.sim().expect("running").tick().0;
+        assert!(!host.sim().unwrap().pacing().paused, "round {round}: unpaused");
+        assert!(after > before + 30, "round {round}: the tick advances ({before} to {after})");
+        // The pause menu, then Save and leave: a checkpoint of the paused moment.
+        link.send(ClientMsg::Command(Command::Pause(true)));
+        pump_n(&clock, &mut host, &mut link, &mut inbox, 20);
+        assert!(host.sim().unwrap().pacing().paused, "round {round}: paused again");
+        assert_eq!(rejections(&inbox), Vec::<String>::new(), "round {round}: no command was refused");
+        let checkpoint = host.sim().unwrap().checkpoint();
+        let _ = host.end_sortie();
+        link.close();
+        sim = sim_systems::Sim::from_checkpoint(&checkpoint, testkit::deps()).expect("the checkpoint restores");
+        assert!(sim.command_seq_floor(PlayerSlot(0)) >= 1 + 2 * round as u32, "the restored Sim remembers the old numbers");
+    }
+}

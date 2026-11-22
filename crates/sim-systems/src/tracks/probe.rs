@@ -26,7 +26,12 @@ fn track_event_probe() {
     let starter = op_starter(op, Act::Act1, &d);
     let config = winnability_config(&op.id, Act::Act1, seed, &starter, &d).expect("config");
     let setup = player_setup(Policy::Mixed);
-    let prepared = prepare_config(&config, &setup);
+    let mut prepared = prepare_config(&config, &setup);
+    // `BP_EMCON=active|burst|silent`: the player hull's spawn setting (as the gate's switch of that name).
+    let emcon = match std::env::var("BP_EMCON").as_deref() { Ok("active") => Some(Emcon::Active), Ok("burst") => Some(Emcon::Burst), Ok("silent") => Some(Emcon::Silent), _ => None };
+    if emcon.is_some() { for v in prepared.vessels.iter_mut().filter(|v| v.role == crate::protocol::config::VesselRole::PlayerHull) { v.emcon = emcon; } }
+    // `BP_HELD=1`: every 30 s, the other sides' tracks of the player hull (truth) or within 3 km of it.
+    let held_dump = std::env::var("BP_HELD").is_ok();
     let mut pilot = Pilot::new(&prepared, &setup, &d);
     let deps = crate::sim::SimDeps { catalogue: d.catalogue.clone(), campaign: d.campaign.clone(), designs: Default::default(), scripts: Box::new(crate::script::NullScriptHost), guest_gate_passed: false, budgets: Default::default(), ladder: Default::default() };
     let me = prepared.players[0].side;
@@ -65,6 +70,30 @@ fn track_event_probe() {
             }
             if let Some(p) = sim.pictures().side(me) {
                 for id in new_ids.drain(..) { if let Some(t) = p.get(id) { *first_src.entry(format!("{:?}", t.sources)).or_default() += 1; } }
+            }
+            if held_dump && i % 1800 == 0 {
+                let own = sim.players()[0].vessel.unwrap_or(EntityId::NONE);
+                let at = sim.world().vessel(own).map(|v| v.kin.pose.pos).unwrap_or(DVec3::ZERO);
+                let world = sim.world();
+                let what = |e: EntityId| if e == own { "player".to_string() } else if let Some(v) = world.vessel(e) { format!("vessel{}", v.side.0) } else if world.bodies().row_of(e).is_some() { "body".into() } else if world.decoys().entity.contains(&e) { "decoy".into() } else { "gone".into() };
+                let nearest_hostile = world.vessels().filter(|(_, v)| v.side != me && matches!(v.status, sim_core::vessel::VesselStatus::Active)).map(|(_, v)| (v.kin.pose.pos - at).length()).fold(f64::INFINITY, f64::min);
+                let mut lines = Vec::new();
+                for (si, p) in sim.pictures().sides.iter().enumerate().filter(|(si, _)| *si as u8 != me.0) {
+                    for t in p.tracks.iter().filter(|t| t.is_live() && (t.truth == own || (t.pos - at).length() < 3_000.0) && t.stance != Stance::Friend) {
+                        lines.push(format!("s{si} t{} {} {:?}/{:?} {:?} {:?} bo={} age={}s err={:.0}m", t.id.0, what(t.truth), t.stance, t.stance_reason, t.grade, t.sources, t.bearing_only.is_some(), (i + 1).saturating_sub(t.last_update_tick) / 60, (t.pos - at).length()));
+                    }
+                }
+                let emcon = sim.ships().ships.iter().find(|s| s.vessel == own).map(|s| s.settings.emcon);
+                eprintln!("HELD t={}s emcon={emcon:?} nearest_hostile={:.0}m tracks={lines:?}", i / 60, nearest_hostile);
+                let mut hulls: Vec<String> = Vec::new();
+                for s in sim.ships().ships.iter().filter(|s| s.side != me) {
+                    let Some(v) = world.vessel(s.vessel) else { continue };
+                    let r = (v.kin.pose.pos - at).length();
+                    if r > 12_000.0 { continue; }
+                    let c = s.captain.as_ref();
+                    hulls.push(format!("e{} {:.0}m {:?} {:?} cap={:?} dir={:?} tgt={:?}", s.vessel.index, r, v.class.as_ref().map(|c| c.as_str()), s.settings.emcon, c.map(|c| (c.behaviour, c.mode)), c.map(|c| c.directive.mode), c.map(|c| c.target.0)));
+                }
+                eprintln!("HULLS t={}s {hulls:?}", i / 60);
             }
             if i % 6 != 0 { continue; }
             let now = i + 1;

@@ -770,7 +770,9 @@ fn read_patch(dict: &VarDictionary, mode: GameMode, services: &Services) -> Resu
     p.time_of_day = match get_i64(&conditions, "time_of_day") { None => None, Some(v) => Some(TimeOfDay::from_gd(v).ok_or_else(|| Msg::new("session.problem.time_of_day"))?) };
     if let Some(sk) = skirmish {
         let template = match get_i64(&sk, "template") { None => content::campaign::MissionType::ConvoyRaid, Some(v) => content::campaign::MissionType::from_gd(v).ok_or_else(|| Msg::new("session.problem.template"))? };
-        let act = match get_i64(&sk, "act") { None => content::enums::Act::Act1, Some(v) => content::enums::Act::from_gd(v).ok_or_else(|| Msg::new("session.problem.act"))? };
+        // Only the acts this build ships (Act 1 in 0.1.0), as in offline skirmish.
+        let shipped = crate::content_api::model::shipped_acts(&content::campaign::load::shipped_campaign().acts);
+        let act = match get_i64(&sk, "act") { None => content::enums::Act::Act1, Some(v) => content::enums::Act::from_gd(v).filter(|a| shipped.contains(a)).ok_or_else(|| Msg::new("session.problem.act"))? };
         let enemy_per_player = get_i64(&sk, "enemy_per_player").unwrap_or(1).clamp(1, logic::MAX_ENEMY_PER_PLAYER as i64) as u8;
         let campaign = services.campaign();
         let difficulty = get_dict(&sk, "difficulty").map(|d| {

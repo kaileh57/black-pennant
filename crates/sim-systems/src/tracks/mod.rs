@@ -806,7 +806,12 @@ fn absorb(a: &mut Track, b: &Track, tick: u64, tuning: &TrackTuning) {
     } else {
         a.last_update_tick = a.last_update_tick.max(b.last_update_tick);
     }
-    if b.last_update_tick > a.last_update_tick || b.last_update_tick == tick { a.truth = b.truth; }
+    // A track that keeps its own position fix keeps its hull when a bearing-only track folds into it, as it does
+    // through a batch of bearings (`update_track`). DECISION, u1: the merge handed the defector's track (camera
+    // fixes) the truth of a pursuer whose ESM wedge folded into it, the defector's Neutral latch let go, the
+    // Combine emitter the wedge brought turned it Hostile, and the escort's guns fired on the defector.
+    let keeps_hull = !take && a.bearing_only.is_none() && b.bearing_only.is_some();
+    if !keeps_hull && (b.last_update_tick > a.last_update_tick || b.last_update_tick == tick) { a.truth = b.truth; }
     a.last_lock_tick = match (a.last_lock_tick, b.last_lock_tick) { (Some(x), Some(y)) => Some(x.max(y)), (x, y) => x.or(y) };
     a.created_tick = a.created_tick.min(b.created_tick);
     a.sources |= b.sources;
@@ -993,6 +998,13 @@ pub(crate) fn fuse_core(picture: &mut SidePicture, detections: &[Detection], own
             let slot = if taken[ti].contains(&key) { &mut blocked } else { &mut best };
             if slot.is_none_or(|(b, _)| d2 < b) { *slot = Some((d2, ti)); }
         }
+        // A bearing that gates only tracks this sensor already reported this instant joins the nearest of them.
+        // DECISION, u1: "one sensor, one instant, two reports, two objects" holds for ranged fixes, which place
+        // the two apart; two bearings inside one gate cannot be told apart, and the new wedge one of them started
+        // merged back into the track it was kept from at the next update without both. Six radiating pursuers
+        // astern of the defector (defector_escort seed 1) did this about once a second: 1,018 tracks created and
+        // 1,009 merged in 14 minutes of the player's log, each also re-identified.
+        let best = best.or(if m.ranged { None } else { blocked });
         match best {
             Some((_, ti)) => { groups[ti].push(mi); taken[ti].push(key); }
             None => {
@@ -1408,6 +1420,67 @@ mod tests {
                 assert!(ids <= 40, "{kind:?} seed {seed}: {ids} track numbers in 10 minutes");
             }
         }
+    }
+
+    #[test]
+    fn esm_bearings_of_hulls_in_line_do_not_churn_tracks() {
+        // defector_escort seed 1: radiating pursuers astern of the defector, all inside one ESM bearing gate from
+        // the escort. Every look one sensor reported several of them at one instant; each extra bearing started a
+        // wedge that merged back at the next look without both. The log showed a new track and a merge about once
+        // a second. Here: a ranged track of the leading hull (visual), three radiating hulls behind it within a
+        // degree, heard at 2 Hz, each missing one look in five.
+        let tun = tun();
+        let mut rng = Rng(9);
+        let mut pic = picture();
+        let from = DVec3::new(0.0, 8.0, 0.0);
+        let lead = DVec3::new(0.0, 0.0, -6_000.0);
+        let astern = [DVec3::new(60.0, 0.0, -9_000.0), DVec3::new(-80.0, 0.0, -10_500.0), DVec3::new(150.0, 0.0, -12_000.0)];
+        let (mut created, mut merged) = (0u32, 0u32);
+        let mut dets = Vec::new();
+        for tick in 1..=(5 * 3_600u64) {
+            if tick % 30 == 0 { dets.push(det(&mut rng, tick, sref(2), SensorKind::Visual, from, eid(1), lead)); }
+            if tick % 30 == 15 {
+                for (k, p) in astern.iter().enumerate() {
+                    if (tick / 30 + k as u64) % 5 != 0 { dets.push(det(&mut rng, tick, sref(1), SensorKind::Esm, from, eid(4 + k as u32), *p)); }
+                }
+            }
+            if tick % 6 == 0 {
+                let mut ch = Vec::new();
+                fuse_core(&mut pic, &dets, &[], tick, &tun, &mut ch);
+                dets.clear();
+                if tick > 600 {
+                    created += ch.iter().filter(|c| matches!(c, TrackChange::Created(_))).count() as u32;
+                    merged += ch.iter().filter(|c| matches!(c, TrackChange::Merged { .. })).count() as u32;
+                }
+            }
+        }
+        assert!(created <= 5 && merged <= 5, "{created} tracks created and {merged} merged in 5 minutes");
+        // The leading hull's track stays its own: bearings of the hulls astern never take its hull.
+        let leads: Vec<&Track> = pic.tracks.iter().filter(|t| t.is_live() && t.bearing_only.is_none()).collect();
+        assert!(leads.iter().all(|t| t.truth == eid(1)), "{:?}", leads.iter().map(|t| (t.id, t.truth)).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn a_wedge_folded_into_a_ranged_track_leaves_its_hull() {
+        let tun = tun();
+        let mut a = blank_track(TrackId(1), SideId(0), eid(1), Domain::Surface, 100);
+        a.pos = DVec3::new(0.0, 0.0, -6_000.0);
+        a.r0_m = 30.0;
+        let mut b = blank_track(TrackId(2), SideId(0), eid(9), Domain::Surface, 100);
+        b.bearing_only = Some(BearingState { origin: DVec3::ZERO, bearing_rad: 0.0, bearing_rate: 0.0, sigma_bearing_rad: 0.03, range_m: 9_000.0, sigma_range_m: 3_000.0, sensors: 1 });
+        b.last_update_tick = 160;
+        a.last_update_tick = 150;
+        absorb(&mut a, &b, 160, &tun.tracks);
+        assert_eq!(a.truth, eid(1), "a bearing-only track does not take a ranged track's hull");
+        assert!(a.bearing_only.is_none());
+        // A ranged track folded into a wedge still gives it its hull.
+        let mut w = b.clone();
+        let mut r = blank_track(TrackId(3), SideId(0), eid(1), Domain::Surface, 100);
+        r.pos = a.pos;
+        r.r0_m = 30.0;
+        r.last_update_tick = 170;
+        absorb(&mut w, &r, 170, &tun.tracks);
+        assert_eq!(w.truth, eid(1));
     }
 
     #[test]

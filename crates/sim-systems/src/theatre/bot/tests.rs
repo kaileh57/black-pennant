@@ -291,6 +291,44 @@ fn kit_operations_get_a_fitted_starter_and_open_kit() {
     }
 }
 
+/// L317 "its starter design" as the gate reads it: the fast attack craft (the first starter a player meets,
+/// L151) wherever it passes the briefing tags, bare or refitted by the Quartermaster; where it cannot, the
+/// first other Act 1 starter that can; and the table names only Act 1 operations and starters.
+#[test]
+fn the_gate_sails_the_fast_attack_craft_unless_it_cannot_pass_the_tags() {
+    let d = data();
+    let op = |id: &str| &d.campaign.operations[&OperationId::new(id)];
+    let stock = |p: &str| content::campaign::load::stock_blueprint(p).expect("a stock starter");
+    let fac = stock(GATE_STARTER_DEFAULT);
+    let starters = act_starters(Act::Act1, &d);
+    assert!(starters.iter().any(|(p, _)| p == GATE_STARTER_DEFAULT), "the default is an Act 1 starter");
+    for (id, path) in GATE_STARTERS {
+        assert!(d.campaign.operations.get(&OperationId::new(*id)).is_some_and(|o| o.act == Act::Act1), "{id} is an Act 1 operation");
+        assert!(starters.iter().any(|(p, _)| p == path), "{id}: {path} is an Act 1 starter");
+    }
+    let listed = |id: &str| GATE_STARTERS.iter().any(|(o, _)| *o == id);
+    // It passes the depot strike's tags as built: the gate sails it unchanged (the data order's first
+    // starter, the patrol boat, passes them too and is not taken).
+    let depot = op("op.act1.depot_strike");
+    assert!(fits(&fac, depot, Act::Act1, &d) && fits(&starters[0].1, depot, Act::Act1, &d) && starters[0].0 != GATE_STARTER_DEFAULT);
+    if !listed("op.act1.depot_strike") { assert_eq!(op_starter(depot, Act::Act1, &d), fac); }
+    // It carries no mine rail: the gate sails the Quartermaster's refit of it.
+    let mines = op("op.act1.minelaying");
+    if !listed("op.act1.minelaying") {
+        let s = op_starter(mines, Act::Act1, &d);
+        assert!(s.header.name == fac.header.name && s != fac && fits(&s, mines, Act::Act1, &d), "sails {}", s.header.name);
+    }
+    // It is over the radar decapitation's cross-section cap and no refit shrinks it: another starter sails.
+    let radar = op("op.act1.radar_decapitation");
+    assert!(fitted(&fac, radar, Act::Act1, &d).is_none(), "the fast attack craft cannot be made to pass the 80 m2 cap");
+    let s = op_starter(radar, Act::Act1, &d);
+    assert!(s.header.name != fac.header.name && fits(&s, radar, Act::Act1, &d), "sails {}", s.header.name);
+    // Acts whose starters do not include the default go by their own list.
+    let act2 = act_starters(Act::Act2, &d);
+    let any2 = d.campaign.operations.values().filter(|o| o.act == Act::Act2 && o.tags.is_empty()).min_by(|a, b| a.id.cmp(&b.id));
+    if let (Some(o), Some((_, first))) = (any2, act2.first()) { assert_eq!(&op_starter(o, Act::Act2, &d), first); }
+}
+
 /// One full-physics sortie traced every `BP_EVERY` seconds (30): own hull, the nearest true hostiles and
 /// whether the player picture holds them, the player's tracks, every mount's engagement state and the
 /// emitters. `BP_OPS` (one operation id substring), `BP_SEED` (0), `BP_MIN` (45); `BP_DROP`, `BP_PILOT` and
@@ -387,6 +425,10 @@ fn trace_act1() {
                     let lead = g.leader.and_then(|l| sim.world().vessel(l)).map(|v| (v.kin.pose.pos.x.round(), v.kin.pose.pos.z.round(), (v.forward_speed() / sim_core::time::KN).round()));
                     eprintln!("    group {:?} tag {:?} orders {:?} mode {:?} contact {} leader {lead:?} mem {:?}", g.id, g.tag, g.orders, g.mode, g.contact.0, g.mem);
                 }
+            }
+            // Prizes whatever side they are on now (a taken prize changes side and leaves the lists below).
+            for v in sim.objectives.hulls.iter().filter(|h| h.role == VesselRole::Prize).filter_map(|h| sim.world().vessel(h.vessel)) {
+                eprintln!("    prize e{} side {} ({:.0}, {:.0}) {:?} speed {:.1} kn lost {:.3}", v.id.index, v.side.0, v.kin.pose.pos.x, v.kin.pose.pos.z, v.status, v.forward_speed() / sim_core::time::KN, v.cells_lost_fraction());
             }
             if std::env::var("BP_ALL").is_ok() {
                 let all: Vec<String> = sim.world().vessels().filter(|v| v.1.side != me).map(|v| format!("e{} ({:.0},{:.0}) {:?}", v.1.id.index, v.1.kin.pose.pos.x, v.1.kin.pose.pos.z, v.1.status)).collect();

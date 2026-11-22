@@ -19,7 +19,9 @@ extends Control
 ##   or cancel (L772), and the theatre events the sortie caused.
 ## Everything is there at once: no count-ups, fades or staggered reveals (banned-pattern table).
 ## The one action is Return to the chart table, which takes the first focus. Esc only moves focus to
-## it, so a stray key never throws the report away; Up and Down scroll the report.
+## it, so a stray key never throws the report away; Up and Down scroll the report. Left of it, a
+## quiet Copy playtest report puts the session's playtest report (L2209) on the clipboard for the
+## tester's issue form, and says so in a line beside it.
 ## With no report (a co-op member before the host's arrives) the screen says so and still offers
 ## the way back.
 ##
@@ -59,6 +61,9 @@ const EVENTS_SHOWN := 12
 @onready var _log: VBoxContainer = $Margin/Column/Scroll/Body/Side/Log
 @onready var _close: Button = $Margin/Column/Footer/Close
 
+var _copy_report: Button
+var _copy_status: Label
+
 var _report_data: Dictionary = {}
 var _players: Array[Dictionary] = []
 var _regions: Array[Dictionary] = []
@@ -79,13 +84,16 @@ func _ready() -> void:
 	_close.custom_minimum_size = Vector2(CLOSE_MIN_W, Kit.PRIMARY_H)
 	_title.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_close.pressed.connect(_on_close)
+	_build_copy_report()
 	accessibility_name = tr(&"after_action.accessible_name")
 	$Margin/Column/Scroll.accessibility_name = tr(&"after_action.accessible_report")
 	_chart.accessibility_name = tr(&"after_action.accessible_chart")
 	var scroll: ScrollContainer = $Margin/Column/Scroll
 	scroll_by_keys(scroll)
 	Kit.chain_vertical([scroll, _close])
-	_close.focus_neighbor_left = _close.get_path_to(_close)
+	Kit.chain_horizontal([_copy_report, _close])
+	_copy_report.focus_neighbor_left = _copy_report.get_path_to(_copy_report)
+	_copy_report.focus_neighbor_top = _copy_report.get_path_to(scroll)
 	_close.focus_neighbor_right = _close.get_path_to(_close)
 	resized.connect(_fit_layout)
 	_fit_layout()
@@ -483,6 +491,36 @@ func _show_chart() -> void:
 
 
 # --- actions -------------------------------------------------------------------------------------
+
+## Copy playtest report and its status line, at the footer's start (the screen is the end of a
+## core loop, when the report has just been written).
+func _build_copy_report() -> void:
+	var footer: HBoxContainer = $Margin/Column/Footer
+	_copy_report = Kit.inline_button("settings_ui.playtest.copy_report")
+	_copy_report.name = &"CopyReport"
+	_copy_report.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_copy_report.pressed.connect(copy_report)
+	_copy_status = Kit.label("", &"Body", true)
+	_copy_status.name = &"CopyStatus"
+	# It wraps in the room the footer has left, so the footer never widens the screen at 200% (L1713).
+	_copy_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_copy_status.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_copy_status.visible = false
+	footer.add_child(_copy_report)
+	footer.move_child(_copy_report, 0)
+	footer.add_child(_copy_status)
+	footer.move_child(_copy_status, 1)
+
+
+## Put the playtest report on the clipboard (nothing is sent) and say whether there was one.
+func copy_report() -> void:
+	var text: Variant = Kit.call_on(&"App", &"playtest_report_text")
+	var ok := text is String and not (text as String).is_empty()
+	if ok and DisplayServer.get_name() != "headless":
+		DisplayServer.clipboard_set(text)
+	_copy_status.text = tr(&"settings_ui.playtest.report_copied" if ok else &"settings_ui.playtest.nothing_to_copy")
+	_copy_status.visible = true
+
 
 func _on_close() -> void:
 	if _live:

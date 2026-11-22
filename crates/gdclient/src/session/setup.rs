@@ -88,7 +88,9 @@ pub(crate) fn read_skirmish(dict: &VarDictionary, presets: &[content::campaign::
     let mut problems = Vec::new();
     let template = match get_i64(dict, "template") { None => Some(MissionType::ConvoyRaid), Some(v) => MissionType::from_gd(v) };
     if template.is_none() { problems.push(problem("session.problem.template")); }
-    let act = match get_i64(dict, "act") { None => Some(Act::Act1), Some(v) => Act::from_gd(v) };
+    // Only the acts this build ships (Act 1 in 0.1.0): a later act's skirmish has never been measured.
+    let shipped = crate::content_api::model::shipped_acts(&content::campaign::load::shipped_campaign().acts);
+    let act = match get_i64(dict, "act") { None => Some(Act::Act1), Some(v) => Act::from_gd(v) }.filter(|a| shipped.contains(a));
     if act.is_none() { problems.push(problem("session.problem.act")); }
     let enemy_per_player = get_i64(dict, "enemy_per_player").unwrap_or(1).clamp(1, MAX_ENEMY_PER_PLAYER as i64) as u8;
     let difficulty = get_dict(dict, "difficulty").map(|d| difficulty_of(&d, presets)).unwrap_or_default();

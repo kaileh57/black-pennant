@@ -31,7 +31,7 @@ fn temp_root(tag: &str) -> PathBuf {
     p
 }
 
-fn names(d: &TheatreData, players: Vec<String>) -> words::Names<'_> { words::Names { campaign: &d.campaign, catalogue: &d.catalogue, players } }
+fn names(d: &TheatreData, players: Vec<String>) -> words::Names<'_> { words::Names { campaign: &d.campaign, catalogue: &d.catalogue, players, act: None } }
 fn text(lk: &CsvLookup, m: &Msg) -> String { crate::text::msg_text(lk, m) }
 fn filled(s: &str) -> bool { !s.contains('{') && !s.contains("campaign.") && !s.contains("units.") && !s.trim().is_empty() }
 
@@ -542,4 +542,36 @@ fn ironman_and_campaign_over() {
     assert!(sim_systems::theatre::saves::campaign_over(&t));
     let q = model::service_quotes(&t.state, PlayerSlot(0), true, &data());
     assert!(q.rebuild.needed && !q.rebuild.allowed);
+}
+
+/// This build ends at Act 1 (L2283): the clock running out restarts Act 1 in retreat (no Act 2 row ships), and
+/// the log line and the clock bar's interrupt say that Act 1 is the end of this build. With every act row
+/// loaded the same events keep the ordinary wording.
+#[test]
+fn act_one_end_says_it_is_the_end_of_this_build() {
+    use content::enums::Act;
+    let lk = CsvLookup::load();
+    let shipped = TheatreData { campaign: Arc::new(content::campaign::load::shipped_campaign().clone()), catalogue: Arc::new(content::catalogue::catalogue().clone()) };
+    let new = NewCampaign {
+        seed: 7, difficulty: content::campaign::DifficultySliders::NORMAL, ironman: false, slot_name: "end".into(),
+        players: vec![(100, "p0".into(), starter())], start_act: Act::Act1,
+    };
+    let mut t = Theatre::new_campaign(new, shipped.clone());
+    t.state.clock_hours_left = Some(1.0);
+    let _ = t.drain_events();
+    t.advance_hour();
+    assert_eq!((t.state.act, t.state.retreat), (Act::Act1, true), "Act 1 starts again in retreat");
+    let n = words::Names { campaign: &shipped.campaign, catalogue: &shipped.catalogue, players: vec![], act: Some(t.state.act) };
+    let lost = t.drain_events().into_iter().find(|e| matches!(e, TheatreEvent::ActLost { .. })).expect("the act is lost");
+    let line = text(&lk, &words::event_msg(&lost, 10, &n));
+    assert!(filled(&line) && line.contains("Act 1") && line.to_lowercase().contains("this build") && !line.contains("next act"), "{line}");
+    let banner = text(&lk, &words::interrupt_msg(&Interrupt::ActEnded, &n));
+    assert!(filled(&banner) && banner.contains("Act 1") && banner.to_lowercase().contains("this build"), "{banner}");
+    let won = text(&lk, &words::event_msg(&TheatreEvent::ActWon { act: Act::Act1 }, 10, &n));
+    assert!(filled(&won) && won.to_lowercase().contains("this build"), "{won}");
+    // With all four rows (a later release), Act 1's end reads as before.
+    let full = data();
+    let n = words::Names { campaign: &full.campaign, catalogue: &full.catalogue, players: vec![], act: Some(Act::Act1) };
+    assert_eq!(text(&lk, &words::event_msg(&TheatreEvent::ActWon { act: Act::Act1 }, 10, &n)), "Act 1 won.");
+    assert!(!text(&lk, &words::interrupt_msg(&Interrupt::ActEnded, &n)).to_lowercase().contains("this build"));
 }

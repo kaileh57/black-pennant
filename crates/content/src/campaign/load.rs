@@ -358,6 +358,31 @@ pub fn campaign() -> &'static CampaignData {
     CAMPAIGN.get_or_init(|| load_embedded(crate::catalogue::catalogue()).unwrap_or_else(|e| panic!("embedded campaign data is invalid: {e}")))
 }
 
+/// The last release phase whose acts this build plays: the first public release ships Act 1 (L2283). A later
+/// release raises this one line. Unit: `content-campaign`.
+pub const SHIPPED_PHASE: crate::enums::Phase = crate::enums::Phase::R010;
+
+/// True when an act row belongs to this build ([`SHIPPED_PHASE`] or earlier). Unit: `content-campaign`.
+pub fn act_ships(act: &ActDef) -> bool { act.phase <= SHIPPED_PHASE }
+
+/// `data` with every act row later than [`SHIPPED_PHASE`] dropped. The later acts' classes, fleets and
+/// operations stay (nothing reaches them without their act row), and [`load_embedded`] and [`campaign`] keep
+/// every row, so the later acts' data and load tests are unchanged. With no row for the next act, theatre
+/// progress stops the clock on a capstone win and restarts the act in retreat when the clock runs out.
+/// Unit: `content-campaign`.
+pub fn shipped(data: &CampaignData) -> CampaignData {
+    let mut out = data.clone();
+    out.acts.retain(act_ships);
+    out
+}
+
+/// [`campaign`] as this build plays it ([`shipped`]): what the game client's campaign, skirmish and lobby read.
+/// Unit: `content-campaign`.
+pub fn shipped_campaign() -> &'static CampaignData {
+    static SHIPPED: OnceLock<CampaignData> = OnceLock::new();
+    SHIPPED.get_or_init(|| shipped(campaign()))
+}
+
 /// Normalise a path under `blueprints/`: forward slashes, no leading `./` or `blueprints/`.
 fn normalize_path(path: &str) -> String {
     let p = path.trim().replace('\\', "/");

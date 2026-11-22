@@ -242,3 +242,31 @@ fn the_tick_p95_skips_only_the_first_second_of_a_sortie() {
     host.run = None;
     assert_eq!(host.p95_ms(), 40.0);
 }
+
+#[test]
+fn a_sim_restored_from_a_checkpoint_takes_the_new_sessions_commands() {
+    let _serial = testkit::serial();
+    let clock = ManualClock::new();
+    let (mut host, mut link) = ends(&clock);
+    let mut out = Vec::new();
+    host.start_sortie(testkit::basin()).expect("starts");
+    tick(&clock, 2);
+    host.update(&mut out).expect("a pass");
+    for on in [true, false, true] {
+        link.send(ClientMsg::Command(Command::Pause(on)));
+        tick(&clock, 1);
+        host.update(&mut out).expect("a pass");
+    }
+    assert!(host.sim().expect("sim").pacing().paused);
+    let checkpoint = host.sim().expect("sim").checkpoint();
+    let _ = host.end_sortie();
+    // A new pair numbers its commands from 1 again; the restored Sim has seen 1 to 3.
+    let (mut host, mut link) = ends(&clock);
+    host.start_sortie(Sim::from_checkpoint(&checkpoint, testkit::deps()).expect("restores")).expect("starts");
+    let _ = sim_events(&link);
+    link.send(ClientMsg::Command(Command::Pause(false)));
+    for _ in 0..3 { tick(&clock, 1); host.update(&mut out).expect("a pass"); }
+    assert!(!host.sim().expect("sim").pacing().paused, "the unpause is applied, not refused as a duplicate");
+    let refused = sim_events(&link).into_iter().filter(|e| matches!(e.event, SimEvent::CommandRejected { .. })).count();
+    assert_eq!(refused, 0);
+}

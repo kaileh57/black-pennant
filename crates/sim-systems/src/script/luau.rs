@@ -42,7 +42,9 @@
 //!   (`"table"`) instead of printing a heap address. Builtins whose work grows with an argument
 //!   (`string.rep`, `string.sub`, `string.find`, `table.create`, `table.concat`, `buffer.create` and the
 //!   rest of `CHARGED_BUILTINS`) charge one work unit per 128 bytes or 8 elements before they run, so
-//!   about 640 KB of builtin output fits in one tick's budget.
+//!   about 640 KB of builtin output fits in one tick's budget. Each interrupt also charges one unit per
+//!   128 bytes the VM's memory grew since the last one, and each error a `pcall`, `xpcall` or
+//!   `coroutine.resume` catches costs [`CAUGHT_ERROR_UNITS`].
 //!
 //! # Faults
 //!
@@ -51,7 +53,7 @@
 //! graph VM then discards the outputs, greys the node and lets the replaced officer stage drive its sinks
 //! from the same tick (`graph::vm`). Budget, backstop and host-call faults are sticky for the run: a
 //! script that catches the error with `pcall` and returns normally still faults. The interrupt callback
-//! keeps failing once the budget or backstop has tripped, so no loop survives it.
+//! keeps failing once any of the three has tripped, so no loop survives it.
 //!
 //! # Setup order of every VM (L359), exactly as the fuzz targets reproduce it
 //!
@@ -65,10 +67,13 @@
 //! limited to 256 KiB. The chunk's top level runs under its own fresh budget and the backstop, so an endless
 //! loop there fails the load instead of hanging the sortie start.
 //!
-//! The 2 ms backstop is the only clock read in sim-systems (`Instant`, every 16 interrupts and at every host
-//! call). It can only stop a script at an interrupt or a host call. The charged builtins keep sized work
-//! inside the budget; what is left uncharged (the `..` operator, `table.sort` without a comparator, a
-//! garbage-collection step) is bounded by the 8 MB memory limit. The Luau `LuauTableMoveTimeoutFix`,
+//! The 2 ms backstop is the only clock read in sim-systems (`Instant`, at an interrupt about every 16
+//! work units, and at every host call). It can only stop a script at an interrupt or a host call. The charged builtins keep sized work
+//! inside the budget, the memory-growth charge covers allocation between interrupts (table constructors,
+//! the `..` operator), and the catch guards cover raised errors. What is left uncharged (`table.sort`
+//! without a comparator, garbage a sweep frees inside one interval, a garbage-collection step, and the
+//! unwinding through nested `pcall`s after the run has been stopped, at most Luau's C-call depth) is
+//! bounded by the 8 MB memory limit and that depth. `cost_sweep` measures these paths. The Luau `LuauTableMoveTimeoutFix`,
 //! `LuauTableRobustOom`, `LuauTableArrayAdjustCheck` and `LuauSandboxFreezesVectorMetatable` fixes are
 //! switched on process-wide before the first VM is made.
 //!
@@ -83,7 +88,7 @@ use crate::sensors::{Detection, Measurement};
 use content::graph::{PortType, ScriptSource};
 use mlua::chunk::{ChunkMode, Compiler};
 use mlua::{Function, Lua, LuaOptions, MultiValue, StdLib, Table, Value, VmState};
-use std::sync::atomic::{AtomicU32, AtomicU64, AtomicU8, Ordering::Relaxed};
+use std::sync::atomic::{AtomicU32, AtomicU64, AtomicU8, AtomicUsize, Ordering::Relaxed};
 use std::sync::{Mutex, Once, OnceLock};
 
 /// Longest script source accepted, in bytes.
@@ -92,13 +97,16 @@ pub const MAX_SOURCE_BYTES: usize = 256 * 1024;
 pub const MAX_LIST: usize = 1_024;
 /// Longest Text output kept, in bytes (cut at a character boundary).
 pub const MAX_TEXT_BYTES: usize = 1_024;
-/// The backstop clock is read on every interrupt whose count is a multiple of this.
+/// The backstop clock is read on every interrupt that takes the count past a multiple of this.
 const BACKSTOP_EVERY: u32 = 16;
 
 const F_BUDGET: u8 = 1;
 const F_BACKSTOP: u8 = 2;
 const F_HOST: u8 = 4;
-const F_STOP: u8 = F_BUDGET | F_BACKSTOP;
+/// Every sticky flag stops the run at the next interrupt or charge. A host-call fault stops it too: the
+/// script is already greyed out for the tick, and an error raised by a Rust callback is far more costly
+/// than one interrupt, so a `pcall` loop must not keep paying it (fuzz crash e7e6a320).
+const F_STOP: u8 = F_BUDGET | F_BACKSTOP | F_HOST;
 
 /// Globals the host takes away before the sandbox closes (L359, L2132): module loading, code loading from
 /// strings, environment access, GC control and introspection, and every timing or debug surface.
@@ -176,6 +184,10 @@ struct Shared {
     flags: AtomicU8,
     started_ns: AtomicU64,
     backstop_ns: AtomicU64,
+    /// VM memory in use at the last interrupt (plus bytes a charged builtin has already paid for): the
+    /// interrupt charges growth past it, see [`Vm::new`]. `usize::MAX` until the run's first interrupt, so
+    /// what the host allocates to start a run or compile a chunk is never charged to the script.
+    mem_mark: AtomicUsize,
     api: Mutex<ApiSlot>,
 }
 
@@ -183,7 +195,7 @@ impl Shared {
     fn new(limits: ScriptLimits) -> Self {
         Self {
             used: AtomicU32::new(0), budget: AtomicU32::new(limits.interrupts_per_tick), flags: AtomicU8::new(0),
-            started_ns: AtomicU64::new(0), backstop_ns: AtomicU64::new(limits.backstop_micros as u64 * 1_000), api: Mutex::new(ApiSlot(None)),
+            started_ns: AtomicU64::new(0), backstop_ns: AtomicU64::new(limits.backstop_micros as u64 * 1_000), mem_mark: AtomicUsize::new(0), api: Mutex::new(ApiSlot(None)),
         }
     }
     fn past_backstop(&self) -> bool { now_ns().saturating_sub(self.started_ns.load(Relaxed)) > self.backstop_ns.load(Relaxed) }
@@ -206,11 +218,13 @@ impl Shared {
     fn api(&self) -> ApiSlot { *self.api.lock().unwrap_or_else(|e| e.into_inner()) }
     fn set_api(&self, slot: ApiSlot) { *self.api.lock().unwrap_or_else(|e| e.into_inner()) = slot; }
     /// Start a run (or a load step): clear the run's flags and start the backstop clock.
-    fn start(&self) { self.flags.store(0, Relaxed); self.started_ns.store(now_ns(), Relaxed); }
+    fn start(&self) { self.flags.store(0, Relaxed); self.started_ns.store(now_ns(), Relaxed); self.mem_mark.store(usize::MAX, Relaxed); }
 }
 
 fn stop_error(flags: u8) -> mlua::Error {
-    if flags & F_BACKSTOP != 0 { mlua::Error::runtime("script stopped: wall-clock backstop") } else { mlua::Error::runtime("script stopped: interrupt budget spent") }
+    if flags & F_BACKSTOP != 0 { mlua::Error::runtime("script stopped: wall-clock backstop") }
+    else if flags & F_BUDGET != 0 { mlua::Error::runtime("script stopped: interrupt budget spent") }
+    else { mlua::Error::runtime("script stopped: a host function was called with the wrong arguments") }
 }
 
 /// Clears the API slot when the run ends, however it ends.
@@ -326,15 +340,34 @@ impl Vm {
             let Ok(orig) = t.raw_get::<Function>(name) else { continue };
             t.raw_set(name, charged_builtin(&lua, &shared, orig, cost)?)?;
         }
+        let sh = shared.clone();
+        // Once the run is stopped, an enclosing `pcall` that catches the stop error does not raise it again
+        // from Rust (that path costs microseconds per catch): the next interrupt or charge ends the run.
+        let caught = lua.create_function(move |_, ()| if sh.flags.load(Relaxed) & F_STOP != 0 { Ok(()) } else { sh.charge(CAUGHT_ERROR_UNITS) })?;
+        lua.load(CATCH_GUARDS).set_name("=host").set_mode(ChunkMode::Text).call::<()>(caught)?;
         if let Ok(math) = g.raw_get::<Table>("math") {
             if let Ok(seed) = math.raw_get::<Function>("randomseed") { seed.call::<()>(vessel_seed(vessel))?; }
         }
         // 3. Memory limit, 4. interrupt budget, 5. sandbox last.
         lua.set_memory_limit(limits.memory_bytes.max(1))?;
         let sh = shared.clone();
-        lua.set_interrupt(move |_| {
-            sh.charge(1)?;
-            if sh.used.load(Relaxed).is_multiple_of(BACKSTOP_EVERY) && sh.past_backstop() {
+        // Each interrupt pays 1 unit, plus 1 per `BYTES_PER_UNIT` the VM's memory grew since the last one.
+        // Interrupts fire only at calls and loop back-edges, so a loop body that builds many tables
+        // (`{{{...}}}`, one constructor per level) does all that allocating between two of them;
+        // charged by its growth, it pays for it (fuzz crash e7e6a320). The count is mlua's tally of the
+        // sizes Luau requests, so it repeats exactly. Luau takes small objects from its own pages, so the
+        // growth shows in page-sized steps; memory the collector frees is not charged back, and garbage a
+        // sweep frees inside one interval hides that much growth, so the charge is a lower bound.
+        lua.set_interrupt(move |lua| {
+            let (used, mark) = (lua.used_memory(), sh.mem_mark.load(Relaxed));
+            // Growth under one unit carries over to the next interrupt; a drop (a sweep) moves the mark down.
+            let grew = if mark == usize::MAX { 0 } else { used.saturating_sub(mark) / BYTES_PER_UNIT as usize };
+            sh.mem_mark.store(if mark != usize::MAX && used > mark { mark + grew * BYTES_PER_UNIT as usize } else { used }, Relaxed);
+            let before = sh.used.load(Relaxed);
+            sh.charge(1u32.saturating_add(grew.min(u32::MAX as usize) as u32))?;
+            // The clock is read each time the count passes a multiple of `BACKSTOP_EVERY`, however far a
+            // growth charge moved it.
+            if before / BACKSTOP_EVERY != sh.used.load(Relaxed) / BACKSTOP_EVERY && sh.past_backstop() {
                 sh.flags.fetch_or(F_BACKSTOP, Relaxed);
                 return Err(stop_error(F_BACKSTOP));
             }
@@ -431,15 +464,48 @@ fn sub_len(len: u64, i: Option<&Value>, j: Option<&Value>) -> u64 {
     if j >= i { (j - i + 1.0) as u64 } else { 0 }
 }
 
+/// The Luau side of a charged builtin: the Rust `charge` only reads the arguments and pays, then Luau calls
+/// the original builtin itself. An argument error is then a native Luau error; raised through a Rust
+/// callback it would cost several hundred interrupts' worth of time, and grows with each one a script
+/// catches and drops (mlua's error path), so `pcall(string.rep)` in a loop ran 0.8 s on one budget.
+const CHARGED_WRAPPER: &str = "local orig, charge = ... return function(...) charge(...) return orig(...) end";
+
 fn charged_builtin(lua: &Lua, shared: &std::sync::Arc<Shared>, orig: Function, cost: Cost) -> mlua::Result<Function> {
     let sh = shared.clone();
-    lua.create_function(move |_, args: MultiValue| {
+    let charge = lua.create_function(move |_, args: MultiValue| {
         let bytes = cost(&args);
         let units = (bytes / BYTES_PER_UNIT).min(u32::MAX as u64) as u32;
-        if units > 0 { sh.charge(units)?; }
-        orig.call::<MultiValue>(args)
-    })
+        if units > 0 {
+            sh.charge(units)?;
+            // The output this pays for is not charged again as memory growth at the next interrupt.
+            let m = sh.mem_mark.load(Relaxed);
+            if m != usize::MAX { sh.mem_mark.store(m.saturating_add(bytes.min(usize::MAX as u64) as usize), Relaxed); }
+        }
+        Ok(())
+    })?;
+    lua.load(CHARGED_WRAPPER).set_name("=host").set_mode(ChunkMode::Text).call::<Function>((orig, charge))
 }
+
+/// Work units charged each time `pcall`, `xpcall` or `coroutine.resume` returns a caught error. Luau
+/// raises errors as C++ exceptions, and one raise and catch costs about as much as 80 interrupts of plain
+/// code (4.2 us natively on Apple Silicon against the 50 ns per interrupt of the L375 gate); uncharged, a
+/// `pcall(error)` loop ran 21 ms on one budget, ten times the 2 ms backstop.
+pub const CAUGHT_ERROR_UNITS: u32 = 100;
+
+/// Host guards, run after the charged builtins are installed and before the sandbox: every place a script
+/// can catch an error charges [`CAUGHT_ERROR_UNITS`] when it reports one. They are Luau functions, so a
+/// yield inside `pcall` still works; the Rust `caught` only runs after the protected call has returned.
+const CATCH_GUARDS: &str = r##"
+local caught = ...
+local rawpcall, rawxpcall, rawresume = pcall, xpcall, coroutine.resume
+local function settle(ok, ...)
+    if not ok then caught() end
+    return ok, ...
+end
+pcall = function(...) return settle(rawpcall(...)) end
+xpcall = function(...) return settle(rawxpcall(...)) end
+coroutine.resume = function(...) return settle(rawresume(...)) end
+"##;
 
 /// One registry function as a Lua global.
 fn host_function(lua: &Lua, shared: &std::sync::Arc<Shared>, index: u16) -> mlua::Result<Function> {
@@ -1193,6 +1259,70 @@ mod tests {
         assert!(h.memory_bytes(other) > 0);
     }
 
+    /// Fuzz crash e7e6a320 (`host_api`, base64 `//////8HrKysAGlm/wo=`): one call of `track_velocity` with
+    /// a 151-level table constructor, inside `pcall`, 10,000 times. It used to spend its 5,000 units in
+    /// 27 ms natively, 13 times the 2 ms backstop: each bad host call raised a Rust error the loop caught,
+    /// and each iteration built 151 tables between two interrupts. Now the first bad call ends the run.
+    #[test]
+    fn work_the_interrupts_do_not_see_is_charged() {
+        let ids = host_api().len() as u16 + 2;
+        let crash = [FuzzCall { func: 65535 % ids, args: vec![FuzzArg::Deep(172)], protected: true, repeat: 65382 }];
+        assert_eq!(crash[0].func, h::TRACK_VELOCITY);
+        let recs = fuzz::check_calls(&crash).unwrap();
+        assert_eq!(recs.len(), 1);
+        assert_eq!(recs[0].fault, Some(ScriptFault::Error), "{recs:?}");
+        assert!(recs[0].interrupts < 100, "stopped after the first bad call, not at the budget: {recs:?}");
+        // A host-call fault caught by `pcall` stops the run at the next interrupt; the host saw no call.
+        let mut api = FixtureApi::default();
+        let (mut hh, _) = host_with(&[src("return function() for _ = 1, 1e6 do pcall(track_velocity, {}) track_count() end return 1 end", &[], &[PortType::Scalar])], lim());
+        hh.begin_tick(V);
+        let r = hh.run(V, 0, &[], &mut api, &mut [PortValue::None]);
+        assert_eq!((r.fault, api.calls), (Some(ScriptFault::Error), 0));
+        assert!(r.interrupts < 20, "{r:?}");
+        // Every caught error pays `CAUGHT_ERROR_UNITS`, through pcall, xpcall and coroutine.resume; the same
+        // loop that catches nothing pays only its interrupts. Counts carry a memory-growth term that depends
+        // on the allocator and the collector's phase, so they are bounded, not exact.
+        let units = |text: &str| { let (r, out) = eval(text, &[PortType::Scalar]); assert_eq!((r.fault, &out[..]), (None, &[PortValue::Scalar(1.0)][..]), "{text}"); r.interrupts };
+        let plain = units("return function() for _ = 1, 10 do pcall(function() end) end return 1 end");
+        assert!(plain < 100, "{plain}");
+        for text in [
+            "return function() for _ = 1, 10 do pcall(error, 'x') end return 1 end",
+            "return function() for _ = 1, 10 do xpcall(error, function(e) return e end) end return 1 end",
+            "return function() for _ = 1, 10 do coroutine.resume(coroutine.create(error)) end return 1 end",
+            "return function() for _ = 1, 10 do pcall(string.rep) end return 1 end",
+        ] {
+            let n = units(text);
+            assert!(n >= 10 * CAUGHT_ERROR_UNITS && n <= plain + 10 * CAUGHT_ERROR_UNITS + 400, "{text}: {n}");
+        }
+        // A direct call of a charged builtin goes through its wrapper, not Luau's fast path (`NO_FASTCALL`):
+        // the wrapper's own entry is one more interrupt per call.
+        let direct = units("return function() local s = 'abc' for _ = 1, 200 do local t = string.sub(s, 1, 1) local b = string.byte(s, 1) end return 1 end");
+        let bare = units("return function() local s = 'abc' for _ = 1, 200 do local t = s local b = 1 end return 1 end");
+        assert!(direct >= bare + 400, "{direct} against {bare}");
+        // A charged builtin's own argument error is a native Luau error that names the builtin.
+        let (r, out) = eval("return function() local ok, e = pcall(string.rep) return e end", &[PortType::Text]);
+        assert_eq!(r.fault, None);
+        assert!(matches!(&out[0], PortValue::Text(t) if t.contains("'rep'")), "{out:?}");
+        // A yield inside `pcall` still works through the guard.
+        let (r, out) = eval("return function() local co = coroutine.create(function() local ok, v = pcall(function() return coroutine.yield(1) + 1 end) return v end)
+            local _, a = coroutine.resume(co) local _, b = coroutine.resume(co, 41) return a + b end", &[PortType::Scalar]);
+        assert_eq!((r.fault, &out[..]), (None, &[PortValue::Scalar(43.0)][..]));
+        // Allocation between two interrupts is paid by the memory growth: a loop that builds 151 tables per
+        // iteration gets 90 iterations out of the budget (about 2,500 before), the same on every run.
+        let deep = format!("{}{}", "{".repeat(151), "}".repeat(151));
+        let text = format!("return function() for _ = 1, 1e6 do local t = {deep} track_count() end end");
+        let counts: Vec<_> = (0..2).map(|_| {
+            let mut api = FixtureApi::default();
+            let (mut hh, _) = host_with(&[src(&text, &[], &[])], lim());
+            hh.begin_tick(V);
+            let r = hh.run(V, 0, &[], &mut api, &mut []);
+            (r.fault, api.calls)
+        }).collect();
+        assert_eq!(counts[0], counts[1]);
+        assert_eq!(counts[0].0, Some(ScriptFault::Budget));
+        assert!((20..=400).contains(&counts[0].1), "{counts:?}");
+    }
+
     #[test]
     fn the_budget_stops_loops_even_through_pcall() {
         for text in [
@@ -1244,13 +1374,16 @@ mod tests {
     #[test]
     fn the_memory_limit_greys_out_allocating_scripts() {
         let limit = 8 * 1024 * 1024 + fuzz::MEMORY_SLACK;
-        // Doubling a string by concatenation: few interrupts, fast growth.
+        // Doubling a string by concatenation: few interrupts, fast growth. The growth is charged to the
+        // budget (one unit per 128 bytes), so one tick stops it near 640 KB, long before the limit.
         let (mut h, _) = host_with(&[src("return function() local s = 'x' for i = 1, 30 do s = s .. s end return #s end", &[], &[PortType::Scalar])], lim());
         let (r, _) = run1(&mut h, 0, &[], 1);
-        assert_eq!(r.fault, Some(ScriptFault::Memory), "{:?}", h.last_error(V, 0));
-        assert!(h.memory_bytes(V) <= limit, "{}", h.memory_bytes(V));
-        // Growth across ticks: state persists, so the limit is reached on some later tick.
-        let (mut h, _) = host_with(&[src("local t = {} return function() for i = 1, 1000 do t[#t + 1] = {i, i, i} end return #t end", &[], &[PortType::Scalar])], lim());
+        assert_eq!(r.fault, Some(ScriptFault::Budget), "{:?}", h.last_error(V, 0));
+        assert!(h.memory_bytes(V) <= 2 * 1024 * 1024, "{}", h.memory_bytes(V));
+        // Growth across ticks: state persists, so the limit is reached on some later tick. A linked list,
+        // not one growing array: doubling an array past about 40,000 entries is one allocation larger than a
+        // tick's growth allowance, and faults on the budget instead.
+        let (mut h, _) = host_with(&[src("local head return function() for i = 1, 300 do head = {head, i, i} end return 1 end", &[], &[PortType::Scalar])], lim());
         let faulted = (0..2_000).find_map(|tick| { let (r, _) = run1(&mut h, 0, &[], 1); r.fault.map(|f| (tick, f)) });
         assert!(matches!(faulted, Some((t, ScriptFault::Memory)) if t > 10), "{faulted:?}");
         assert!(h.memory_bytes(V) <= limit, "{}", h.memory_bytes(V));
@@ -1262,17 +1395,18 @@ mod tests {
             "return function() local t = table.create(4000000, true) return #t end",
             "return function() return buffer.len(buffer.create(32 * 1024 * 1024)) end",
             "return function() local s = string.rep('x', 400000) for i = 1, 100 do s:upper() end return 1 end",
-            // A string grown by `..` (uncharged) and then copied by direct calls, which Luau would fast-path.
+            // A string grown by `..` and then copied by direct calls, which Luau would fast-path.
             "return function() local s = 'x' for i = 1, 21 do s = s .. s end for i = 1, 100 do local t = string.sub(s, 1, #s - 1) end return 1 end",
             "return function() local s = 'x' for i = 1, 21 do s = s .. s end for i = 1, 100 do local t = s:sub(2) end return 1 end",
         ] {
             let (r, _) = eval(text, &[PortType::Scalar]);
             assert_eq!(r.fault, Some(ScriptFault::Budget), "{text}");
         }
-        // Ordinary sizes cost next to nothing: 1 unit per 128 bytes.
+        // Ordinary sizes cost next to nothing: 1 unit per 128 bytes, for the builtins' output and for the
+        // `..` result's memory growth.
         let (r, out) = eval("return function() return #(string.rep('-', 80) .. string.rep('ab', 1000)) == 2080 and 2 or 0 end", &[PortType::Scalar]);
         assert_eq!((r.fault, &out[0]), (None, &PortValue::Scalar(2.0)));
-        assert!(r.interrupts < 40, "{}", r.interrupts);
+        assert!(r.interrupts < 80, "{}", r.interrupts);
     }
 
     #[test]
@@ -1386,7 +1520,7 @@ mod tests {
         let (mut h, r) = host_with(&[src("return function() local s = 0 for i = 1, 1e8 do s += i end return s end", &[], &[PortType::Scalar])], limits);
         assert_eq!(r, vec![Ok(())]);
         let (run, out) = run1(&mut h, 0, &[], 1);
-        assert_eq!(run.fault, Some(ScriptFault::Backstop));
+        assert_eq!(run.fault, Some(ScriptFault::Backstop), "{run:?} {:?}", h.last_error(V, 0));
         assert_eq!(out, vec![PortValue::None]);
         // At load, too.
         assert_eq!(host_with(&[src("for i = 1, 1e9 do end return function() end", &[], &[])], limits).1, vec![Err(ScriptFault::Backstop)]);
@@ -1518,6 +1652,14 @@ end"#),
         }
         let recs = fuzz::check_calls(&calls).unwrap();
         assert!(matches!(recs[0].fault, Some(ScriptFault::Error | ScriptFault::Budget)), "wrong kinds grey the script even inside pcall: {:?}", recs[0]);
+        // Crash e7e6a320 (see `work_the_interrupts_do_not_see_is_charged`), and the same shape through a
+        // missing global, which raises a native error instead of a host fault.
+        let ids = host_api().len() as u16 + 2;
+        for func in [65535 % ids, host_api().len() as u16] {
+            for n in [1, 8] {
+                fuzz::check_calls(&[FuzzCall { func, args: vec![FuzzArg::Deep(172); n], protected: true, repeat: 65382 }]).unwrap();
+            }
+        }
         let first_bad: Vec<FuzzCall> = calls.iter().filter(|c| c.func == h::PART_HEALTH).cloned().collect();
         assert_eq!(fuzz::check_calls(&first_bad).unwrap()[0].fault, Some(ScriptFault::Error));
         // Well-typed edge values never fault: missing data is nil.
@@ -1616,6 +1758,69 @@ end"#),
         assert!((45 * 60..46 * 60).contains(&at), "greyed at tick {at}");
         let ship = sim.ships().get(vessel).unwrap();
         assert_eq!(ship.graph_state.greyed, vec![(node, ScriptFault::Error)], "stays greyed for the sortie");
+    }
+
+    /// Wall time per full-budget tick of the host_api fuzz surface and of the raw-source error and
+    /// allocation paths, natively, with no backstop: anything far over the 2 ms production backstop is a
+    /// path the work-unit budget does not pay for. Run with `cargo test -p sim-systems --features luau
+    /// --lib -- --ignored --nocapture cost_sweep`. Nothing asserts on wall time.
+    #[test]
+    #[ignore]
+    fn cost_sweep() {
+        let none = ScriptLimits { backstop_micros: u32::MAX, ..ScriptLimits::default() };
+        let time = |text: &str| -> (f64, Option<ScriptFault>, u32) {
+            let (mut hh, r) = host_with(&[src(text, &[], &[PortType::Scalar])], none);
+            if r != vec![Ok(())] { return (0.0, r[0].err(), 0); }
+            let mut best = (f64::MAX, None, 0);
+            for _ in 0..3 {
+                let t = std::time::Instant::now();
+                let (run, _) = run1(&mut hh, 0, &[], 1);
+                let ms = t.elapsed().as_secs_f64() * 1e3;
+                if ms < best.0 { best = (ms, run.fault, run.interrupts); }
+            }
+            best
+        };
+        let mut rows: Vec<(f64, String)> = Vec::new();
+        let args = [FuzzArg::Nil, FuzzArg::Num(1.0), FuzzArg::Nan, FuzzArg::Huge, FuzzArg::Int(2), FuzzArg::Vector(1.0, 2.0, 3.0), FuzzArg::Deep(150), FuzzArg::Cyclic,
+            FuzzArg::Long(16 << 20), FuzzArg::Long(127), FuzzArg::Long(100_000), FuzzArg::Text("x".repeat(4096)), FuzzArg::Function];
+        let funcs = [h::OWN_POSITION, h::TRACK_VELOCITY, h::INTERCEPT_POINT, host_api().len() as u16];
+        for f in funcs {
+            for a in &args {
+                for n in [1usize, 8] {
+                    for protected in [false, true] {
+                        let calls = [FuzzCall { func: f, args: vec![a.clone(); n], protected, repeat: 10_000 }];
+                        let (ms, fault, units) = time(&fuzz::render_host_calls(&calls));
+                        rows.push((ms, format!("f{f} {n}x{a:?} protected {protected}: {fault:?} {units}").chars().take(140).collect()));
+                    }
+                }
+            }
+        }
+        let deep = format!("{}{}", "{".repeat(151), "}".repeat(151));
+        for text in [
+            "return function() for _ = 1, 1e6 do pcall(error, 'x') end end".to_string(),
+            "return function() for _ = 1, 1e6 do pcall(nil) end end".into(),
+            "return function() for _ = 1, 1e6 do pcall(string.rep) end end".into(),
+            "return function() for _ = 1, 1e6 do pcall(track_velocity, {}) end end".into(),
+            "return function() for _ = 1, 1e6 do xpcall(error, error) end end".into(),
+            "return function() for _ = 1, 1e6 do xpcall(error, function() error('y') end) end end".into(),
+            "return function() for _ = 1, 1e6 do coroutine.resume(coroutine.create(error)) end end".into(),
+            "return function() for _ = 1, 1e6 do pcall(coroutine.wrap(error)) end end".into(),
+            "return function() for _ = 1, 1e6 do pcall(coroutine.wrap(function() coroutine.wrap(function() coroutine.wrap(error)() end)() end)) end end".into(),
+            "return function() for _ = 1, 1e6 do coroutine.create(error) end end".into(),
+            "local function chain(n) if n == 0 then error('x') end coroutine.wrap(chain)(n - 1) end return function() for _ = 1, 1e6 do pcall(chain, 190) end end".into(),
+            "local function chain(n) if n == 0 then error('x') end local ok, e = pcall(chain, n - 1) error(e, 0) end return function() for _ = 1, 1e6 do pcall(chain, 190) end end".into(),
+            "local function chain(n) if n == 0 then error('x') end coroutine.wrap(chain)(n - 1) end return function() for _ = 1, 1e6 do coroutine.resume(coroutine.create(chain), 190) end end".into(),
+            "local function h(e) error(e) end return function() for _ = 1, 1e6 do xpcall(error, h) end end".into(),
+            "return function() for _ = 1, 1e6 do local t = {} end end".into(),
+            format!("return function() local last for _ = 1, 1e6 do last = {deep} end end"),
+            "return function() local s = string.rep('x', 300000) for _ = 1, 1e6 do local t = s .. s end end".into(),
+            "return function() while true do own_position() track_count() end end".into(),
+        ] {
+            let (ms, fault, units) = time(&text);
+            rows.push((ms, format!("{fault:?} {units}: {}", text.chars().take(110).collect::<String>())));
+        }
+        rows.sort_by(|a, b| b.0.total_cmp(&a.0));
+        for (ms, what) in &rows[..rows.len().min(40)] { println!("{ms:9.3} ms  {what}"); }
     }
 
     /// The L375 budget gate's measurement, for the report: a script that spends the whole budget, timed per

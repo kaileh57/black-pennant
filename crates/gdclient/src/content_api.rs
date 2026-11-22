@@ -220,7 +220,9 @@ impl BpContent {
         let key = format!("starters:{}", at.map_or(-1, |a| a.to_gd()));
         self.cached_list(&key, || {
             let (Some(cat), Some(data)) = (self.data().catalogue.clone(), self.data().campaign.clone()) else { return Vec::new() };
-            model::starter_paths(&data.acts, at)
+            // Sandbox, skirmish and PvP keep all six starters; an act's list comes from the acts this build ships.
+            let acts = if at.is_some() { &data.acts } else { &content::campaign::load::campaign().acts };
+            model::starter_paths(acts, at)
                 .into_iter()
                 .filter_map(|path| match content::campaign::load::stock_blueprint(&path) {
                     Ok(bp) => {
@@ -278,9 +280,10 @@ impl BpContent {
             list
         })
     }
-    /// Tonnage caps per act in tonnes: 150, 400, 900, 1,800.
+    /// Tonnage caps in tonnes of the acts this build ships, in act order (150 for Act 1; later releases add
+    /// 400, 900, 1,800). Skirmish and lobby setup offer one act per entry.
     #[func]
-    fn act_caps(&self) -> PackedFloat32Array { [Act::Act1, Act::Act2, Act::Act3, Act::Act4].iter().map(|a| a.hull_cap_t() as f32).collect() }
+    fn act_caps(&self) -> PackedFloat32Array { model::shipped_acts(&services().campaign().acts).iter().map(|a| a.hull_cap_t() as f32).collect() }
     /// Player limit of a mode at this release: `{ "max_players": int, "team_sizes": PackedInt32Array }`.
     #[func]
     fn mode_limits(&self, mode: i64) -> VarDictionary {

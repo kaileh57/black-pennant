@@ -35,7 +35,6 @@ const MODE_PVP_ELIMINATION := 3
 const MODE_PVP_ESCORT := 4
 const RULESET_IDS: Array[String] = ["standard", "open"]
 const PVP_CAPS: Array[float] = [150.0, 400.0, 900.0, 1800.0]
-const ACT_COUNT := 4
 const ENEMY_MIN := 1
 const ENEMY_MAX := 20
 const COL_NAME := 0
@@ -375,7 +374,9 @@ func fill_choices(templates: Array[Dictionary], presets: Array[Dictionary], caps
 	for i in templates.size():
 		_template.add_item(tr(StringName(Kit.get_str(templates[i], "name"))), i)
 	_act.clear()
-	for a in ACT_COUNT:
+	# One row per act this build ships (Content.act_caps: Act 1 alone in 0.1.0); Act 1 when none is given.
+	var acts := maxi(caps.size(), 1)
+	for a in acts:
 		var cap := caps[a] if a < caps.size() else PVP_CAPS[a]
 		_act.add_item(tr(&"lobby.settings.act_row").format([tr(StringName("units.word.act.%d" % (a + 1))), Kit.number(cap, &"t", 0)]), a)
 	_difficulty.clear()
@@ -519,7 +520,7 @@ func _show_setup(mode: int, ruleset: Dictionary, setup_v: Variant) -> void:
 		for i in _templates.size():
 			if Kit.get_int(_templates[i], "template", -2) == Kit.get_int(sk, "template", -1):
 				_template.select(i)
-		_act.select(clampi(Kit.get_int(sk, "act"), 0, ACT_COUNT - 1))
+		_act.select(clampi(Kit.get_int(sk, "act"), 0, _act.item_count - 1))
 		_enemies.set_value_no_signal(clampi(Kit.get_int(sk, "enemy_per_player", 1), ENEMY_MIN, ENEMY_MAX))
 		var preset := Kit.get_str(Kit.as_dict(sk.get("difficulty")), "preset")
 		for i in _presets.size():
@@ -546,7 +547,7 @@ func setup_patch() -> Dictionary:
 			out[k] = cond[k]
 	if mode == MODE_SKIRMISH and not _templates.is_empty():
 		var t := _templates[clampi(_template.get_selected_id(), 0, _templates.size() - 1)]
-		var sk := {"template": Kit.get_int(t, "template"), "act": clampi(_act.get_selected_id(), 0, ACT_COUNT - 1), "enemy_per_player": int(_enemies.value)}
+		var sk := {"template": Kit.get_int(t, "template"), "act": clampi(_act.get_selected_id(), 0, maxi(_act.item_count - 1, 0)), "enemy_per_player": int(_enemies.value)}
 		var d := _difficulty.get_selected_id()
 		if d >= 0 and d < _presets.size():
 			sk["difficulty"] = {"preset": Kit.get_str(_presets[d], "preset")}

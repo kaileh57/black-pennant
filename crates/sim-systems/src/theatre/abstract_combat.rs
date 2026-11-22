@@ -23,31 +23,51 @@
 //!   cut at `MAX_RULES`.
 //! - Helm, when `follow_briefing_route` is set: the briefing route (player spawn, the objective point, the
 //!   exit if the objective names one), rebuilt from the config by the generator's rule. Then, by objective:
-//!   - destroy all, group or site: after the last waypoint the Helm closes on the nearest hostile surface
-//!     track (re-aimed every 15 s), else holds station at the objective point;
+//!   - destroy all or a group: after the last waypoint the Helm steers for the reported position of the
+//!     nearest hostile surface track that has one (re-aimed every 15 s), else holds station at the objective
+//!     point;
+//!   - destroy a site: the route ends at a stand-off on the approach bearing, 0.8 of the longest gun's
+//!     effective range from the site and never inside 1,000 m, and the hull holds station there. If no track
+//!     of the site is held after 60 s at the stand-off and a gun still has ammunition, it closes once, to 0.75
+//!     of the weather's visibility (still never inside 1,000 m). It never closes with its magazines empty;
 //!   - insert or extract: hold station on the shore marker for the hold, then leave by the nearest exit;
 //!   - lay mines: a line through the marker along the approach course, one mine per 50 m of the count plus
-//!     200 m run-in at each end, sailed at 10 kn;
-//!   - photograph: the nearest unphotographed non-Friend surface track, approached to 4.5 km (at most 75% of
-//!     the weather's visibility) and held, closing to half that while the camera reports it too far, beyond
-//!     visibility or out of sight;
-//!   - capture and cutting-out: close on a disabled enemy hull in visual range, hold 100 m off it while the
-//!     boarding runs, order the prize home and (cutting-out) sail for the exit;
+//!     200 m run-in at each end; the hull cruises to the line's start and sails the line at 10 kn;
+//!   - photograph: the nearest unphotographed non-Friend surface track inside 1.5 stand-offs, else the best
+//!     other one, approached to 4.5 km (at most 75% of the weather's visibility) and held, closing to half
+//!     that while the camera reports it too far, beyond visibility or out of sight. A target whose range has
+//!     not closed in 60 s is given up for 5 minutes;
+//!   - capture and cutting-out: close the prize's contact to 1,000 m and hold there until it is disabled
+//!     (Gunnery fires on a Suspect track inside self-defence range), then close on the disabled hull, hold
+//!     150 m off it while the boarding runs, order each boarded hull home when its boarding finishes and
+//!     (cutting-out) sail for the point abeam of the exit. A cutting-out's route ends 1,000 m short of where
+//!     the prize lies, not at the map's first objective marker;
 //!   - feint: once the hold is served, withdraw and sail for the nearest exit;
-//!   - survive and escort: the route ends at the exit.
+//!   - survive and escort: the route ends at the exit; an escort first meets its charge.
 //!
-//!   Without `follow_briefing_route` the hull gets no Helm orders, designations or withdrawals: its
-//!   officers and standing orders do everything.
+//!   Without `follow_briefing_route` the hull gets no Helm orders or withdrawals: its officers and standing
+//!   orders do everything.
+//! - What the pilot never orders (22 November 2026, the reading of L317 "stock officers and the Helm officer
+//!   following the briefing route"): it never changes the emission state after the first tick, never
+//!   designates a track, never leads a moving contact and never orders more than the Helm's cruise. Emissions
+//!   are the Sensors officer's under the L1 setting the hull sails in at (L507), and what Gunnery fires on is
+//!   set by stance and grade (L484, L498). The orders it does give are the player's one-button orders of the
+//!   shipped game: a course (L108), a station hold, a station action and a prize decision (L786), and the
+//!   withdrawal.
 //! - Every course carries an ordered speed, because a player hull spawns under a stop order: the hull's
 //!   `helm.cruise` fraction (else the Helm's default 0.7) of the Speed gauge's top speed, 95% of it when an
 //!   attempted ghost condition runs against the clock, and 6 to 10 kn on a mine line.
+//! - Exits: the objective's named exit, else the nearest Exit-kind marker. A convoy lane's end is not a way
+//!   out for the pilot (the straight course to one grounded the hull on Mareby's shore).
 //! - Targets: the hunt and the camera prefer contacts identified as a class of the hulls the objective
 //!   names (its tag, or the site), then the nearest.
-//! - While hunting, the pilot designates the track it closes on for the officers.
 //! - Station actions the objective needs are started at the first tick where their target is a marker or a
 //!   line (a started action waits paused until its conditions hold) and once a target exists for track
 //!   targets; an aborted action is restarted after 30 s.
-//! - The policy reads only the player's own snapshot (`Viewer::Player`), at 1 Hz, never the truth.
+//! - The policy reads only the player's own snapshot (`Viewer::Player`), at 1 Hz, never the truth, plus the
+//!   list of its own finished station actions (`SpecOpsState::completed` for its slot). A finished action
+//!   leaves the snapshot's action list in the tick it finishes, so the snapshot alone never shows one done;
+//!   a client learns it from the action-changed event.
 //! - A sortie the `Sim` refuses to build returns `Outcome::Aborted` (no result applies, 0 minutes).
 //! - Call `resolve` inside the 3-worker sim pool for the shipping thread count; outside one it runs on
 //!   rayon's global pool and the result is the same (results never depend on the pool, L1150).
@@ -295,6 +315,11 @@ const HUNT_PERIODS: u64 = 15;
 const ACTION_RETRY_PERIODS: u64 = 30;
 /// Hold-station range of a shore hold or a boarding approach.
 const HOLD_APPROACH_M: f64 = 1_500.0;
+/// A hull to be boarded is closed to this range and no nearer until it is disabled: inside the range at which
+/// Gunnery fires on a Suspect track (self-defence range, L484), and clear of a collision with it.
+const BOARD_STANDOFF_M: f64 = 1_000.0;
+/// Station kept off a disabled hull while the boarding runs (the boarding needs 200 m or less).
+const BOARD_HOLD_M: f64 = 150.0;
 /// Photograph from this range in clear weather (inside the 6 km camera, L796).
 const PHOTO_STANDOFF_M: f64 = 4_500.0;
 /// Speed of a mine-laying run (at least the 6 kn the rails need, L795).
@@ -309,16 +334,27 @@ const HELM_CRUISE_DEFAULT: f64 = 0.7;
 const HURRY_FRACTION: f64 = 0.95;
 /// Course speed when the design's top speed cannot be measured.
 const DEFAULT_COURSE_KN: f64 = 12.0;
-/// Pilot periods on the objective with no usable contact (or no fix on the camera's target) before the Helm
-/// orders the radars on (EMCON Active) to find one.
-const SEARCH_PERIODS: u64 = 60;
-/// An escort has met its charge inside this distance.
-const ESCORT_MEET_M: f64 = 1_000.0;
+/// An escort has met its charge inside this distance (inside the 1,500 m at which the charge is released).
+const ESCORT_MEET_M: f64 = 1_300.0;
+/// An escort keeps this far abeam of its charge's way out, and waits this far abeam of the exit.
+const ESCORT_FLANK_M: f64 = 1_000.0;
 /// The hunt closes only on contacts a sensor updated within this many ticks (60 s).
 const HUNT_FRESH_TICKS: u64 = 60 * TICK_HZ as u64;
-/// On the approach to a destroy objective, radiate inside this distance of the objective point while no
-/// usable contact is held (a raid does not sail into the target's guns blind).
-const ATTACK_RADIATE_M: f64 = 8_000.0;
+/// A site is engaged from this share of the longest gun's effective range, and never from inside the floor.
+const SITE_STANDOFF_FRACTION: f64 = 0.8;
+const SITE_STANDOFF_MIN_M: f64 = 1_000.0;
+/// Pilot periods at the stand-off with no track of the site before the hull closes to visual range, as a
+/// share of the weather's visibility.
+const SITE_SEARCH_PERIODS: u64 = 60;
+const SITE_VISUAL_FRACTION: f64 = 0.75;
+/// A track within this distance of the site's marker is the site.
+const SITE_TRACK_M: f64 = 1_000.0;
+/// The camera gives up a target whose range has not closed by `PHOTO_CLOSING_M` in this many pilot periods,
+/// and leaves it alone for `PHOTO_SKIP_PERIODS`. A target inside this many stand-offs is taken first.
+const PHOTO_STALL_PERIODS: u64 = 60;
+const PHOTO_CLOSING_M: f64 = 100.0;
+const PHOTO_SKIP_PERIODS: u64 = 300;
+const PHOTO_NEAR_STANDOFFS: f64 = 1.5;
 
 /// Ordered course speed of a design. A player hull spawns with a stop order (0 kn), so every course the
 /// pilot lays carries a speed: the hull's `helm.cruise` fraction (else the Helm's default) of the Speed
@@ -338,6 +374,8 @@ enum Phase { Route, Objective, Leaving }
 struct Hull {
     slot: PlayerSlot,
     seq: u32,
+    /// Where the hull spawned (the start of the approach bearing).
+    spawn: DVec2,
     /// Waypoints still to sail.
     route: Vec<DVec2>,
     phase: Phase,
@@ -346,45 +384,44 @@ struct Hull {
     action_started: Option<u64>,
     /// Entities ordered home as prizes.
     prized: BTreeSet<EntityId>,
-    /// Tracks photographed (their action finished Done).
+    /// Tracks photographed, and how many of its own finished photographs the pilot has counted.
     photographed: BTreeSet<TrackId>,
+    photos_done: usize,
     photo_target: Option<TrackId>,
+    /// Closest range to the camera's target so far and the pilot period it was reached.
+    photo_best: Option<(f64, u64)>,
+    /// Targets given up because the range would not close, with the pilot period they were given up at.
+    photo_skipped: BTreeMap<TrackId, u64>,
     withdrawn: bool,
-    /// The mine line of a mine-laying objective.
+    /// The mine line of a mine-laying objective, and whether the line's speed has been ordered.
     line: Option<(DVec2, DVec2)>,
+    mine_run: bool,
     /// The first orders went out (the hull is in the water).
     started: bool,
     /// Ordered speed on every course: the Helm's cruise fraction of the design's top speed.
     cruise_kn: f64,
-    /// Track last designated for the officers.
-    designated: TrackId,
-    /// Hull the running boarding was started on.
-    boarding_target: Option<EntityId>,
-    /// Ordered speed once the objective is done and the hull leaves: nearly all of the design's top speed.
-    leave_kn: f64,
-    /// The emission state the Helm last ordered (`None`: the first orders' state still stands).
-    emcon_ordered: Option<Emcon>,
-    /// Pilot period since which the objective phase has held no usable contact.
-    no_contact_since: Option<u64>,
+    /// Gun mounts of the design (the site stand-off is measured from their effective range).
+    guns: BTreeSet<PartSlot>,
+    /// Site objective: where the hull holds, the pilot period it got there, and whether it has closed to
+    /// visual range.
+    standoff: Option<DVec2>,
+    standoff_since: Option<u64>,
+    site_closed: bool,
     /// Escort: the escorted hull has been met; the hull now keeps company with it to the exit.
     met: bool,
 }
 
 /// Which of the pilot's orders beyond sailing the briefing route go out. The gate plays with all of them
-/// ([`PilotOrders::ALL`], the default of [`Pilot::new`]); the diagnosis harness withholds some to measure
-/// what each one is worth to the result (`bot::tests::gate`, `BP_PILOT`). Harness only.
+/// ([`PilotOrders::ALL`], the default of [`Pilot::new`]); the diagnosis harness can withhold them to see what
+/// the route alone is worth (`bot::tests::gate`, `BP_PILOT=route`). Harness only.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct PilotOrders {
-    /// May order EMCON Active (`radiate`, `search`).
-    pub radiate: bool,
-    /// May designate tracks for the officers (`hunt`, `designate_wanted`).
-    pub designate: bool,
     /// May give any order after the first ones: the hunt, holds, station actions, prizes, withdrawals, the
     /// escort meeting and the leaving course. Off, the hull only sails the briefing route it got at the start.
     pub beyond_route: bool,
 }
 impl PilotOrders {
-    pub(crate) const ALL: PilotOrders = PilotOrders { radiate: true, designate: true, beyond_route: true };
+    pub(crate) const ALL: PilotOrders = PilotOrders { beyond_route: true };
 }
 
 pub(crate) struct Pilot {
@@ -400,6 +437,8 @@ pub(crate) struct Pilot {
     /// Rules per player slot to send at the first tick.
     rules: BTreeMap<PlayerSlot, Vec<Rule>>,
     marker_names: BTreeMap<String, DVec2>,
+    /// The weather's visibility (infinite when the config carries none).
+    visibility_m: f64,
     /// Photograph from this range: inside the camera's 6 km and the weather's visibility.
     photo_standoff_m: f64,
     /// Classes of the hulls the objective names (its tag, or the site), which the hunt prefers.
@@ -411,7 +450,7 @@ impl Pilot {
     pub(crate) fn new(config: &SortieConfig, setup: &PlayerSetup, data: &TheatreData) -> Pilot {
         let finite = |p: &[f64; 2]| p.iter().all(|v| v.is_finite());
         let markers: BTreeMap<String, DVec2> = config.map.markers.iter().filter(|m| finite(&m.pos_m)).map(|m| (m.name.clone(), DVec2::from(m.pos_m))).collect();
-        let exits: Vec<DVec2> = config.map.markers.iter().filter(|m| matches!(m.kind, MarkerKind::Exit | MarkerKind::ConvoyExit) && finite(&m.pos_m)).map(|m| DVec2::from(m.pos_m)).collect();
+        let exits: Vec<DVec2> = config.map.markers.iter().filter(|m| m.kind == MarkerKind::Exit && finite(&m.pos_m)).map(|m| DVec2::from(m.pos_m)).collect();
         let objective_pos = objective_point(config, data);
         let named_exit = objective_exit(&config.objective).and_then(|e| markers.get(e).copied());
         let forbids_emission = config.ghosts.iter().any(|g| matches!(g.kind, GhostKind::NoRadarEmissions | GhostKind::NeverDetected));
@@ -425,7 +464,7 @@ impl Pilot {
             let bp = config_blueprint(config, &v.blueprint);
             let hurry = setup.ghosts && config.ghosts.iter().any(|g| matches!(g.kind, GhostKind::UnderTime { .. }));
             let cruise_kn = bp.as_ref().map_or(DEFAULT_COURSE_KN, |b| cruise_speed(b, &data.catalogue, hurry));
-            let leave_kn = bp.as_ref().map_or(DEFAULT_COURSE_KN, |b| cruise_speed(b, &data.catalogue, true)).max(cruise_kn);
+            let guns: BTreeSet<PartSlot> = bp.as_ref().map(|b| b.parts.iter().enumerate().filter(|(_, pl)| matches!(data.catalogue.part(&pl.part).map(|d| &d.function), Some(PartFunction::Gun(_)))).filter_map(|(k, _)| u16::try_from(k).ok().map(PartSlot)).collect()).unwrap_or_default();
             if let Some(m) = setup.method {
                 if let Some(bp) = &bp {
                     let mut list = method_rules(bp, &data.catalogue, m);
@@ -443,9 +482,16 @@ impl Pilot {
                 route = vec![a, b];
                 line = Some((a, b));
             }
-            if let Some(e) = named_exit { route.push(e); }
+            // A cutting-out's route ends a stand-off short of the prize, not on top of it; its way out is laid
+            // once the prize is taken (`leave`).
+            let cut_out = matches!(config.objective, Objective::CutOut { .. });
+            if cut_out { route = vec![site_standoff(spawn, objective_pos, BOARD_STANDOFF_M)]; }
+            if let Some(e) = named_exit.filter(|_| !cut_out) { route.push(e); }
             if spawn.distance(route[0]) < WAYPOINT_M && route.len() > 1 { route.remove(0); }
-            hulls.push(Hull { slot: p.slot, seq: 0, route, phase: Phase::Route, last_order: None, action_started: None, prized: BTreeSet::new(), photographed: BTreeSet::new(), photo_target: None, withdrawn: false, line, started: false, cruise_kn, designated: TrackId::NONE, boarding_target: None, leave_kn, emcon_ordered: None, no_contact_since: None, met: false });
+            hulls.push(Hull {
+                slot: p.slot, seq: 0, spawn, route, phase: Phase::Route, last_order: None, action_started: None, prized: BTreeSet::new(), photographed: BTreeSet::new(), photos_done: 0, photo_target: None, photo_best: None,
+                photo_skipped: BTreeMap::new(), withdrawn: false, line, mine_run: false, started: false, cruise_kn, guns, standoff: None, standoff_since: None, site_closed: false, met: false,
+            });
         }
         let tag = match &config.objective { Objective::DestroyGroup { tag, .. } | Objective::Capture { tag } | Objective::CutOut { tag, .. } | Objective::Photograph { tag, .. } | Objective::Escort { tag, .. } => Some(tag.as_str()), _ => None };
         let target_classes = config.vessels.iter()
@@ -453,25 +499,35 @@ impl Pilot {
             .filter_map(|v| v.class.clone()).collect();
         let vis = config.weather.visibility_m;
         let photo_standoff_m = if vis.is_finite() && vis > 0.0 { PHOTO_STANDOFF_M.min(0.75 * vis).max(300.0) } else { PHOTO_STANDOFF_M };
-        Pilot {
-            orders: PilotOrders::ALL, photo_standoff_m, target_classes, hulls, objective: config.objective.clone(), objective_pos, exits, named_exit, actions: config.actions.clone(), follow: setup.follow_briefing_route, emcon, rules,
+        let mut pilot = Pilot {
+            orders: PilotOrders::ALL, visibility_m: if vis.is_finite() && vis > 0.0 { vis } else { f64::INFINITY }, photo_standoff_m, target_classes, hulls, objective: config.objective.clone(), objective_pos, exits, named_exit, actions: config.actions.clone(), follow: setup.follow_briefing_route, emcon, rules,
             marker_names: markers, period: 0,
+        };
+        if matches!(pilot.objective, Objective::Escort { .. }) {
+            for i in 0..pilot.hulls.len() { pilot.hulls[i].route = vec![pilot.flank(i, pilot.objective_pos)]; }
         }
+        pilot
     }
 
     fn allowed(&self, a: StationAction) -> bool { self.actions.contains(&a) }
 
-    /// Withhold some of the pilot's orders (diagnosis only; the gate uses [`PilotOrders::ALL`]).
+    /// Withhold the pilot's orders beyond the route (diagnosis only; the gate uses [`PilotOrders::ALL`]).
     pub(crate) fn with_orders(mut self, orders: PilotOrders) -> Pilot { self.orders = orders; self }
     /// The objective point the briefing route runs to.
     pub(crate) fn objective_pos(&self) -> DVec2 { self.objective_pos }
 }
 
-/// The objective point the briefing route runs to: the generator's rule (`opgen`'s objective point).
+/// The objective point the briefing route runs to: the generator's rule (`opgen`'s objective point). A
+/// cutting-out ends where its prize lies (the tagged prize's own position in the config), which the generator
+/// puts at the berth its briefing route ends at, not at the map's first objective-kind marker.
 fn objective_point(config: &SortieConfig, data: &TheatreData) -> DVec2 {
     let find = |name: &str| config.map.markers.iter().find(|m| m.name == name).map(|m| DVec2::from(m.pos_m));
     let named = match &config.objective { Objective::DestroySite { marker } | Objective::Extract { marker, .. } | Objective::LayMines { marker, .. } => find(marker), _ => None };
-    let p = named
+    let prize = match &config.objective {
+        Objective::CutOut { tag, .. } if !tag.is_empty() => config.vessels.iter().find(|v| v.tag == *tag && v.role == VesselRole::Prize).map(|v| DVec2::new(v.pos.x, v.pos.z)).filter(|p| p.is_finite()),
+        _ => None,
+    };
+    let p = named.or(prize)
         .or_else(|| config.map.markers.iter().find(|m| matches!(m.kind, MarkerKind::Objective | MarkerKind::DepotSite | MarkerKind::RadarSite | MarkerKind::Berth)).map(|m| DVec2::from(m.pos_m)))
         .or_else(|| config.operation.as_ref().and_then(|o| data.campaign.operations.get(o)).and_then(|op| op.force.first()).and_then(|f| find(&f.marker)))
         .unwrap_or(DVec2::ZERO);
@@ -511,8 +567,11 @@ impl HeadlessPolicy for Pilot {
         self.period += 1;
         for i in 0..self.hulls.len() {
             if !self.hulls[i].started { continue; }
-            let snap = sim.snapshot(Viewer::Player(self.hulls[i].slot));
-            self.steer(i, &snap, tick, out);
+            let slot = self.hulls[i].slot;
+            let snap = sim.snapshot(Viewer::Player(slot));
+            // The hull's own finished station actions: they leave the snapshot's list as they finish.
+            let finished: Vec<(StationAction, Option<EntityId>)> = sim.specops.completed.iter().filter(|c| c.player == Some(slot)).map(|c| (c.action, c.target)).collect();
+            self.steer(i, &snap, &finished, tick, out);
         }
     }
 }
@@ -537,9 +596,9 @@ impl Pilot {
         if let Some(r) = self.rules.get(&self.hulls[i].slot).cloned() { self.push(i, tick, Command::SetRules(r), out); }
         let route = self.hulls[i].route.clone();
         if !route.is_empty() {
+            // Cruise all the way in; a mine line's own speed is ordered at the line (`steer`).
             let cruise = self.hulls[i].cruise_kn;
-            let speed = if matches!(self.objective, Objective::LayMines { .. }) { MINE_RUN_KN.min(cruise).max(MINE_MIN_KN) } else { cruise };
-            self.order(i, tick, Command::SetCourse { waypoints: route, speed_kn: Some(speed), append: false }, out);
+            self.order(i, tick, Command::SetCourse { waypoints: route, speed_kn: Some(cruise), append: false }, out);
         }
         if self.orders.beyond_route { self.start_marker_action(i, tick, out); }
     }
@@ -557,7 +616,7 @@ impl Pilot {
         }
     }
 
-    fn steer(&mut self, i: usize, snap: &Snapshot, tick: u64, out: &mut Vec<CommandEnvelope>) {
+    fn steer(&mut self, i: usize, snap: &Snapshot, finished: &[(StationAction, Option<EntityId>)], tick: u64, out: &mut Vec<CommandEnvelope>) {
         let Some(ship) = snap.ship.as_ref() else { return };
         let Some(me) = snap.vessels.iter().find(|v| v.entity == ship.vessel) else { return };
         let pos = plane(me.kin.pose.pos);
@@ -572,32 +631,27 @@ impl Pilot {
         let period = self.period;
         let retry_due = |h: &Hull| h.action_started.is_none_or(|s| period.saturating_sub(s) >= ACTION_RETRY_PERIODS);
         let action_state = |a: StationAction| -> (bool, bool) {
-            let done = ship.actions.iter().any(|x| x.action == a && x.state == ActionState::Done);
+            let done = finished.iter().any(|x| x.0 == a);
             let running = ship.actions.iter().any(|x| x.action == a && matches!(x.state, ActionState::Running | ActionState::Paused));
             (done, running)
         };
 
         match self.objective.clone() {
-            Objective::DestroyAll | Objective::DestroyGroup { .. } | Objective::DestroySite { .. } => {
-                // A tracked hull the objective names ends the route at once: the Helm intercepts it rather
-                // than sailing to a fixed point while a convoy or patrol moves on.
-                let named = !self.target_classes.is_empty() && snap.tracks.iter().any(|t| !t.last_known && t.domain == Domain::Surface && matches!(t.stance, Stance::Hostile | Stance::Suspect)
-                    && tick.saturating_sub(t.last_update_tick) <= HUNT_FRESH_TICKS && t.class.as_ref().is_some_and(|c| self.target_classes.contains(c)));
-                if self.hulls[i].phase != Phase::Route || (named && !matches!(self.objective, Objective::DestroySite { .. })) { self.hunt(i, pos, snap, tick, out); } else {
-                    self.designate_wanted(i, snap, tick, out);
-                    let contact = snap.tracks.iter().any(|t| !t.last_known && t.domain == Domain::Surface && matches!(t.stance, Stance::Hostile | Stance::Suspect) && matches!(t.grade, TrackGrade::Lock | TrackGrade::Fine | TrackGrade::Coarse));
-                    if !contact && pos.distance(self.objective_pos) <= ATTACK_RADIATE_M { self.radiate(i, tick, out); }
-                }
+            Objective::DestroySite { .. } => self.strike_site(i, pos, snap, tick, out),
+            Objective::DestroyAll | Objective::DestroyGroup { .. } => {
+                // A hull the objective names, tracked with a position, ends the route at once: the Helm steers
+                // for it rather than sailing to a fixed point while a convoy or patrol moves on.
+                let named = !self.target_classes.is_empty() && snap.tracks.iter().any(|t| huntable(t, tick) && t.grade != TrackGrade::Bearing && t.class.as_ref().is_some_and(|c| self.target_classes.contains(c)));
+                if self.hulls[i].phase != Phase::Route || named { self.hunt(i, pos, snap, tick, out); }
             }
             Objective::Extract { marker, .. } => {
                 let at = self.marker_names.get(&marker).copied().unwrap_or(self.objective_pos);
                 let (done, running) = action_state(StationAction::InsertOrExtract);
-                // A finished hold leaves the action list, so the objective's own progress (0.5 once held) says
-                // the extraction is done as well.
+                // The objective's own progress (0.5 once held) says the extraction is done as well.
                 let held = primary.is_some_and(|o| o.progress >= 0.5);
                 if done || held || self.hulls[i].phase == Phase::Leaving {
                     self.hulls[i].phase = Phase::Leaving;
-                    self.leave(i, pos, tick, true, out);
+                    self.leave(i, pos, tick, out);
                 } else {
                     if !running && retry_due(&self.hulls[i]) { self.start_marker_action(i, tick, out); }
                     if pos.distance(at) < HOLD_APPROACH_M { self.order(i, tick, Command::HoldStation { at, heading_rad: None }, out); }
@@ -607,11 +661,19 @@ impl Pilot {
                 let (done, running) = action_state(StationAction::LayMines);
                 if !done && !running && retry_due(&self.hulls[i]) { self.start_marker_action(i, tick, out); }
                 if done || primary_done { self.hulls[i].phase = Phase::Leaving; }
-                if self.hulls[i].phase == Phase::Leaving { self.leave(i, pos, tick, true, out); }
+                if self.hulls[i].phase == Phase::Leaving { self.leave(i, pos, tick, out); }
                 else if self.hulls[i].route.is_empty() { self.order(i, tick, Command::HoldStation { at: self.objective_pos, heading_rad: None }, out); }
+                else if let Some((a, _)) = self.hulls[i].line {
+                    // On the line (its start is behind): the rest of the route at the mine-laying speed.
+                    if !self.hulls[i].mine_run && self.hulls[i].route.first() != Some(&a) {
+                        self.hulls[i].mine_run = true;
+                        let kn = MINE_RUN_KN.min(self.hulls[i].cruise_kn).max(MINE_MIN_KN);
+                        self.order(i, tick, Command::SetCourse { waypoints: self.hulls[i].route.clone(), speed_kn: Some(kn), append: false }, out);
+                    }
+                }
             }
-            Objective::Photograph { .. } => self.photograph(i, pos, snap, tick, out),
-            Objective::Capture { .. } | Objective::CutOut { .. } => self.board(i, pos, snap, tick, out),
+            Objective::Photograph { .. } => self.photograph(i, pos, snap, finished, tick, out),
+            Objective::Capture { .. } | Objective::CutOut { .. } => self.board(i, pos, snap, finished, tick, out),
             Objective::Feint { .. } => {
                 let held = primary.is_some_and(|o| o.progress >= 0.9);
                 if held && !self.hulls[i].withdrawn && self.follow {
@@ -619,42 +681,60 @@ impl Pilot {
                     self.hulls[i].phase = Phase::Leaving;
                     self.push(i, tick, Command::Withdraw, out);
                 }
-                if self.hulls[i].phase == Phase::Leaving { self.leave(i, pos, tick, true, out); }
+                if self.hulls[i].phase == Phase::Leaving { self.leave(i, pos, tick, out); }
                 else if self.hulls[i].phase == Phase::Objective { self.order(i, tick, Command::HoldStation { at: self.objective_pos, heading_rad: None }, out); }
             }
             Objective::Escort { .. } => {
-                // Meet the escorted hull on its way out (the nearest Neutral contact, its class first), then
-                // keep company with it to the exit; with no contact, sail the briefing route.
+                // Meet the escorted hull (the nearest Neutral contact, its class first; with no contact, where
+                // the briefing puts it) from abeam, then keep company with it to the exit on a parallel track.
+                // The escort never sails or stops on the charge's own way out: see `flank`.
+                let wanted = |t: &&crate::protocol::snapshot::TrackView| t.class.as_ref().is_some_and(|c| self.target_classes.contains(c));
+                let contact = snap.tracks.iter()
+                    .filter(|t| !t.last_known && t.domain == Domain::Surface && t.stance == Stance::Neutral && t.pos.x.is_finite() && t.pos.z.is_finite())
+                    .min_by(|a, b| (!wanted(a)).cmp(&!wanted(b)).then(plane(a.pos).distance_squared(pos).total_cmp(&plane(b.pos).distance_squared(pos))).then(a.id.cmp(&b.id)))
+                    .map(|t| plane(t.pos));
                 if !self.hulls[i].met {
-                    let wanted = |t: &&crate::protocol::snapshot::TrackView| t.class.as_ref().is_some_and(|c| self.target_classes.contains(c));
-                    let charge = snap.tracks.iter()
-                        .filter(|t| !t.last_known && t.domain == Domain::Surface && t.stance == Stance::Neutral && t.pos.x.is_finite() && t.pos.z.is_finite())
-                        .min_by(|a, b| (!wanted(a)).cmp(&!wanted(b)).then(plane(a.pos).distance_squared(pos).total_cmp(&plane(b.pos).distance_squared(pos))).then(a.id.cmp(&b.id)))
-                        .map(|t| plane(t.pos));
-                    match charge {
+                    match contact {
                         Some(at) if at.distance(pos) <= ESCORT_MEET_M => self.hulls[i].met = true,
                         Some(at) => {
                             if self.period.is_multiple_of(HUNT_PERIODS) || !matches!(self.hulls[i].last_order, Some(Command::SetCourse { ref waypoints, .. }) if waypoints.len() == 1) {
-                                self.order(i, tick, Command::SetCourse { waypoints: vec![at], speed_kn: Some(self.hulls[i].cruise_kn), append: false }, out);
+                                let abeam = self.flank(i, at);
+                                self.order(i, tick, Command::SetCourse { waypoints: vec![abeam], speed_kn: Some(self.hulls[i].cruise_kn), append: false }, out);
                             }
                         }
                         None => {}
                     }
                 }
-                if (self.hulls[i].met || self.hulls[i].route.is_empty()) && !primary_done { self.leave(i, pos, tick, false, out); }
+                if (self.hulls[i].met || self.hulls[i].route.is_empty()) && !primary_done { self.leave(i, pos, tick, out); }
             }
             Objective::Survive { .. } => {
-                if self.hulls[i].route.is_empty() && !primary_done { self.leave(i, pos, tick, false, out); }
+                if self.hulls[i].route.is_empty() && !primary_done { self.leave(i, pos, tick, out); }
             }
         }
     }
 
-    /// Sail for the objective's exit, else the nearest exit marker; with none, withdraw in place. `done`: the
-    /// objective is done and the hull leaves at nearly its top speed (else at the Helm's cruise, keeping
-    /// company with an escorted hull).
-    fn leave(&mut self, i: usize, pos: DVec2, tick: u64, done: bool, out: &mut Vec<CommandEnvelope>) {
+    /// The point [`ESCORT_FLANK_M`] abeam of `at`, across the leg from the objective point to the objective's
+    /// exit, on the side the hull came in from. An escort and a prize's captor sail and wait there, never on
+    /// the leg itself: an AI hull that finds another hull ahead on its route turns away and then takes its
+    /// planned route again from its first waypoint, so a defector whose escort sailed ahead of it, or waited
+    /// on the exit marker, shuttled between its anchorage and the escort and never reached the exit (traced
+    /// on the defector escort, 22 November 2026).
+    fn flank(&self, i: usize, at: DVec2) -> DVec2 {
+        let Some(exit) = self.named_exit else { return at };
+        let leg = (exit - self.objective_pos).normalize_or_zero();
+        if leg == DVec2::ZERO { return at; }
+        let side = leg.perp();
+        let sign = if (self.hulls[i].spawn - self.objective_pos).dot(side) < 0.0 { -1.0 } else { 1.0 };
+        at + side * sign * ESCORT_FLANK_M
+    }
+
+    /// Sail at the Helm's cruise for the objective's exit, else the nearest exit marker; with none, withdraw
+    /// in place. Where the objective is finished by another hull reaching the exit (the escorted hull, the
+    /// prize) the hull makes for the point abeam of the exit instead.
+    fn leave(&mut self, i: usize, pos: DVec2, tick: u64, out: &mut Vec<CommandEnvelope>) {
         let exit = self.named_exit.or_else(|| nearest(pos, &self.exits));
-        let kn = if done { self.hulls[i].leave_kn } else { self.hulls[i].cruise_kn };
+        let exit = if matches!(self.objective, Objective::Escort { .. } | Objective::CutOut { .. }) { exit.map(|e| self.flank(i, e)) } else { exit };
+        let kn = self.hulls[i].cruise_kn;
         match exit {
             Some(e) if e.distance(pos) >= 100.0 => self.order(i, tick, Command::SetCourse { waypoints: vec![e], speed_kn: Some(kn), append: false }, out),
             Some(e) => self.order(i, tick, Command::HoldStation { at: e, heading_rad: None }, out),
@@ -662,112 +742,122 @@ impl Pilot {
         }
     }
 
-    /// Order the radars on (EMCON Active) once: what a player does when the objective needs a contact or a fix
-    /// that passive sensors have not given.
-    fn radiate(&mut self, i: usize, tick: u64, out: &mut Vec<CommandEnvelope>) {
-        if !self.follow || !self.orders.radiate || self.hulls[i].emcon_ordered == Some(Emcon::Active) { return; }
-        self.hulls[i].emcon_ordered = Some(Emcon::Active);
-        self.push(i, tick, Command::SetEmcon(Emcon::Active), out);
+    /// A site objective: sail to the stand-off on the approach bearing and hold there. See the module docs.
+    fn strike_site(&mut self, i: usize, pos: DVec2, snap: &Snapshot, tick: u64, out: &mut Vec<CommandEnvelope>) {
+        let Some(ship) = snap.ship.as_ref() else { return };
+        let site = self.objective_pos;
+        let (spawn, cruise) = (self.hulls[i].spawn, self.hulls[i].cruise_kn);
+        let guns: Vec<&crate::protocol::snapshot::MountView> = ship.mounts.iter().filter(|m| self.hulls[i].guns.contains(&m.slot)).collect();
+        if self.hulls[i].standoff.is_none() {
+            let reach = guns.iter().map(|m| m.effective_range_m as f64).filter(|r| r.is_finite()).fold(0.0, f64::max);
+            // The range is not in the first snapshots of a hull whose doctrine has not run yet: wait for it.
+            if reach <= 0.0 && self.period < 5 { return; }
+            let at = site_standoff(spawn, site, standoff_range(reach));
+            self.hulls[i].standoff = Some(at);
+            self.hulls[i].route = vec![at];
+        }
+        let Some(at) = self.hulls[i].standoff else { return };
+        if pos.distance(at) >= WAYPOINT_M {
+            self.hulls[i].phase = Phase::Route;
+            self.order(i, tick, Command::SetCourse { waypoints: vec![at], speed_kn: Some(cruise), append: false }, out);
+            return;
+        }
+        self.hulls[i].phase = Phase::Objective;
+        let since = *self.hulls[i].standoff_since.get_or_insert(self.period);
+        // No track of the site from the stand-off: close once to visual range, unless every gun is empty.
+        let tracked = snap.tracks.iter().any(|t| !t.last_known && t.domain == Domain::Surface && t.pos.x.is_finite() && t.pos.z.is_finite() && (plane(t.pos).distance(site) <= SITE_TRACK_M || t.class.as_ref().is_some_and(|c| self.target_classes.contains(c))));
+        let empty = !guns.is_empty() && guns.iter().all(|m| matches!(m.status, crate::protocol::text::EngageStatus::Holding { reason: crate::protocol::text::HoldReason::NoAmmunition, .. }));
+        if !tracked && !empty && !self.hulls[i].site_closed && self.period.saturating_sub(since) >= SITE_SEARCH_PERIODS {
+            let closer = site_standoff(spawn, site, (SITE_VISUAL_FRACTION * self.visibility_m).max(SITE_STANDOFF_MIN_M));
+            self.hulls[i].site_closed = true;
+            if closer.distance(site) < at.distance(site) {
+                self.hulls[i].standoff = Some(closer);
+                self.hulls[i].standoff_since = None;
+                self.hulls[i].route = vec![closer];
+                return;
+            }
+        }
+        self.order(i, tick, Command::HoldStation { at, heading_rad: None }, out);
     }
 
-    /// Count pilot periods without a usable contact (or fix); radiate once [`SEARCH_PERIODS`] have passed.
-    fn search(&mut self, i: usize, found: bool, tick: u64, out: &mut Vec<CommandEnvelope>) {
-        if found { self.hulls[i].no_contact_since = None; return; }
-        let since = *self.hulls[i].no_contact_since.get_or_insert(self.period);
-        if self.period.saturating_sub(since) >= SEARCH_PERIODS { self.radiate(i, tick, out); }
-    }
-
-    /// Close on the nearest hostile surface contact (re-aimed every [`HUNT_PERIODS`]), else hold at the
-    /// objective point.
+    /// Steer for the reported position of the nearest hostile surface contact that has one (re-aimed every
+    /// [`HUNT_PERIODS`]), else hold at the objective point.
     fn hunt(&mut self, i: usize, pos: DVec2, snap: &Snapshot, tick: u64, out: &mut Vec<CommandEnvelope>) {
         let holding = matches!(self.hulls[i].last_order, Some(Command::HoldStation { .. }));
-        // The objective's own hulls first (by class, once identified), then the nearest hostile.
+        // The objective's own hulls first (by class, once identified), then the nearest hostile. A contact
+        // with a position before a bearing-only one, whose range is a guess; only contacts a sensor has
+        // updated lately, since a coasting track's extrapolation runs off across the map.
         let wanted = |t: &&crate::protocol::snapshot::TrackView| t.class.as_ref().is_some_and(|c| self.target_classes.contains(c));
-        // Only contacts a sensor has updated lately: a coasting track's extrapolation runs off across the map.
-        let fresh_track = |t: &&crate::protocol::snapshot::TrackView| tick.saturating_sub(t.last_update_tick) <= HUNT_FRESH_TICKS;
-        let target = snap.tracks.iter()
-            .filter(|t| !t.last_known && t.domain == Domain::Surface && matches!(t.stance, Stance::Hostile | Stance::Suspect) && t.pos.x.is_finite() && t.pos.z.is_finite())
-            .filter(fresh_track)
-            .min_by(|a, b| (!wanted(a)).cmp(&!wanted(b)).then(plane(a.pos).distance_squared(pos).total_cmp(&plane(b.pos).distance_squared(pos))))
-            .map(|t| {
-                // Lead a moving contact: aim where it will be when the hull gets there (one step, at most 10 min).
-                let p = plane(t.pos);
-                let v = DVec2::new(t.vel.x, t.vel.z);
-                let own = (self.hulls[i].cruise_kn * sim_core::time::KN).max(1.0);
-                let tgo = (p.distance(pos) / own).min(600.0);
-                let aim = if v.is_finite() { p + v * tgo } else { p };
-                (t.id, if aim.is_finite() { aim } else { p })
-            });
+        let rank = |t: &&crate::protocol::snapshot::TrackView| (t.grade == TrackGrade::Bearing, !wanted(t));
+        let target = snap.tracks.iter().filter(|t| huntable(t, tick))
+            .min_by(|a, b| rank(a).cmp(&rank(b)).then(plane(a.pos).distance_squared(pos).total_cmp(&plane(b.pos).distance_squared(pos))).then(a.id.cmp(&b.id)))
+            .map(|t| plane(t.pos));
         // Re-aim on the cadence, or at once when a contact appears while holding or the route just ended.
         let fresh = self.hulls[i].phase == Phase::Route || (holding && target.is_some());
         self.hulls[i].phase = Phase::Objective;
-        self.search(i, target.is_some(), tick, out);
         if !(fresh || self.period.is_multiple_of(HUNT_PERIODS)) { return; }
         match target {
-            Some((id, at)) => {
-                if self.hulls[i].designated != id && self.follow && self.orders.designate {
-                    self.hulls[i].designated = id;
-                    self.push(i, tick, Command::Designate { track: Some(id) }, out);
-                }
-                self.order(i, tick, Command::SetCourse { waypoints: vec![at], speed_kn: Some(self.hulls[i].cruise_kn), append: false }, out)
-            }
+            Some(at) => self.order(i, tick, Command::SetCourse { waypoints: vec![at], speed_kn: Some(self.hulls[i].cruise_kn), append: false }, out),
             None => self.order(i, tick, Command::HoldStation { at: self.objective_pos, heading_rad: None }, out),
         }
     }
 
-    /// On the approach, designate the objective's own hull (its tag's class, or the site) as soon as a track of
-    /// it exists, so the officers engage it rather than holding on a Suspect contact (designation lifts it).
-    fn designate_wanted(&mut self, i: usize, snap: &Snapshot, tick: u64, out: &mut Vec<CommandEnvelope>) {
-        if !self.follow || !self.orders.designate || self.target_classes.is_empty() { return; }
-        let pos = snap.ship.as_ref().and_then(|sh| snap.vessels.iter().find(|v| v.entity == sh.vessel)).map(|v| plane(v.kin.pose.pos)).unwrap_or(DVec2::ZERO);
-        let wanted = snap.tracks.iter()
-            .filter(|t| !t.last_known && t.domain == Domain::Surface && matches!(t.stance, Stance::Hostile | Stance::Suspect) && t.class.as_ref().is_some_and(|c| self.target_classes.contains(c)) && t.pos.x.is_finite() && t.pos.z.is_finite())
-            .min_by(|a, b| plane(a.pos).distance_squared(pos).total_cmp(&plane(b.pos).distance_squared(pos)).then(a.id.cmp(&b.id)))
-            .map(|t| t.id);
-        if let Some(id) = wanted {
-            if self.hulls[i].designated != id {
-                self.hulls[i].designated = id;
-                self.push(i, tick, Command::Designate { track: Some(id) }, out);
-            }
-        }
-    }
-
-    fn photograph(&mut self, i: usize, pos: DVec2, snap: &Snapshot, tick: u64, out: &mut Vec<CommandEnvelope>) {
+    fn photograph(&mut self, i: usize, pos: DVec2, snap: &Snapshot, finished: &[(StationAction, Option<EntityId>)], tick: u64, out: &mut Vec<CommandEnvelope>) {
         let Some(ship) = snap.ship.as_ref() else { return };
         let photo = ship.actions.iter().rfind(|a| a.action == StationAction::Photograph);
         let running = photo.is_some_and(|a| matches!(a.state, ActionState::Running | ActionState::Paused));
-        if let (Some(a), Some(t)) = (photo, self.hulls[i].photo_target) {
-            if a.state == ActionState::Done { self.hulls[i].photographed.insert(t); self.hulls[i].photo_target = None; }
-            else if a.state == ActionState::Aborted && !running { self.hulls[i].photo_target = None; }
+        // A photograph that finished since the last look was of the target in hand.
+        let done_now = finished.iter().filter(|x| x.0 == StationAction::Photograph).count();
+        if done_now > self.hulls[i].photos_done {
+            self.hulls[i].photos_done = done_now;
+            if let Some(t) = self.hulls[i].photo_target.take() { self.hulls[i].photographed.insert(t); }
+            self.hulls[i].photo_best = None;
         }
         // A target is live while a sensor still updates it (a coasting ESM range guess drifts off).
         let live = |id: TrackId| snap.tracks.iter().find(|t| t.id == id && !t.last_known && tick.saturating_sub(t.last_update_tick) <= HUNT_FRESH_TICKS);
-        if self.hulls[i].photo_target.is_some_and(|t| live(t).is_none()) { self.hulls[i].photo_target = None; }
+        if self.hulls[i].photo_target.is_some_and(|t| live(t).is_none()) { self.hulls[i].photo_target = None; self.hulls[i].photo_best = None; }
+        // A target whose range has not closed for a while is given up for a time: it is sailing away at the
+        // hull's own speed, or lies behind land.
+        let period = self.period;
+        self.hulls[i].photo_skipped.retain(|_, at| period.saturating_sub(*at) < PHOTO_SKIP_PERIODS);
+        if let Some(t) = self.hulls[i].photo_target.and_then(live) {
+            let range = plane(t.pos).distance(pos);
+            let (stalled, best) = photo_stalled(self.hulls[i].photo_best, range, period);
+            self.hulls[i].photo_best = best;
+            if stalled && !running_unblocked(photo) {
+                self.hulls[i].photo_skipped.insert(t.id, period);
+                self.hulls[i].photo_target = None;
+                self.hulls[i].photo_best = None;
+                if let Some(a) = photo.filter(|_| running) { self.push(i, tick, Command::CancelAction(a.id), out); }
+            }
+        }
         let allowed = self.allowed(StationAction::Photograph);
         if self.hulls[i].photo_target.is_none() {
-            let done = &self.hulls[i].photographed;
-            // The objective's classes first, then hostile contacts, then any other non-Friend contact.
-            let rank = |t: &crate::protocol::snapshot::TrackView| (t.grade == TrackGrade::Bearing, !t.class.as_ref().is_some_and(|c| self.target_classes.contains(c)), !matches!(t.stance, Stance::Hostile | Stance::Suspect));
+            let h = &self.hulls[i];
+            let near = PHOTO_NEAR_STANDOFFS * self.photo_standoff_m;
+            // A contact with a position inside 1.5 stand-offs first (the nearest), then the objective's
+            // classes, then hostile contacts, then any other non-Friend contact.
+            let rank = |t: &crate::protocol::snapshot::TrackView| (t.grade == TrackGrade::Bearing, plane(t.pos).distance(pos) > near, !t.class.as_ref().is_some_and(|c| self.target_classes.contains(c)), !matches!(t.stance, Stance::Hostile | Stance::Suspect));
             let pick = snap.tracks.iter()
-                .filter(|t| !t.last_known && t.domain == Domain::Surface && t.stance != Stance::Friend && !done.contains(&t.id) && t.pos.x.is_finite() && t.pos.z.is_finite() && tick.saturating_sub(t.last_update_tick) <= HUNT_FRESH_TICKS)
-                .min_by(|a, b| rank(a).cmp(&rank(b)).then(plane(a.pos).distance_squared(pos).total_cmp(&plane(b.pos).distance_squared(pos))))
+                .filter(|t| !t.last_known && t.domain == Domain::Surface && t.stance != Stance::Friend && !h.photographed.contains(&t.id) && !h.photo_skipped.contains_key(&t.id) && t.pos.x.is_finite() && t.pos.z.is_finite() && tick.saturating_sub(t.last_update_tick) <= HUNT_FRESH_TICKS)
+                .min_by(|a, b| rank(a).cmp(&rank(b)).then(plane(a.pos).distance_squared(pos).total_cmp(&plane(b.pos).distance_squared(pos))).then(a.id.cmp(&b.id)))
                 .map(|t| t.id);
             if let Some(t) = pick {
                 self.hulls[i].photo_target = Some(t);
-                if allowed {
+                self.hulls[i].photo_best = None;
+                // The camera is started on a contact with a position; a bearing-only one is only steered for
+                // (the retry below starts the camera once it has a position).
+                if allowed && live(t).is_some_and(|t| t.grade != TrackGrade::Bearing) {
                     self.hulls[i].action_started = Some(self.period);
                     self.push(i, tick, Command::StartAction { action: StationAction::Photograph, target: ActionTarget::Track(t) }, out);
                 }
             }
         } else if !running && allowed && self.hulls[i].action_started.is_none_or(|s| self.period.saturating_sub(s) >= ACTION_RETRY_PERIODS) {
-            if let Some(t) = self.hulls[i].photo_target {
+            if let Some(t) = self.hulls[i].photo_target.filter(|t| live(*t).is_some_and(|t| t.grade != TrackGrade::Bearing)) {
                 self.hulls[i].action_started = Some(self.period);
                 self.push(i, tick, Command::StartAction { action: StationAction::Photograph, target: ActionTarget::Track(t) }, out);
             }
         }
-        // No target, or one without a position fix (bearing-only ESM range guesses), for too long: radiate.
-        let fix = self.hulls[i].photo_target.and_then(live).is_some_and(|t| matches!(t.grade, TrackGrade::Lock | TrackGrade::Fine));
-        if self.hulls[i].phase != Phase::Route || self.hulls[i].photo_target.is_some() { self.search(i, fix, tick, out); }
         match self.hulls[i].photo_target.and_then(live) {
             Some(t) => {
                 let at = plane(t.pos);
@@ -790,25 +880,22 @@ impl Pilot {
         }
     }
 
-    fn board(&mut self, i: usize, pos: DVec2, snap: &Snapshot, tick: u64, out: &mut Vec<CommandEnvelope>) {
+    fn board(&mut self, i: usize, pos: DVec2, snap: &Snapshot, finished: &[(StationAction, Option<EntityId>)], tick: u64, out: &mut Vec<CommandEnvelope>) {
         let Some(ship) = snap.ship.as_ref() else { return };
-        let boarding = ship.actions.iter().rfind(|a| a.action == StationAction::BoardAndCapture);
-        let running = boarding.is_some_and(|a| matches!(a.state, ActionState::Running | ActionState::Paused));
-        let boarded = boarding.is_some_and(|a| a.state == ActionState::Done);
+        let running = ship.actions.iter().any(|a| a.action == StationAction::BoardAndCapture && matches!(a.state, ActionState::Running | ActionState::Paused));
         let hostile_track = |id: TrackId| !id.is_none() && snap.tracks.iter().any(|t| t.id == id && t.stance != Stance::Friend);
         let dist = |v: &crate::protocol::snapshot::VesselView| plane(v.kin.pose.pos).distance_squared(pos);
-        // A boarded hull goes home under its own Helm: the one hull this boarding was started on, once.
-        if boarded {
-            if let Some(e) = self.hulls[i].boarding_target.take() {
-                if self.hulls[i].prized.insert(e) { self.push(i, tick, Command::Prize { prize: e, decision: PrizeDecision::SailHome }, out); }
-            }
-            if matches!(self.objective, Objective::CutOut { .. }) { self.hulls[i].phase = Phase::Leaving; }
+        // Every boarded hull goes home under its own Helm, once, when its boarding finishes.
+        for e in prizes_due(finished, &self.hulls[i].prized) {
+            self.hulls[i].prized.insert(e);
+            self.push(i, tick, Command::Prize { prize: e, decision: PrizeDecision::SailHome }, out);
         }
-        if self.hulls[i].phase == Phase::Leaving { self.leave(i, pos, tick, true, out); return; }
+        if !self.hulls[i].prized.is_empty() && matches!(self.objective, Objective::CutOut { .. }) { self.hulls[i].phase = Phase::Leaving; }
+        if self.hulls[i].phase == Phase::Leaving { self.leave(i, pos, tick, out); return; }
         // A disabled enemy hull in visual range: close and board.
         let target = snap.vessels.iter()
             .filter(|v| v.entity != ship.vessel && v.status == VesselStatus::Disabled && hostile_track(v.track) && !self.hulls[i].prized.contains(&v.entity))
-            .min_by(|a, b| dist(a).total_cmp(&dist(b)));
+            .min_by(|a, b| dist(a).total_cmp(&dist(b)).then(a.entity.cmp(&b.entity)));
         match target {
             Some(v) => {
                 let at = plane(v.kin.pose.pos);
@@ -816,23 +903,87 @@ impl Pilot {
                 let due = self.hulls[i].action_started.is_none_or(|s| self.period.saturating_sub(s) >= ACTION_RETRY_PERIODS);
                 if !running && self.allowed(StationAction::BoardAndCapture) && due {
                     self.hulls[i].action_started = Some(self.period);
-                    self.hulls[i].boarding_target = Some(v.entity);
                     self.push(i, tick, Command::StartAction { action: StationAction::BoardAndCapture, target: ActionTarget::Track(v.track) }, out);
                 }
                 let d = at.distance(pos);
                 if d > HOLD_APPROACH_M {
                     if self.period.is_multiple_of(10) || !matches!(self.hulls[i].last_order, Some(Command::SetCourse { .. })) { self.order(i, tick, Command::SetCourse { waypoints: vec![at], speed_kn: Some(self.hulls[i].cruise_kn), append: false }, out); }
                 } else {
-                    let off = if d > 1.0 { (pos - at) / d * 100.0 } else { DVec2::new(100.0, 0.0) };
+                    let off = if d > 1.0 { (pos - at) / d * BOARD_HOLD_M } else { DVec2::new(BOARD_HOLD_M, 0.0) };
                     let hold = at + off;
                     let moved = !matches!(&self.hulls[i].last_order, Some(Command::HoldStation { at: h, .. }) if h.distance(hold) < 50.0);
                     if moved { self.order(i, tick, Command::HoldStation { at: hold, heading_rad: None }, out); }
                 }
             }
-            None => if self.hulls[i].phase != Phase::Route { self.hunt(i, pos, snap, tick, out); },
+            None => if self.hulls[i].phase != Phase::Route { self.close_to_board(i, pos, snap, tick, out); },
+        }
+    }
+
+    /// No hull is ready to board yet: close the nearest contact that could be the prize (the objective's class
+    /// first) to [`BOARD_STANDOFF_M`] and hold there, where Gunnery engages a Suspect track and the hull does
+    /// not run the prize down; with no contact, hold at the objective point.
+    fn close_to_board(&mut self, i: usize, pos: DVec2, snap: &Snapshot, tick: u64, out: &mut Vec<CommandEnvelope>) {
+        let wanted = |t: &&crate::protocol::snapshot::TrackView| t.class.as_ref().is_some_and(|c| self.target_classes.contains(c));
+        let rank = |t: &&crate::protocol::snapshot::TrackView| (t.grade == TrackGrade::Bearing, !wanted(t));
+        let target = snap.tracks.iter().filter(|t| huntable(t, tick))
+            .min_by(|a, b| rank(a).cmp(&rank(b)).then(plane(a.pos).distance_squared(pos).total_cmp(&plane(b.pos).distance_squared(pos))).then(a.id.cmp(&b.id)))
+            .map(|t| plane(t.pos));
+        let holding = matches!(self.hulls[i].last_order, Some(Command::HoldStation { .. }));
+        let fresh = self.hulls[i].phase == Phase::Route || (holding && target.is_some());
+        self.hulls[i].phase = Phase::Objective;
+        if !(fresh || self.period.is_multiple_of(HUNT_PERIODS)) { return; }
+        match target {
+            Some(at) if at.distance(pos) > BOARD_STANDOFF_M + WAYPOINT_M => {
+                let short = site_standoff(pos, at, BOARD_STANDOFF_M);
+                self.order(i, tick, Command::SetCourse { waypoints: vec![short], speed_kn: Some(self.hulls[i].cruise_kn), append: false }, out)
+            }
+            Some(_) => { if !holding { self.order(i, tick, Command::HoldStation { at: pos, heading_rad: None }, out); } }
+            None => self.order(i, tick, Command::HoldStation { at: self.objective_pos, heading_rad: None }, out),
         }
     }
 }
+
+/// A contact the hunt may steer for: a live hostile or suspect surface track with a finite position that a
+/// sensor updated within [`HUNT_FRESH_TICKS`].
+fn huntable(t: &crate::protocol::snapshot::TrackView, tick: u64) -> bool {
+    !t.last_known && t.domain == Domain::Surface && matches!(t.stance, Stance::Hostile | Stance::Suspect) && t.pos.x.is_finite() && t.pos.z.is_finite() && tick.saturating_sub(t.last_update_tick) <= HUNT_FRESH_TICKS
+}
+
+/// Range a site is engaged from: [`SITE_STANDOFF_FRACTION`] of the longest gun's effective range, never inside
+/// [`SITE_STANDOFF_MIN_M`] (a hull with no gun range holds at the floor).
+fn standoff_range(gun_range_m: f64) -> f64 {
+    let r = if gun_range_m.is_finite() { SITE_STANDOFF_FRACTION * gun_range_m } else { 0.0 };
+    r.max(SITE_STANDOFF_MIN_M)
+}
+
+/// The point `range` from the site on the bearing the hull approaches from; the spawn itself when the hull
+/// starts inside that range.
+fn site_standoff(spawn: DVec2, site: DVec2, range: f64) -> DVec2 {
+    let d = spawn.distance(site);
+    if !(d.is_finite() && d > range) { return spawn; }
+    site + (spawn - site) / d * range
+}
+
+/// The boarded hulls whose prize decision is due: every hull one of the pilot's own boardings finished on
+/// that has not been ordered home yet, in the order the boardings finished.
+fn prizes_due(finished: &[(StationAction, Option<EntityId>)], prized: &BTreeSet<EntityId>) -> Vec<EntityId> {
+    let mut due: Vec<EntityId> = Vec::new();
+    for e in finished.iter().filter(|x| x.0 == StationAction::BoardAndCapture).filter_map(|x| x.1) {
+        if !prized.contains(&e) && !due.contains(&e) { due.push(e); }
+    }
+    due
+}
+
+/// Whether the camera's target has stalled, and the new record of its closest range: stalled when the range
+/// has not come down by [`PHOTO_CLOSING_M`] for [`PHOTO_STALL_PERIODS`] (the caller keeps a target the
+/// camera is running on).
+fn photo_stalled(best: Option<(f64, u64)>, range: f64, period: u64) -> (bool, Option<(f64, u64)>) {
+    let best = match best { Some((r, at)) if range > r - PHOTO_CLOSING_M => (r, at), _ => (range, period) };
+    (period.saturating_sub(best.1) >= PHOTO_STALL_PERIODS, Some(best))
+}
+
+/// The camera is running with nothing in its way (a photograph in progress is never given up).
+fn running_unblocked(photo: Option<&crate::protocol::snapshot::ActionView>) -> bool { photo.is_some_and(|a| a.state == ActionState::Running && a.block.is_none()) }
 
 #[cfg(test)]
 mod tests {
@@ -956,6 +1107,259 @@ mod tests {
         assert!((a - DVec2::new(-450.0, 0.0)).length() < 1e-9 && (b - DVec2::new(450.0, 0.0)).length() < 1e-9);
         let (a, b) = mine_line(DVec2::ZERO, DVec2::ZERO, 0);
         assert!(a.is_finite() && b.is_finite() && a.distance(b) > 0.0);
+    }
+
+    // ---- the pilot on hand-built snapshots (no simulation) ----
+
+    use crate::protocol::snapshot::{MountView, ShipStatus, TrackView, UncertaintyShape, VesselView};
+    use crate::protocol::text::{EngageStatus, HoldReason};
+    use content::campaign::MissionType;
+
+    const SETUP: PlayerSetup = PlayerSetup { reference_setup: None, method: None, emcon: None, ghosts: false, follow_briefing_route: true };
+
+    fn template(m: MissionType, d: &TheatreData) -> SortieConfig {
+        crate::theatre::opgen::generate_standalone(m, Act::Act1, 1, 3, &content::campaign::DifficultySliders::NORMAL, None, d).expect("an Act 1 template").config
+    }
+
+    fn own() -> EntityId { EntityId::from_u64(1) }
+
+    /// The player's snapshot with the hull at `pos`.
+    fn snapshot(pos: DVec2, tracks: Vec<TrackView>, mounts: Vec<MountView>) -> Snapshot {
+        let mut kin = Kinematics::default();
+        kin.pose.pos = DVec3::new(pos.x, 0.0, pos.y);
+        let me = VesselView { entity: own(), kin, status: VesselStatus::default(), flags: Default::default(), turrets: Vec::new(), rudder: 0.0, power: 0.0, track: TrackId::NONE, relevance: Default::default() };
+        Snapshot { ship: Some(ShipStatus { vessel: own(), mounts, ..Default::default() }), vessels: vec![me], tracks, ..Default::default() }
+    }
+
+    fn track(id: u32, stance: Stance, grade: TrackGrade, pos: DVec2, vel: DVec2, class: Option<ClassId>, tick: u64) -> TrackView {
+        TrackView {
+            id: TrackId(id), domain: Domain::Surface, stance, stance_reason: Default::default(), rung: Default::default(), rung_reason: Default::default(), grade, pos: DVec3::new(pos.x, 0.0, pos.y), vel: DVec3::new(vel.x, 0.0, vel.y),
+            shape: UncertaintyShape::Circle { radius_m: 50.0 }, last_update_tick: tick, last_known: false, class, candidates: 1, sources: Default::default(), trend: Default::default(), inbound: false, engaged_by: 0, envelope_m: 0.0, emitting: false, relevance: Default::default(), struck: false,
+        }
+    }
+
+    fn gun(slot: u16, range_m: f32, status: EngageStatus) -> MountView { MountView { slot: PartSlot(slot), status, holder: Default::default(), solution: None, effective_range_m: range_m, local_control: false } }
+
+    /// Steer hull 0 for `periods` pilot periods on the snapshot `at(period)` gives; returns every command.
+    fn steer_for(p: &mut Pilot, periods: u64, finished: &[(StationAction, Option<EntityId>)], mut at: impl FnMut(u64, u64) -> Snapshot) -> Vec<Command> {
+        let mut out = Vec::new();
+        for _ in 0..periods {
+            p.period += 1;
+            let tick = p.period * PILOT_PERIOD;
+            let snap = at(p.period, tick);
+            p.steer(0, &snap, finished, tick, &mut out);
+        }
+        out.into_iter().map(|c| c.command).collect()
+    }
+
+    fn sensor_orders(cmds: &[Command]) -> usize { cmds.iter().filter(|c| matches!(c, Command::SetEmcon(_) | Command::Designate { .. })).count() }
+
+    /// The hunt steers for where the contact is reported, at cruise, and the pilot neither designates it nor
+    /// brings the radars up, with a contact or without one (L108, L307, L507).
+    #[test]
+    fn the_hunt_steers_for_the_reported_position_and_leaves_sensors_and_designation_alone() {
+        let d = data();
+        let c = convoy_raid(&d);
+        let mut p = Pilot::new(&c, &SETUP, &d);
+        let class = p.target_classes.iter().next().cloned().expect("the convoy has a class");
+        let cruise = p.hulls[0].cruise_kn;
+        let (objective, contact, vel) = (p.objective_pos, p.objective_pos + DVec2::new(6_000.0, 2_000.0), DVec2::new(0.0, 7.5));
+        // Ten minutes at the objective point with no contact: a hold, and no order to radiate.
+        let quiet = steer_for(&mut p, 600, &[], |_, _| snapshot(objective, Vec::new(), Vec::new()));
+        assert_eq!(sensor_orders(&quiet), 0, "{quiet:?}");
+        assert!(quiet.iter().any(|c| matches!(c, Command::HoldStation { .. })));
+        // A moving contact of the convoy's class: the course is its reported position, not a point led ahead.
+        let chase = steer_for(&mut p, 120, &[], |_, tick| snapshot(objective, vec![track(7, Stance::Hostile, TrackGrade::Coarse, contact, vel, Some(class.clone()), tick)], Vec::new()));
+        assert_eq!(sensor_orders(&chase), 0, "{chase:?}");
+        let courses: Vec<&Command> = chase.iter().filter(|c| matches!(c, Command::SetCourse { .. })).collect();
+        assert!(!courses.is_empty());
+        for c in courses {
+            let Command::SetCourse { waypoints, speed_kn, .. } = c else { unreachable!() };
+            assert_eq!((waypoints.as_slice(), *speed_kn), ([contact].as_slice(), Some(cruise)), "no lead, and never more than the Helm's cruise");
+        }
+        // A bearing-only contact has no position to steer for while one with a position is held.
+        let mut p = Pilot::new(&c, &SETUP, &d);
+        let far = objective + DVec2::new(-9_000.0, 0.0);
+        let both = steer_for(&mut p, 30, &[], |_, tick| snapshot(objective, vec![track(8, Stance::Hostile, TrackGrade::Bearing, far, DVec2::ZERO, Some(class.clone()), tick), track(9, Stance::Hostile, TrackGrade::Coarse, contact, DVec2::ZERO, None, tick)], Vec::new()));
+        assert!(both.iter().all(|c| !matches!(c, Command::SetCourse { waypoints, .. } if waypoints[0] == far)), "{both:?}");
+    }
+
+    /// A site is engaged from 0.8 of the longest gun's effective range on the approach bearing, never from
+    /// inside 1,000 m; the hull closes once to visual range when it holds no track of the site, and never
+    /// with its magazines empty.
+    #[test]
+    fn a_site_is_held_from_the_stand_off() {
+        let d = data();
+        let c = template(MissionType::DepotStrike, &d);
+        let fresh = |vis: f64| { let mut p = Pilot::new(&c, &SETUP, &d); p.hulls[0].guns = [PartSlot(4)].into_iter().collect(); p.visibility_m = vis; p };
+        let closest = |cmds: &[Command], site: DVec2| cmds.iter().filter_map(|c| match c { Command::SetCourse { waypoints, .. } => waypoints.iter().map(|w| w.distance(site)).reduce(f64::min), Command::HoldStation { at, .. } => Some(at.distance(site)), _ => None }).fold(f64::INFINITY, f64::min);
+        let mut p = fresh(20_000.0);
+        let (site, spawn) = (p.objective_pos, p.hulls[0].spawn);
+        let bearing = (spawn - site).normalize();
+        let ready = || vec![gun(4, 8_000.0, EngageStatus::Idle), gun(9, 30_000.0, EngageStatus::Idle)];
+        // On the way in: a course for the stand-off (slot 9 is not a gun of the design and does not count).
+        let approach = steer_for(&mut p, 3, &[], |_, _| snapshot(spawn, Vec::new(), ready()));
+        let standoff = site + bearing * 6_400.0;
+        assert!(approach.iter().any(|c| matches!(c, Command::SetCourse { waypoints, .. } if waypoints.len() == 1 && waypoints[0].distance(standoff) < 1.0)), "{approach:?}");
+        // At the stand-off with the site tracked: a hold there, for as long as it takes.
+        let hold = steer_for(&mut p, 600, &[], |_, tick| snapshot(standoff, vec![track(3, Stance::Hostile, TrackGrade::Fine, site, DVec2::ZERO, None, tick)], ready()));
+        assert!(hold.iter().any(|c| matches!(c, Command::HoldStation { at, .. } if at.distance(standoff) < 1.0)));
+        assert!((closest(&hold, site) - 6_400.0).abs() < 1.0 && sensor_orders(&hold) == 0, "{hold:?}");
+        // No track of the site in 2,000 m visibility: after a minute it closes to 1,500 m, once.
+        let mut p = fresh(2_000.0);
+        let blind = steer_for(&mut p, 300, &[], |_, _| snapshot(standoff, Vec::new(), ready()));
+        assert!((closest(&blind, site) - 1_500.0).abs() < 1.0 && sensor_orders(&blind) == 0, "{blind:?}");
+        // In 500 m visibility the floor holds.
+        let mut p = fresh(500.0);
+        let fog = steer_for(&mut p, 300, &[], |_, _| snapshot(standoff, Vec::new(), ready()));
+        assert!((closest(&fog, site) - SITE_STANDOFF_MIN_M).abs() < 1.0, "{fog:?}");
+        // Magazines empty: it stays at the stand-off.
+        let mut p = fresh(2_000.0);
+        let out_of_ammo = EngageStatus::Holding { track: TrackId::NONE, reason: HoldReason::NoAmmunition };
+        let spent = steer_for(&mut p, 300, &[], |_, _| snapshot(standoff, Vec::new(), vec![gun(4, 8_000.0, out_of_ammo)]));
+        assert!((closest(&spent, site) - 6_400.0).abs() < 1.0, "{spent:?}");
+        // The pure rules.
+        assert_eq!((standoff_range(8_000.0), standoff_range(600.0), standoff_range(f64::NAN)), (6_400.0, 1_000.0, 1_000.0));
+        assert_eq!(site_standoff(DVec2::new(500.0, 0.0), DVec2::ZERO, 1_000.0), DVec2::new(500.0, 0.0), "a hull that starts inside the range holds where it is");
+    }
+
+    /// The approach to a mine line is sailed at the Helm's cruise and only the line at the mine-laying speed.
+    #[test]
+    fn the_mine_line_alone_is_sailed_slowly() {
+        let d = data();
+        let c = template(MissionType::Minelaying, &d);
+        let mut p = Pilot::new(&c, &SETUP, &d);
+        let (a, b) = p.hulls[0].line.expect("a mine line");
+        let cruise = p.hulls[0].cruise_kn;
+        assert!(cruise > MINE_RUN_KN + 1.0, "the starter cruises at {cruise:.1} kn");
+        let mut out = Vec::new();
+        p.first_orders(0, 0, &mut out);
+        let first: Vec<Command> = out.into_iter().map(|c| c.command).collect();
+        assert!(first.iter().any(|c| matches!(c, Command::SetCourse { waypoints, speed_kn, .. } if waypoints[0] == a && *speed_kn == Some(cruise))), "{first:?}");
+        // Short of the line's start: nothing new. At it: the rest of the route at 10 kn.
+        let spawn = p.hulls[0].spawn;
+        let early = steer_for(&mut p, 5, &[], |_, _| snapshot(spawn, Vec::new(), Vec::new()));
+        assert!(early.iter().all(|c| !matches!(c, Command::SetCourse { .. })), "{early:?}");
+        let on_line = steer_for(&mut p, 5, &[], |_, _| snapshot(a, Vec::new(), Vec::new()));
+        let runs: Vec<&Command> = on_line.iter().filter(|c| matches!(c, Command::SetCourse { .. })).collect();
+        assert_eq!(runs.len(), 1, "{on_line:?}");
+        assert!(matches!(runs[0], Command::SetCourse { waypoints, speed_kn, .. } if waypoints[0] == b && *speed_kn == Some(MINE_RUN_KN)));
+    }
+
+    /// The pilot leaves by Exit-kind markers, at cruise: a convoy lane's end is not a way out.
+    #[test]
+    fn the_pilot_leaves_by_exit_markers_at_cruise() {
+        let d = data();
+        let c = template(MissionType::AgentExtraction, &d);
+        let mut p = Pilot::new(&c, &SETUP, &d);
+        let kind_at = |w: DVec2| c.map.markers.iter().find(|m| DVec2::from(m.pos_m) == w).map(|m| m.kind);
+        assert!(!p.exits.is_empty() && p.exits.iter().all(|e| kind_at(*e) == Some(MarkerKind::Exit)), "{:?}", p.exits);
+        assert!(c.map.markers.iter().any(|m| m.kind == MarkerKind::ConvoyExit), "the map has a lane end to leave alone");
+        // The extraction done: a course for the exit at cruise, not at 95% of top speed.
+        let (landing, cruise) = (p.objective_pos, p.hulls[0].cruise_kn);
+        let leaving = steer_for(&mut p, 3, &[(StationAction::InsertOrExtract, None)], |_, _| snapshot(landing, Vec::new(), Vec::new()));
+        let exit = p.exits[0];
+        assert!(leaving.iter().any(|c| matches!(c, Command::SetCourse { waypoints, speed_kn, .. } if waypoints[0] == exit && *speed_kn == Some(cruise))), "{leaving:?}");
+    }
+
+    /// A cutting-out's route ends where the prize lies; every boarded hull is ordered home once, when its
+    /// boarding finishes (a finished action is in the finished list, never in the snapshot); then the hull
+    /// makes for the point abeam of the exit, off the prize's way.
+    #[test]
+    fn a_boarded_prize_is_ordered_home_and_the_route_ends_at_it() {
+        let d = data();
+        let c = template(MissionType::CuttingOut, &d);
+        let mut p = Pilot::new(&c, &SETUP, &d);
+        let prize = c.vessels.iter().find(|v| v.role == VesselRole::Prize).expect("a prize");
+        let berth = DVec2::new(prize.pos.x, prize.pos.z);
+        assert_eq!(p.objective_pos, berth);
+        let short = p.hulls[0].route[0];
+        assert!((short.distance(berth) - BOARD_STANDOFF_M).abs() < 1e-6 && (short - berth).normalize().dot((p.hulls[0].spawn - berth).normalize()) > 0.999_999, "the route ends a stand-off short of the prize, on the approach");
+        let first_objective_marker = c.map.markers.iter().find(|m| matches!(m.kind, MarkerKind::Objective | MarkerKind::DepotSite | MarkerKind::RadarSite | MarkerKind::Berth)).map(|m| DVec2::from(m.pos_m)).unwrap();
+        assert!(first_objective_marker.distance(berth) > 1_000.0, "this map tells the two rules apart");
+        // The prize tracked and not yet disabled: the hull closes to the stand-off and no nearer.
+        let class = p.target_classes.iter().next().cloned();
+        // (At the route's end with the prize 4 km off, as when it has moved: a course to 1,000 m short of it.)
+        let away = berth + (berth - short).normalize() * 3_000.0;
+        let closing = steer_for(&mut p, 40, &[], |_, tick| snapshot(short, vec![track(4, Stance::Suspect, TrackGrade::Fine, away, DVec2::ZERO, class.clone(), tick)], Vec::new()));
+        let berth_was = berth;
+        let berth = away;
+        let nearest = closing.iter().filter_map(|c| match c { Command::SetCourse { waypoints, .. } => waypoints.iter().map(|w| w.distance(berth)).reduce(f64::min), Command::HoldStation { at, .. } => Some(at.distance(berth)), _ => None }).fold(f64::INFINITY, f64::min);
+        assert!((nearest - BOARD_STANDOFF_M).abs() < 1.0, "{closing:?}");
+        let berth = berth_was;
+        // Nothing finished: no decision. The boarding finished: one decision for that hull, then the way out.
+        let none = steer_for(&mut p, 5, &[], |_, _| snapshot(berth, Vec::new(), Vec::new()));
+        assert!(none.iter().all(|c| !matches!(c, Command::Prize { .. })));
+        let taken = EntityId::from_u64(42);
+        let done = [(StationAction::BoardAndCapture, Some(taken))];
+        let after = steer_for(&mut p, 5, &done, |_, _| snapshot(berth, Vec::new(), Vec::new()));
+        let decisions: Vec<&Command> = after.iter().filter(|c| matches!(c, Command::Prize { .. })).collect();
+        assert_eq!(decisions.len(), 1, "{after:?}");
+        assert!(matches!(decisions[0], Command::Prize { prize, decision: PrizeDecision::SailHome } if *prize == taken));
+        let exit = p.named_exit.expect("a cutting-out names its exit");
+        let abeam = p.flank(0, exit);
+        assert!((abeam.distance(exit) - ESCORT_FLANK_M).abs() < 1e-6 && (abeam - exit).dot(exit - berth).abs() < 1e-3);
+        assert!(after.iter().any(|c| matches!(c, Command::SetCourse { waypoints, .. } if waypoints[0] == abeam)), "{after:?}");
+        // The pure rule: every finished boarding once, in order, less the hulls already ordered home.
+        let (e1, e2, e3) = (EntityId::from_u64(1), EntityId::from_u64(2), EntityId::from_u64(3));
+        let finished = [(StationAction::BoardAndCapture, Some(e1)), (StationAction::Photograph, Some(e2)), (StationAction::BoardAndCapture, Some(e3)), (StationAction::BoardAndCapture, Some(e1)), (StationAction::BoardAndCapture, None)];
+        assert_eq!(prizes_due(&finished, &[e3].into_iter().collect()), vec![e1]);
+        assert_eq!(prizes_due(&finished, &BTreeSet::new()), vec![e1, e3]);
+    }
+
+    /// An escort meets its charge from abeam and leaves on a parallel track: it never sails or waits on the
+    /// leg from the charge to the exit.
+    #[test]
+    fn an_escort_keeps_off_its_charges_way_out() {
+        let d = data();
+        let c = template(MissionType::DefectorEscort, &d);
+        let mut p = Pilot::new(&c, &SETUP, &d);
+        let (charge, exit, spawn) = (p.objective_pos, p.named_exit.expect("an escort names its exit"), p.hulls[0].spawn);
+        let leg = (exit - charge).normalize();
+        let off_leg = |w: DVec2| (w - charge).perp_dot(leg).abs();
+        let abeam = p.hulls[0].route[0];
+        assert_eq!(p.hulls[0].route.len(), 1);
+        assert!((off_leg(abeam) - ESCORT_FLANK_M).abs() < 1e-6 && (abeam - charge).dot(leg).abs() < 1e-6, "the first waypoint is abeam of the charge");
+        assert!((spawn - charge).perp_dot(leg) * (abeam - charge).perp_dot(leg) >= 0.0, "on the side the hull comes in from");
+        // The charge in sight 3 km off: a course abeam of it. Met: a course abeam of the exit.
+        let closing = steer_for(&mut p, 2, &[], |_, tick| snapshot(charge + (spawn - charge).normalize() * 3_000.0, vec![track(2, Stance::Neutral, TrackGrade::Fine, charge, DVec2::ZERO, None, tick)], Vec::new()));
+        assert!(closing.iter().any(|c| matches!(c, Command::SetCourse { waypoints, .. } if waypoints[0].distance(abeam) < 1e-6)), "{closing:?}");
+        let met = steer_for(&mut p, 2, &[], |_, tick| snapshot(abeam, vec![track(2, Stance::Neutral, TrackGrade::Fine, charge, DVec2::ZERO, None, tick)], Vec::new()));
+        let out = p.flank(0, exit);
+        assert!(met.iter().any(|c| matches!(c, Command::SetCourse { waypoints, .. } if waypoints[0] == out)), "{met:?}");
+        assert!((off_leg(out) - ESCORT_FLANK_M).abs() < 1e-6);
+        for cmd in closing.iter().chain(&met) {
+            if let Command::SetCourse { waypoints, .. } = cmd { assert!(waypoints.iter().all(|w| off_leg(*w) > ESCORT_FLANK_M - 1.0), "{cmd:?}"); }
+        }
+    }
+
+    /// The camera counts a photograph from the finished list, gives up a target that will not close, and
+    /// takes a contact inside 1.5 stand-offs before a farther one of the objective's class.
+    #[test]
+    fn the_camera_moves_on_from_a_finished_or_a_stalled_target() {
+        let d = data();
+        let c = template(MissionType::PhotoReconnaissance, &d);
+        let mut p = Pilot::new(&c, &SETUP, &d);
+        let class = p.target_classes.iter().next().cloned().expect("the targets have a class");
+        let here = p.objective_pos;
+        let (near, far) = (here + DVec2::new(1.2 * p.photo_standoff_m, 0.0), here + DVec2::new(0.0, 3.0 * p.photo_standoff_m));
+        let picture = |tick: u64| vec![track(5, Stance::Hostile, TrackGrade::Fine, far, DVec2::ZERO, Some(class.clone()), tick), track(6, Stance::Suspect, TrackGrade::Fine, near, DVec2::ZERO, None, tick)];
+        let started = |cmds: &[Command]| cmds.iter().filter_map(|c| match c { Command::StartAction { action: StationAction::Photograph, target: ActionTarget::Track(t) } => Some(t.0), _ => None }).collect::<Vec<_>>();
+        let first = steer_for(&mut p, 1, &[], |_, tick| snapshot(here, picture(tick), Vec::new()));
+        assert_eq!(started(&first), vec![6], "the contact inside 1.5 stand-offs first");
+        // Its photograph finishes: the other target is next, and the first is not taken again.
+        let done = [(StationAction::Photograph, Some(EntityId::from_u64(60)))];
+        let next = steer_for(&mut p, 40, &done, |_, tick| snapshot(here, picture(tick), Vec::new()));
+        assert!(started(&next).iter().all(|t| *t == 5) && !started(&next).is_empty(), "{:?}", started(&next));
+        // The second target never closes: given up after a minute, and the pilot holds no target then.
+        let stalled = steer_for(&mut p, PHOTO_STALL_PERIODS + 5, &done, |_, tick| snapshot(here, picture(tick), Vec::new()));
+        assert!(p.hulls[0].photo_skipped.contains_key(&TrackId(5)) && p.hulls[0].photo_target.is_none(), "{stalled:?}");
+        assert_eq!(sensor_orders(&first) + sensor_orders(&next) + sensor_orders(&stalled), 0);
+        // The pure rule: no 100 m of closing in 60 periods is a stall; closing resets the count.
+        assert_eq!(photo_stalled(None, 5_000.0, 10), (false, Some((5_000.0, 10))));
+        assert_eq!(photo_stalled(Some((5_000.0, 10)), 4_950.0, 69), (false, Some((5_000.0, 10))));
+        assert_eq!(photo_stalled(Some((5_000.0, 10)), 4_950.0, 70), (true, Some((5_000.0, 10))));
+        assert_eq!(photo_stalled(Some((5_000.0, 10)), 4_800.0, 70), (false, Some((4_800.0, 70))));
     }
 
     #[test]

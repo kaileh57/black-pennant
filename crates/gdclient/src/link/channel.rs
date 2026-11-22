@@ -268,6 +268,9 @@ struct ChannelHost {
     pending: Vec<CommandEnvelope>,
     /// Newest input not yet handed to the Sim.
     input: Option<PlayerInput>,
+    /// Added to the client's sequence numbers: a Sim restored from a checkpoint already holds that player's
+    /// numbers from the session that took it (`Sim::command_seq_floor`).
+    seq_base: u32,
     /// Wall time of each simulation step, stamped with the clock reading (p95 and achieved rate).
     times: TickTimes,
     last_panel: Option<Duration>,
@@ -331,7 +334,7 @@ fn pair_parts(slot: PlayerSlot, side: SideId, mode: content::enums::GameMode, cl
     let (writer, reader) = triple_buffer();
     let host = ChannelHost {
         slot, side, mode, clock: clock.clone(), pool, shared: shared.clone(), to_client, events: events_tx, snapshots: writer, from_client,
-        phase: SessionPhase::Lobby, sim: None, run: None, pending: Vec::new(), input: None, times: TickTimes::new(P95_WINDOW), last_panel: None, summary: None, shut: false,
+        phase: SessionPhase::Lobby, sim: None, run: None, pending: Vec::new(), input: None, seq_base: 0, times: TickTimes::new(P95_WINDOW), last_panel: None, summary: None, shut: false,
     };
     let link = ChannelLink {
         slot, mode, clock, shared, from_host, events: events_rx, snapshots: reader, to_host,
@@ -354,7 +357,7 @@ impl ChannelHost {
             match self.from_client.try_recv() {
                 Ok(ToHost::Command { seq, client_render_tick, command }) => {
                     // Commands outside a sortie have nothing to act on.
-                    if self.sim.is_some() { self.pending.push(CommandEnvelope { player: self.slot, seq, client_render_tick, rtt_ms: 0, command }); }
+                    if self.sim.is_some() { self.pending.push(CommandEnvelope { player: self.slot, seq: self.seq_base.saturating_add(seq), client_render_tick, rtt_ms: 0, command }); }
                 }
                 Ok(ToHost::Input(input)) => {
                     // Newest by input tick, as the server keeps it.
@@ -499,6 +502,7 @@ impl HostPort for ChannelHost {
         // Every blueprint is already in the shared store: nothing streams, so the sortie runs at once.
         self.set_phase_internal(SessionPhase::Sortie);
         self.to_client(ClientEvent::SortieRunning { tick });
+        self.seq_base = self.seq_base.max(sim.command_seq_floor(self.slot));
         self.pending.clear();
         self.input = None;
         self.summary = None;

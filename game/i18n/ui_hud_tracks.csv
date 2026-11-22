@@ -41,7 +41,7 @@ hud_tracks.card.cpa_now,Track card line for a track that is receding; {0} curren
 hud_tracks.card.grade,Track card line; {0} the quality grade word,Quality {0}
 hud_tracks.card.grade_sources,"Track card line; {0} the quality grade word, {1} the sensors holding the track","Quality {0}, from {1}"
 hud_tracks.card.envelope,Track card line; {0} the weapon range the plot draws for the track,Weapon range {0}
-hud_tracks.card.struck,Track card line once the side has seen the hull strike its colours,Struck colours
+hud_tracks.card.stance_struck,"Track card stance line once the side has seen the hull strike its colours (L2542); {0} stance word",{0}. Struck colours
 hud_tracks.card.emitting,Track card line while the track radiates,Radiating
 hud_tracks.card.inbound,Track card line for an inbound weapon,Inbound weapon
 hud_tracks.card.dropped,Track card text after the track left the picture; {0} track number,Track {0} is no longer held.

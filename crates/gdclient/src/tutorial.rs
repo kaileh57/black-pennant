@@ -523,11 +523,24 @@ fn waits_on_continue(t: &Trigger) -> bool {
     }
 }
 
+/// Control ids of the gauges a step's completion watches (`GaugePass`), for example `editor.gauge.float` on
+/// the beam step: the overlay keeps its card off them.
+pub(crate) fn watched_gauges(t: &Trigger, out: &mut Vec<String>) {
+    match t {
+        Trigger::GaugePass(g) => { let id = format!("editor.gauge.{g}"); if !out.contains(&id) { out.push(id); } }
+        Trigger::All(ts) | Trigger::Any(ts) => for t in ts { watched_gauges(t, out); },
+        _ => {}
+    }
+}
+
 /// `TutorialStepDict` for the run's current step (an empty dictionary when it has none).
 fn step_dict(run: &TutorialRun) -> VarDictionary {
     let Some(step) = run.current() else { return VarDictionary::new() };
     let demo = demo_of(step);
     let allow: PackedStringArray = step.allow.iter().map(|s| GString::from(s.as_str())).collect();
+    let mut watched = Vec::new();
+    watched_gauges(&step.complete, &mut watched);
+    let watch: PackedStringArray = watched.iter().map(|s| GString::from(s.as_str())).collect();
     let (want, have) = run.kits_progress();
     let ids = |v: &[content::ids::KitId]| -> PackedStringArray { v.iter().map(|k| GString::from(k.as_str())).collect() };
     crate::convert::d! {
@@ -537,6 +550,7 @@ fn step_dict(run: &TutorialRun) -> VarDictionary {
         "text" => StringName::from(step.text.0.as_str()),
         "point_at" => GString::from(step.point_at.as_deref().unwrap_or("")),
         "allow" => allow,
+        "watch" => watch,
         "demo" => GString::from(demo.as_deref().unwrap_or("")),
         "needs_continue" => demo.is_none() && waits_on_continue(&step.complete),
         "lesson" => step.lesson as i64,
@@ -642,6 +656,16 @@ fn append_file(path: &str, text: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_beam_step_watches_the_float_gauge() {
+        let mut w = Vec::new();
+        watched_gauges(&Trigger::Any(vec![Trigger::GaugePass("float".into()), Trigger::After { seconds: 240 }]), &mut w);
+        assert_eq!(w, ["editor.gauge.float"]);
+        let mut none = Vec::new();
+        watched_gauges(&Trigger::Continue, &mut none);
+        assert!(none.is_empty());
+    }
 
     #[test]
     fn short_pauses_count_and_long_ones_are_dropped() {

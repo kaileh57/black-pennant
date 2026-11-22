@@ -19,6 +19,13 @@
 // Constraint tag limits (draft, cross-section) are first values for the Fit Check gates to calibrate: the
 // cross-section scale is not fixed until sim-core's projected areas exist. Approach distances are the authored
 // values the sortie-length fallback scales within 50% to 150% (L85-90).
+//
+// `recommended_emcon` is the emission state the player hull sails in at (the generator applies it), so it is
+// authored only where the objective is done without gunfire: agent extraction, minelaying, photo
+// reconnaissance and Quiet hand. An operation that needs gunfire leaves it out even when a ghost condition
+// forbids emissions; the briefing still recommends Silent there (the generator infers it from the ghost
+// conditions, L507) and the hull sails in at its design's own setting, because in Silent the stock Gunnery
+// officer never gets a track graded Fine to fire on (L484). Decision of 22 November 2026 for the L317 gate.
 [
     // =========================================================================================================
     // Templates
@@ -37,7 +44,6 @@
         complications: [None, DecoyConvoy, WeatherTurns(to: Rain, at_s: 900), Reinforcements(fleet: "fleet.act1.patrol", at_s: 1200), CivilianTraffic],
         approach_m: 14000.0,
         declared_hostile: ["class.patrol_corvette", "class.escort_corvette"],
-        recommended_emcon: Some(Silent),
     ),
     // Commitment: garrison 2 x 24 + 90 = 138 t (3 hulls) + gun task group 649 t (5) = 787 t, 8 hulls.
     (
@@ -67,7 +73,6 @@
         complications: [None, WeatherTurns(to: Haze, at_s: 600), CivilianTraffic, Reinforcements(fleet: "fleet.act1.patrol", at_s: 900)],
         approach_m: 12000.0,
         actions: [InsertOrExtract],
-        recommended_emcon: Some(Silent),
     ),
     // Commitment: patrol 2 x 24 + 54 = 102 t (3) + gun task group 649 t (5) = 751 t, 8 hulls.
     (
@@ -198,7 +203,6 @@
         complications: [None, WeatherTurns(to: FogBank, at_s: 300), Reinforcements(fleet: "fleet.act1.patrol", at_s: 900)],
         approach_m: 10000.0,
         actions: [BoardAndCapture],
-        recommended_emcon: Some(Silent),
     ),
 
     // =========================================================================================================
@@ -219,7 +223,6 @@
         ],
         complications: [None],
         approach_m: 11000.0,
-        recommended_emcon: Some(Silent),
     ),
     // 2. Kessel toll: the convoy run through the region's chokepoint. The Auditor arrives. Opens tier 3.
     // Commitment: convoy escort 666 t (5) + the Auditor's Arrears 122 t when she arrives = 788 t, 6 hulls.
@@ -238,7 +241,6 @@
         complications: [AceArrives("ace.auditor")],
         approach_m: 14000.0,
         declared_hostile: ["class.patrol_corvette", "class.escort_corvette", "class.ace_arrears"],
-        recommended_emcon: Some(Silent),
     ),
     // 3. Quiet hand: bring out the Mareby harbour pilot who charts the Combine's swept channels.
     // Needs tier 2 (RHIB, passenger berths): Blind Crane Head first, then Kessel toll or Alert 2 in the region.
@@ -280,7 +282,6 @@
         approach_m: 10000.0,
         actions: [BoardAndCapture],
         declared_hostile: ["class.frigate", "class.ace_covenant"],
-        recommended_emcon: Some(Silent),
     ),
 
     // =========================================================================================================

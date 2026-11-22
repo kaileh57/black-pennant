@@ -375,3 +375,13 @@ fn archipelago_land_share() {
     let s: f64 = shallows.iter().map(|l| area(l).abs()).sum();
     eprintln!("islands {} land {:.1}% shallows {:.1}%", land.len(), 100.0 * a / 240_000.0, 100.0 * s / 240_000.0);
 }
+
+/// Skirmish and lobby offer one act per shipped act row: Act 1 alone in this build (L2283).
+#[test]
+fn skirmish_acts_follow_the_shipped_rows() {
+    let acts = vec![act(Act::Act2, &[]), act(Act::Act1, &[])];
+    assert_eq!(shipped_acts(&acts), [Act::Act1, Act::Act2]);
+    assert_eq!(shipped_acts(&[]), [Act::Act1]);
+    let shipped = &content::campaign::load::shipped_campaign().acts;
+    assert_eq!(shipped_acts(shipped), [Act::Act1], "this build ships Act 1 only");
+}

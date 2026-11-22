@@ -272,7 +272,28 @@ impl Sim {
         // sky and time of day rather than their defaults.
         let (weather, wave_seed) = (*sim.world.weather(), sim.world.waves().seed);
         sim.emit(crate::protocol::event::Audience::All, crate::protocol::event::Lane::Reliable, crate::protocol::event::SimEvent::Phys(sim_core::PhysEvent::WeatherChanged { weather, wave_seed }));
+        // Every client of a resumed sortie starts from nothing, so each human player (connected or not: all of
+        // them arrive fresh) and the host get the catch-up a mid-sortie joiner gets: sortie start, pacing and
+        // an intro for every drawable entity. Without it a client never learns its own hull's design.
+        let humans: Vec<PlayerSlot> = sim.players.iter().filter(|p| p.human).map(|p| p.slot).collect();
+        for p in humans {
+            let events = super::snapshot::catch_up(&sim, crate::protocol::snapshot::Viewer::Player(p));
+            sim.out.extend(events);
+        }
+        let host = super::snapshot::catch_up(&sim, crate::protocol::snapshot::Viewer::Omniscient);
+        sim.out.extend(host);
         Ok(sim)
+    }
+
+    /// The highest command sequence number this Sim has seen from `player`: its direct-command floor, the
+    /// floor of its hull and any queued command. A session that hands a restored Sim to new connections
+    /// numbers that player's commands above this, or they all come back as `Duplicate`. Unit:
+    /// `sys-sim-keyframe`.
+    pub fn command_seq_floor(&self, player: PlayerSlot) -> u32 {
+        let direct = self.run.direct_seq.iter().find(|e| e.0 == player).map_or(0, |e| e.1);
+        let hull = self.ships.ships.iter().filter(|s| s.player == Some(player)).map(|s| s.control.last_seq).max().unwrap_or(0);
+        let queued = self.pending.iter().filter(|e| e.player == player).map(|e| e.seq).max().unwrap_or(0);
+        direct.max(hull).max(queued)
     }
 
     /// Splash rewind: go back `ticks` (at most `sim_core::time::REWIND_TICKS`) to the nearest stored

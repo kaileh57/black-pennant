@@ -357,8 +357,14 @@ const KN: f64 = sim_core::time::KN;
 const ENGAGE_FACTOR: f64 = 1.3;
 /// Contacts further than this from the group (and more than two doctrine ranges) are ignored unless hunting.
 const INTEREST_M: f64 = 25_000.0;
-/// Convoys scatter when a hostile comes this close.
-const SCATTER_M: f64 = 15_000.0;
+/// Convoys scatter when a hostile comes this close. DECISION (the spec sets no range; owner ruling of 22
+/// November 2026 to choose it from the geometry): a scattering convoy keeps its transit speed, measured 14.6 kn,
+/// and the Act 1 raider cruises at 19 kn, so a stern chase closes at 4.4 kn (2.26 m/s). The raider's guns
+/// reach 8 km at most (the 57 to 76 mm cap, L489). Scattering at 9 km starts it 1 km outside that range, and
+/// the raider closes the 1 km in 1,000 / 2.26 = 442 s (7.4 min), which leaves the 15 to 30 minute sortie
+/// (L81) room for the approach and the gunnery. At the old 15 km the same chase took 7,000 / 2.26 = 3,097 s
+/// (52 min), past the 45 minute cap.
+const SCATTER_M: f64 = 9_000.0;
 const SCATTER_S: u64 = 300;
 /// Re-request a route when the goal moves this far (a moving contact: `HUNT_REPLAN_M`).
 const REPLAN_M: f64 = 250.0;
@@ -1142,7 +1148,11 @@ mod tests {
 
         let mut c = new_group(&init(GroupOrders::Transit { from: "a".into(), to: "b".into() }, FleetKind::Convoy), vec![EntityId::from_u64(1), EntityId::from_u64(2)]);
         let ms = [member(1, 0.0, 0.0), member(2, 0.0, 500.0)];
-        let p = pic(vec![track(7, DVec2::new(0.0, -10_000.0), Stance::Hostile, Domain::Surface)]);
+        // A Hostile at 10 km, outside the 9 km scatter range: the convoy keeps formation.
+        let far = pic(vec![track(7, DVec2::new(0.0, -10_000.0), Stance::Hostile, Domain::Surface)]);
+        run(&mut c, &ms, &env(&far, &t, &mods, 600), &mut PathPlanner::default());
+        assert_eq!(c.mode, GroupMode::Standing);
+        let p = pic(vec![track(7, DVec2::new(0.0, -8_500.0), Stance::Hostile, Domain::Surface)]);
         let d = run(&mut c, &ms, &env(&p, &t, &mods, 600), &mut PathPlanner::default());
         assert_eq!(c.mode, GroupMode::Scattered);
         assert!(d.iter().all(|x| x.1.leader.is_none() && !x.1.weapons_tight));

@@ -55,6 +55,7 @@ campaign.interrupt.hunter_group_warning,Interrupt; {0} hours until it arrives,A 
 campaign.interrupt.card_arriving,"Interrupt; {0} doctrine card, {1} region, {2} hours",{0} reaches {1} in {2}.
 campaign.interrupt.clock_low,Interrupt; {0} theatre days left,{0} days left on the operation clock.
 campaign.interrupt.act_ended,Interrupt,The act has ended.
+campaign.interrupt.build_end,"Interrupt when the last act this build ships ends; {0} act number",Act {0} is the end of this build. The chart stays open to look over.
 campaign.interrupt.hull_ready,Interrupt; {0} player name,{0}'s hull is ready.
 campaign.interrupt.paused,Interrupt,Theatre time paused.
 campaign.event.hour_advanced,Theatre log; {0} theatre hour,Hour {0}.
@@ -78,7 +79,9 @@ campaign.event.card_arrived,"Theatre log; {0} card, {1} region",{0} is in force 
 campaign.event.clock_pushed_back,Theatre log; {0} theatre hours,Operation clock pushed back {0}.
 campaign.event.clock_expired,Theatre log,The operation clock ran out.
 campaign.event.act_lost,Theatre log; {0} act number,Act {0} lost. The next act starts in retreat.
+campaign.event.act_lost_build_end,"Theatre log when the last act this build ships is lost; {0} act number","Act {0} lost. This build ends at Act {0}, so it starts again in retreat."
 campaign.event.act_won,Theatre log; {0} act number,Act {0} won.
+campaign.event.act_won_build_end,"Theatre log when the last act this build ships is won; {0} act number",Act {0} won. This build ends here: the clock stops and the chart stays open to look over.
 campaign.event.act_started,Theatre log; {0} act number,Act {0} begins.
 campaign.event.act_started_retreat,Theatre log; {0} act number,Act {0} begins in retreat.
 campaign.event.open_theatre_opened,"Theatre log; Open Theatre is a proper noun, the mode after Act 4",Open Theatre: the operation clock stops.

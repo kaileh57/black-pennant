@@ -11,14 +11,20 @@
 //!   (default 4), `BP_FIRST`: index of the first seed (default 0). `BP_MIN`: the cap in simulated minutes (45).
 //! - `BP_DROP=n`: the L317 fallback for this run only: drop the n last-added droppable hostile hulls of every
 //!   operation run (`CampaignRules::hostile_drop`; `all` drops every droppable one). Nothing is written to data.
-//! - `BP_PILOT`: `full` (default, the gate), `noradiate`, `nodesignate`, `nosensor` (neither) or `route` (the
-//!   hull only sails the briefing route): withholds orders of the stand-in pilot that a shipped stock officer
-//!   does not give, to measure what they are worth.
-//! - `BP_EMCON`: the emission setting the player hull spawns with. Unset, the config's own (the generator sets
-//!   the briefing's recommendation, Silent wherever a ghost condition forbids emissions or detection).
-//!   `design`: the starter's own setting (Burst, the default of L507); `silent`, `burst`, `active`: that one.
-//! - `BP_STARTER=starters/fac22.bp.ron`: sail this stock design instead of the operation's starter
-//!   (`op_starter`: the first of the act's starters, in data order, that passes the briefing tags).
+//! - `BP_PILOT`: `full` (default, the gate) or `route` (the hull only sails the briefing route). The pilot no
+//!   longer orders EMCON Active or designates (22 November 2026), so the diagnosis's `noradiate`,
+//!   `nodesignate` and `nosensor` are accepted and mean `full`.
+//! - `BP_EMCON`: the emission setting the player hull spawns with. Unset, the config's own (the generator
+//!   applies an operation's authored setting only; the rest sail in at the design's). `design`: the starter's
+//!   own setting (Burst, the default of L507); `silent`, `burst`, `active`: that one.
+//! - `BP_STARTER=starters/patrol15.bp.ron`: sail this stock design instead of the operation's starter
+//!   (`op_starter`: the gate's table, the fast attack craft unless the table names another, refitted by the
+//!   Quartermaster for the briefing tags). The named design gets the same refit; `starter_fits` on the
+//!   `SORTIE` line says whether what sailed passes the tags.
+//! - `BP_ASSERT=1`: fail unless every operation run passes the gate at this seed count: wins at least 80%,
+//!   the median inside 15 to 30 minutes and no sortie at the stop. For the nightly gate.
+//! - The run always fails if the stand-in pilot orders an emission state after its first orders or designates
+//!   a track: those are the player's and the officers' (L108, L507), not the gate's.
 //! - `BP_CHECK=1`: also resolve each sortie through `FullPhysicsResolver` and assert the same outcome and
 //!   length (doubles the run time; for checking this loop against the gate's).
 //! - `BP_LOG=1`: print pilot commands, own-hull status changes and a 60 s sample line as they happen.
@@ -72,12 +78,9 @@ fn env_u(name: &str, default: u64) -> u64 { std::env::var(name).ok().and_then(|s
 pub(super) fn pilot_orders() -> (String, PilotOrders) {
     let name = std::env::var("BP_PILOT").unwrap_or_else(|_| "full".into());
     let o = match name.as_str() {
-        "full" => PilotOrders::ALL,
-        "noradiate" => PilotOrders { radiate: false, ..PilotOrders::ALL },
-        "nodesignate" => PilotOrders { designate: false, ..PilotOrders::ALL },
-        "nosensor" => PilotOrders { radiate: false, designate: false, beyond_route: true },
-        "route" => PilotOrders { radiate: false, designate: false, beyond_route: false },
-        other => panic!("BP_PILOT={other}: expected full, noradiate, nodesignate, nosensor or route"),
+        "full" | "noradiate" | "nodesignate" | "nosensor" => PilotOrders::ALL,
+        "route" => PilotOrders { beyond_route: false },
+        other => panic!("BP_PILOT={other}: expected full or route"),
     };
     (name, o)
 }
@@ -139,6 +142,8 @@ fn top<K: core::fmt::Display + Ord + Clone>(m: &BTreeMap<K, u32>, n: usize) -> S
 
 /// What one gate sortie did.
 pub(super) struct Record {
+    /// The pilot ordered an emission state after the first tick, or designated a track (it must not).
+    pub sensor_orders: u32,
     pub win: bool,
     pub end: &'static str,
     pub outcome: Outcome,
@@ -196,6 +201,7 @@ pub(super) fn play(op: &content::campaign::OperationDef, index: u32, config: &So
     let mut radiating_now: BTreeSet<PartSlot> = BTreeSet::new();
     // Orders and actions.
     let mut orders_log: BTreeMap<String, (u32, u64)> = BTreeMap::new();
+    let mut sensor_orders = 0u32;
     let mut actions: BTreeMap<String, String> = BTreeMap::new();
 
     for i in 0..max_ticks {
@@ -206,6 +212,7 @@ pub(super) fn play(op: &content::campaign::OperationDef, index: u32, config: &So
             for c in &commands {
                 let e = orders_log.entry(command_kind(&c.command)).or_insert((0, i));
                 e.0 += 1;
+                if matches!(c.command, Command::Designate { .. }) || (matches!(c.command, Command::SetEmcon(_)) && i > HZ) { sensor_orders += 1; }
                 if log { eprintln!("  t={:.0}s cmd {:?}", i as f64 / HZ as f64, c.command); }
             }
             sim.apply(&commands);
@@ -352,7 +359,7 @@ pub(super) fn play(op: &content::campaign::OperationDef, index: u32, config: &So
         if emcon_s.is_empty() { "-".into() } else { emcon_s.join(",") }, r.stats.radiating_s, secs(rad_first), bursts,
         if orders_s.is_empty() { "-".into() } else { orders_s.join(",") },
     );
-    Some(Record { win, end, outcome: r.outcome, minutes: if minutes.is_finite() { minutes.max(0.0) } else { 0.0 }, ticks: r.duration_ticks, line })
+    Some(Record { sensor_orders, win, end, outcome: r.outcome, minutes: if minutes.is_finite() { minutes.max(0.0) } else { 0.0 }, ticks: r.duration_ticks, line })
 }
 
 /// Median as `winnability` takes it (the mean of the two middle lengths of an even count).
@@ -373,6 +380,8 @@ fn gate_act1() {
     let filter = std::env::var("BP_OPS").unwrap_or_default();
     let check = std::env::var("BP_CHECK").is_ok();
     let log = std::env::var("BP_LOG").is_ok();
+    let assert_gate = std::env::var("BP_ASSERT").is_ok_and(|v| v != "0");
+    let mut failed: Vec<String> = Vec::new();
     let (pilot_name, orders) = pilot_orders();
     let mut ids: Vec<OperationId> = shipped.campaign.operations.values().filter(|o| o.act == Act::Act1 && o.kind != OperationKind::Tutorial && o.id.as_str().contains(filter.as_str())).map(|o| o.id.clone()).collect();
     ids.sort();
@@ -381,7 +390,13 @@ fn gate_act1() {
     pool.install(|| {
         for id in &ids {
             let op = &d.campaign.operations[id];
-            let starter = match std::env::var("BP_STARTER") { Ok(p) => content::campaign::load::stock_blueprint(&p).expect("BP_STARTER names a stock blueprint"), Err(_) => op_starter(op, Act::Act1, &d) };
+            let starter = match std::env::var("BP_STARTER") {
+                // The named design, fitted for the operation's tags the way the gate's own starter is; bare
+                // when it cannot be made to pass them.
+                Ok(p) => { let bp = content::campaign::load::stock_blueprint(&p).expect("BP_STARTER names a stock blueprint"); fitted(&bp, op, Act::Act1, &d).unwrap_or(bp) }
+                Err(_) => op_starter(op, Act::Act1, &d),
+            };
+            let starter_fits = fits(&starter, op, Act::Act1, &d);
             let t0 = std::time::Instant::now();
             let (mut wins, mut draws, mut losses, mut aborted, mut no_config, mut over_cap) = (0u32, 0u32, 0u32, 0u32, 0u32, 0u32);
             let mut minutes: Vec<f64> = Vec::new();
@@ -409,7 +424,8 @@ fn gate_act1() {
                     assert_eq!(emcon_name, "config", "BP_CHECK compares against the gate's config");
                     assert!(std::env::var("BP_STARTER").is_err(), "BP_CHECK compares against the gate's starter");
                 }
-                eprintln!("SORTIE {} pilot={pilot_name} drop={drop} spawn_emcon={emcon_name} starter={}", rec.line, starter.header.name.replace(' ', "_"));
+                eprintln!("SORTIE {} pilot={pilot_name} drop={drop} spawn_emcon={emcon_name} starter={} starter_fits={starter_fits}", rec.line, starter.header.name.replace(' ', "_"));
+                assert_eq!(rec.sensor_orders, 0, "{} seed {s}: the stand-in pilot ordered an emission state or a designation", id.as_str());
                 if rec.win { wins += 1; } else if matches!(rec.outcome, Outcome::Draw | Outcome::Withdrawn) { draws += 1; } else { losses += 1; }
                 if rec.minutes >= cap_min as f64 - 1e-9 { over_cap += 1; }
                 *ends.entry(rec.end).or_default() += 1;
@@ -426,6 +442,8 @@ fn gate_act1() {
                 "SUMMARY op={} seeds={seeds} first={first} pilot={pilot_name} drop={drop} spawn_emcon={} wins={wins} draws={draws} losses={losses} aborted={aborted} no_config={no_config} median_min={med:.1} longest_min={longest:.1} at_cap={over_cap} ends={} hostiles={:?} wins_ok={wins_ok} median_ok={median_ok} cap_ok={cap_ok} gate={} wall_s={:.0}",
                 id.as_str(), std::env::var("BP_EMCON").unwrap_or_else(|_| "config".into()), top(&ends, 6), hostiles_seen, if wins_ok && median_ok && cap_ok { "pass" } else { "fail" }, t0.elapsed().as_secs_f64()
             );
+            if !(wins_ok && median_ok && cap_ok) { failed.push(format!("{} (wins {wins}/{seeds}, median {med:.1} min, {over_cap} at the stop)", id.as_str())); }
         }
     });
+    assert!(!assert_gate || failed.is_empty(), "the Act 1 stock-officer gate fails at {seeds} seeds: {}", failed.join("; "));
 }

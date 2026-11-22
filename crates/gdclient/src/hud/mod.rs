@@ -372,10 +372,7 @@ impl HudCore {
                 let prev = self.last_pacing.replace(p.clone());
                 if let Some(d) = pacing_entry(prev.as_ref(), p) { log(out, d); }
             }
-            SimEvent::LadderStep { rung, sub_step, up } => {
-                let key = if *up { "log.pacing.ladder_up" } else { "log.pacing.ladder_down" };
-                log(out, LogDraft::new(LogKind::Pacing, Msg::new(key).arg(MsgArg::Int(*rung as i64)).arg(MsgArg::Int(*sub_step as i64))));
-            }
+            SimEvent::LadderStep { rung, sub_step, up } => log(out, LogDraft::new(LogKind::Pacing, ladder_msg(*rung, *sub_step, *up))),
             SimEvent::SortieEnded(summary) => {
                 log(out, LogDraft::new(LogKind::System, Msg::new("log.system.ended").arg(word_key("outcome", summary.outcome.to_gd()))));
             }
@@ -1480,11 +1477,29 @@ pub fn text_keys() -> Vec<&'static str> {
     keys
 }
 
+/// A host overload ladder step in plain words (L1025: every change shows in the log). Up names what the host
+/// just simplified; down says the load is easing and what is still in force. Rung 0 steps are the time
+/// compression ceiling (4x, 2x, 1x) the host lowers before rung 2; the event does not say which.
+pub(crate) fn ladder_msg(rung: u8, sub_step: u8, up: bool) -> Msg {
+    let what = match (rung, sub_step) {
+        (0 | 1, _) => "log.pacing.step.compression",
+        (2, 0) => "log.pacing.step.kinematic_far",
+        (2, _) => "log.pacing.step.kinematic_all",
+        (3, 0) => "log.pacing.step.projectiles_1500",
+        (3, _) => "log.pacing.step.projectiles_1000",
+        _ => "log.pacing.step.time_scale",
+    };
+    let word = MsgArg::Key(TextKey::new(what));
+    if up { Msg::new("log.pacing.load_up").arg(word) } else if rung <= 1 { Msg::new("log.pacing.load_down_clear") } else { Msg::new("log.pacing.load_down").arg(word) }
+}
+
 const LOG_KEYS: &[&str] = &[
     "hud.name", "hud.candidate.civilian", "hud.candidate.unknown",
     "log.system.started", "log.system.ended", "log.system.rejected", "log.system.script",
     "log.pacing.paused", "log.pacing.resumed", "log.pacing.rate", "log.pacing.blocked", "log.pacing.unblocked", "log.pacing.scale",
-    "log.pacing.ladder_up", "log.pacing.ladder_down",
+    "log.pacing.load_up", "log.pacing.load_down", "log.pacing.load_down_clear",
+    "log.pacing.step.compression", "log.pacing.step.kinematic_far", "log.pacing.step.kinematic_all",
+    "log.pacing.step.projectiles_1500", "log.pacing.step.projectiles_1000", "log.pacing.step.time_scale",
     "log.network.joined", "log.network.dropped", "log.network.left",
     "log.track.created", "log.track.dropped", "log.track.merged", "log.track.split", "log.track.rung", "log.track.rung_class",
     "log.track.stance", "log.track.reinforcements",

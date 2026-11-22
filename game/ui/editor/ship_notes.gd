@@ -413,6 +413,17 @@ func _restore_focus(key: String) -> void:
 			found = _suggest_toggle
 	if found != null and found.is_visible_in_tree():
 		Ui.focus(found)
+		# Accept and Cancel appear under the note: bring them into the list's view (a short dock at UI
+		# scale 200% ends where the 3D view ends).
+		_reveal(found)
+
+
+## Scroll the list to `c` once the rebuilt rows have their places (two frames: build, then layout).
+func _reveal(c: Control) -> void:
+	for i in 2:
+		await get_tree().process_frame
+	if is_instance_valid(c) and c.is_visible_in_tree() and is_instance_valid(_scroll):
+		_scroll.ensure_control_visible(c)
 
 
 func _find_key(node: Node, key: String) -> Control:

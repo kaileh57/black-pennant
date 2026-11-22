@@ -164,8 +164,47 @@ func _run() -> void:
 	check(int(editor.call(&"rev")) > rev1, "revision moved on")
 	check(rev0 > 0, "opened with a revision")
 
+	await _tight_layout_checks(dock)
+
 	dock.queue_free()
 	editor.call(&"close")
 	await frames(2)
 	print("ui_editor_test: %s" % ("ok" if failures == 0 else "%d failures" % failures))
 	quit(1 if failures > 0 else 0)
+
+
+## UI scale 200% on 1920 x 1080 (a 960 x 540 canvas): the gauge strip shows names and checks, and on the
+## Parts and Hull tabs the whole strip and the whole 3D view fit on one screen together, so the tutorial's
+## beam step can show the Float gauge and the handle at once (DESIGN.md L1713, L254).
+func _tight_layout_checks(dock: Control) -> void:
+	var was := [root.size, root.content_scale_size, root.content_scale_mode, root.content_scale_aspect, root.content_scale_factor]
+	root.size = Vector2i(1920, 1080)
+	root.content_scale_size = Vector2i(1920, 1080)
+	root.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+	root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+	root.content_scale_factor = 2.0
+	await frames(6)
+	var canvas := root.get_visible_rect().size
+	check(canvas.y <= 541.0, "the canvas is 540 high at 200%: " + str(canvas))
+	var strip := dock.get_node(^"Scroll/Frame/Gauges") as Control
+	var stage := dock.get_node(^"Scroll/Frame/Body/Centre/Stage") as Control
+	var tabs := dock.get_node(^"Scroll/Frame/Body/LeftDock/Tabs") as TabContainer
+	check(bool(strip.get(&"headline")), "the strip shows names and checks only at 200%")
+	for tab: int in [0, 1]:
+		tabs.current_tab = tab
+		await frames(4)
+		var top := strip.get_global_rect().position.y
+		var bottom := stage.get_global_rect().end.y
+		check(bottom - top <= canvas.y, "tab %d: strip and view fit one screen (%.0f of %.0f)" % [tab, bottom - top, canvas.y])
+		check(stage.size.y >= 240.0, "tab %d: the view keeps 240 high (%.0f)" % [tab, stage.size.y])
+		var left := dock.get_node(^"Scroll/Frame/Body/LeftDock") as Control
+		check(absf(left.get_global_rect().end.y - bottom) <= 1.0, "tab %d: the build dock ends with the view (%.0f, %.0f)" % [tab, left.get_global_rect().end.y, bottom])
+	tabs.current_tab = 0
+	root.content_scale_factor = 1.0
+	root.size = was[0]
+	root.content_scale_size = was[1]
+	root.content_scale_mode = was[2]
+	root.content_scale_aspect = was[3]
+	root.content_scale_factor = was[4]
+	await frames(6)
+	check(not bool(strip.get(&"headline")), "at 100% the strip shows its readouts again")

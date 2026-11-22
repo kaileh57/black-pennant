@@ -67,6 +67,16 @@ var _stale_since: Dictionary[StringName, int] = {}
 var _stale_timer: Timer
 var _design_timer: Timer
 var _parts_names: Dictionary[int, String] = {}
+## Name and check only, one short line per gauge (the dry dock sets it when the screen is both narrow and
+## short, as at UI scale 200% on 1920 x 1080): the readouts stay one press away in the detail sheet, and the
+## 3D view keeps the height. Abbreviation at 200% (L1713).
+var headline := false:
+	set(v):
+		if v == headline:
+			return
+		headline = v
+		if is_node_ready():
+			_fit_width()
 
 
 func _ready() -> void:
@@ -209,6 +219,13 @@ func _apply() -> void:
 ## not fit (UI scale 200%), the row wraps.
 func _fit_width() -> void:
 	if not is_inside_tree():
+		return
+	for g: StringName in GAUGES:
+		_cells[g].headline = headline
+	if headline:
+		for g: StringName in GAUGES:
+			_cells[g].compact = true
+			_cells[g].tight = 2
 		return
 	var room := get_viewport_rect().size.x - float(Ui.spacing(1) * 2)
 	var rules := float(GAUGES.size() - 1) * _rule_w()
@@ -786,6 +803,14 @@ class GaugeCell extends Control:
 			tight = v
 			update_minimum_size()
 			queue_redraw()
+	## Name and check only (the strip's `headline`).
+	var headline := false:
+		set(v):
+			if v == headline:
+				return
+			headline = v
+			update_minimum_size()
+			queue_redraw()
 	## Short labels, when the full strip does not fit the screen.
 	var compact := false:
 		set(v):
@@ -924,6 +949,8 @@ class GaugeCell extends Control:
 		if reserve_stale:
 			badge_w = maxf(badge_w, Badges.width(Badges.UPDATING, _label_font(), _label_size()))
 		var title_w := _text_w(_label_font(), _label_size(), _title) + 12.0 + badge_w
+		if headline:
+			return Vector2(ceilf(title_w + PAD_X * 2.0), ceilf(PAD_Y * 2.0 + _title_h()))
 		return Vector2(ceilf(maxf(_cols_width(), title_w) + PAD_X * 2.0), ceilf(PAD_Y * 2.0 + _title_h() + 2.0 + _line_h() * 3.0))
 
 	func _draw() -> void:
@@ -949,8 +976,8 @@ class GaugeCell extends Control:
 			var bw := Badges.width(check, lf, ls)
 			Badges.draw(self, Vector2(size.x - PAD_X - bw, y), check, lf, ls)
 		y += _title_h() + 2.0
+		var cols := _shown_cols() if not headline else []
 		var x := PAD_X
-		var cols := _shown_cols()
 		var extra := maxf(0.0, size.x - PAD_X * 2.0 - _cols_width())
 		var stretchers := 0
 		for c: Dictionary in cols:

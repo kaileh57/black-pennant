@@ -108,6 +108,7 @@ enum Mode { SHIP, GRAPH, SCRIPTS }
 @onready var _launch_caution: TextureRect = $Scroll/Frame/TopBar/Margin/Row/Launch/Content/Caution
 @onready var _launch_count: Label = $Scroll/Frame/TopBar/Margin/Row/Launch/Content/Count
 @onready var _body: HBoxContainer = $Scroll/Frame/Body
+@onready var _gauge_strip: Control = $Scroll/Frame/Gauges
 @onready var _left_dock: PanelContainer = $Scroll/Frame/Body/LeftDock
 @onready var _left_tabs: TabContainer = $Scroll/Frame/Body/LeftDock/Tabs
 @onready var _tray: Control = $Scroll/Frame/Body/LeftDock/Tabs/Parts/Tray
@@ -186,6 +187,7 @@ var _undo_state: Dictionary = {}
 var _launch_state: Dictionary = {}
 var _quiet_save := false
 var _compact := false
+var _tight := false
 var _after_drag := false
 var _name_stale := true
 var _new_path := ""
@@ -200,6 +202,8 @@ func _ready() -> void:
 	_set_mode(Mode.SHIP)
 	_refresh_all()
 	_stage_box.resized.connect(_fit_viewport)
+	# The view moves down the page when a build-dock tab of another width rewraps the view bar.
+	_stage_box.item_rect_changed.connect(func() -> void: _fit_side_docks.call_deferred())
 	_stage_box.resized.connect(_fit_hint)
 	resized.connect(_apply_compact)
 	_reports.toggled.connect(func(_on: bool) -> void: _apply_compact())
@@ -231,9 +235,13 @@ func setup(_args: Dictionary) -> void:
 ## Narrow screens (a small window or UI scale up to 200%, L1716): the reports dock folds behind a toggle,
 ## the build dock narrows, the top bar drops its status words and Leave shows its arrow only, and the gauge
 ## strip wraps. The dock then scrolls up and down only, never sideways, and on a short screen the build area
-## keeps a usable height and the page scrolls instead.
+## keeps a usable height and the page scrolls instead. Narrow and short at once (UI scale 200% on 1920 x
+## 1080, a 960 x 540 canvas), the gauge strip shows each gauge's name and check only and the top and view
+## bars lose their inner margins, so the 3D view and the whole strip fit on the screen together without
+## scrolling (the readouts open from each gauge).
 func _apply_compact() -> void:
 	var compact := size.x > 0.0 and size.x < COMPACT_W
+	var tight := compact and size.y > 0.0 and size.y < SHORT_H
 	_reports.visible = compact
 	_right_dock.visible = not compact or _reports.button_pressed
 	# On a narrow screen one side dock shows at a time: the reports take the build dock's place, so the
@@ -250,11 +258,31 @@ func _apply_compact() -> void:
 	_leave.icon = Ui.icon(&"arrow_left") if compact else null
 	_leave.tooltip_text = tr(&"editor_shell.leave") if compact else ""
 	_leave.accessibility_name = tr(&"editor_shell.leave")
-	_body.custom_minimum_size.y = BODY_MIN_H if size.y > 0.0 and size.y < SHORT_H else 0.0
+	_body.custom_minimum_size.y = BODY_MIN_H if size.y > 0.0 and size.y < SHORT_H and not tight else 0.0
+	_gauge_strip.set(&"headline", tight)
+	for m: MarginContainer in [$Scroll/Frame/TopBar/Margin, $Scroll/Frame/Body/Centre/ViewBar/Margin]:
+		Ui.set_margins(m, 0 if tight else 1)
+	_tight = tight
+	_fit_side_docks.call_deferred()
 	_overlays.call(&"set_compact", compact)
 	_compact = compact
 	_refresh_launch()
 	_refresh_hint()
+
+
+## Narrow and short at once, the side docks end where the 3D view ends rather than under the overlay bar
+## below it: scrolled so the view's foot meets the screen's, the tray and Ship's Notes then end on screen too
+## and scroll inside themselves, so every kit row is reachable without scrolling the page.
+func _fit_side_docks() -> void:
+	if not is_inside_tree():
+		return
+	var h := 0.0
+	if _tight:
+		h = maxf(_stage_box.get_global_rect().end.y - _body.get_global_rect().position.y, 0.0)
+	for dock: Control in [_left_dock, _right_dock]:
+		dock.size_flags_vertical = Control.SIZE_SHRINK_BEGIN if _tight else Control.SIZE_FILL
+		if not is_equal_approx(dock.custom_minimum_size.y, h):
+			dock.custom_minimum_size.y = h
 
 
 func default_focus() -> Control:
@@ -310,6 +338,17 @@ func _fit_viewport() -> void:
 	_viewport.size = Vector2i(maxi(int(px.x), 2), maxi(int(px.y), 2))
 	_viewport.size_2d_override = Vector2i(maxi(roundi(canvas.x), 2), maxi(roundi(canvas.y), 2))
 	_refresh_handles()
+	_refresh_handles_after_reframe()
+
+
+## The view frames the design again on its next frames when its size changes before the player has moved the
+## camera (a build-dock tab of another width at UI scale 200%): read the handles again after that, or the
+## gizmos, the tutorial's frame and a press would use the old camera.
+func _refresh_handles_after_reframe() -> void:
+	for i in 2:
+		await get_tree().process_frame
+	if is_inside_tree():
+		_refresh_handles()
 
 
 func _wire_controls() -> void:
@@ -2117,7 +2156,7 @@ func _allowed(id: String) -> bool:
 ## handle, the tray for the tray, Ship's Notes for a note.
 func _on_tutorial_step(step: Dictionary) -> void:
 	var at := String(step.get("point_at", ""))
-	if (at.begins_with("editor.handle.") or at.begins_with("editor.tray")) and _compact:
+	if (at.begins_with("editor.handle.") or at.begins_with("editor.tray") or at.begins_with("editor.officers")) and _compact:
 		# The build dock comes back from behind the reports on a narrow screen.
 		_reports.button_pressed = false
 	if at.begins_with("editor.handle."):

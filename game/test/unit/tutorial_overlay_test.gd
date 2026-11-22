@@ -55,6 +55,24 @@ func _near(a: float, b: float) -> bool:
 
 
 func _pure() -> void:
+	# The tight dock (UI scale 200% on 1920 x 1080, rects from a 2x play-through): the card keeps off the 3D
+	# view, the beam handle and the Float gauge on the beam step, and off the view and the framed kit rows on
+	# the kits step, where only the full-width card fits (over the top bar and the gauge strip).
+	var screen := Rect2(0, 0, 960, 540)
+	var stage := Rect2(521, 300, 431, 240)
+	var float_cell := Rect2(0, 31, 120, 39)
+	var handle := Rect2(707, 372, 32, 32)
+	var beam_firm: Array[Rect2] = [stage, handle.grow(4.0), float_cell]
+	var beam: Array = Overlay.tight_spot(screen, Vector2(399, 219), beam_firm, Vector2(16, 117))
+	var beam_card := Rect2(beam[0], Vector2(399, 219))
+	_check(beam[1] == 0.0 and not beam_card.intersects(stage) and not beam_card.intersects(float_cell) and screen.encloses(beam_card), "beam card clear of the view and the Float gauge: %s" % str(beam_card))
+	var kit_stage := Rect2(400, 247, 552, 240)
+	var rows := Rect2(32, 388, 328, 152)
+	var kit_firm: Array[Rect2] = [kit_stage, rows.grow(4.0)]
+	_check(float(Overlay.tight_spot(screen, Vector2(520, 260), kit_firm, Vector2(16, 117))[1]) > 0.0, "a column-wide kits card has no clear spot")
+	var wide: Array = Overlay.tight_spot(screen, Vector2(928, 180), kit_firm, Vector2(16, 117))
+	var wide_card := Rect2(wide[0], Vector2(928, 180))
+	_check(wide[1] == 0.0 and not wide_card.intersects(kit_stage) and not wide_card.intersects(rows) and screen.encloses(wide_card), "the full-width kits card is clear: %s" % str(wide_card))
 	# The beam demonstration: hold, narrow, hold, widen back, hold; ends exactly where it began.
 	var from := 5.8
 	var low := 4.0
@@ -181,6 +199,8 @@ func _check_beam_step() -> void:
 	_check(not (_overlay.get_node("Card/Margin/Column/Footer/Continue") as Control).visible, "an action step has no Continue")
 	_check(String(_overlay.get(&"_target_id")) == "editor.handle.beam", "the beam step points at the beam handle")
 	_check(bool(_overlay.call(&"_allowed", "editor.handle.beam")), "the beam step allows the handle")
+	var watch: Variant = (_overlay.get(&"_step") as Dictionary).get("watch", PackedStringArray())
+	_check(watch is PackedStringArray and (watch as PackedStringArray).has("editor.gauge.float"), "the beam step watches the Float gauge: %s" % str(watch))
 
 
 func _check_finish_text() -> void:

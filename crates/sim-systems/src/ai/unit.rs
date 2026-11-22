@@ -833,6 +833,34 @@ fn range_keeping(c: &mut CaptainState, s: &Situation<'_>, t: &Contact, rs: f64) 
     (wrap_tau(to_t + sign * off), Speed::Fraction(0.8), CaptainMode::Attacking)
 }
 
+/// A hull this close to a route's first leg is on it, metres (the group replans a leader that strays farther,
+/// `group::STRAY_M`).
+const ON_ROUTE_M: f64 = 1_500.0;
+
+/// The group's route from the leg the hull is on: leading waypoints it has already passed are dropped. A
+/// waypoint is passed when the hull lies beyond it along the leg that leaves it, within [`ON_ROUTE_M`] of that
+/// leg, and (for any waypoint after the first) beyond it along the leg that reaches it too, so a hull short of
+/// a sharp turn never cuts the corner.
+///
+/// DECISION, u1: a planned route starts where the leader stood when it was planned, and the Helm restarts a
+/// route at its first waypoint whenever its orders change. Each time collision avoidance (or a flight from a
+/// threat) took the course for a decision and the captain then handed the group's route back, the hull turned
+/// round for that stale start point. The prize tanker of prize_capture, ringed by its escorts, did this for 45
+/// minutes at 13 to 16 kn within about 500 m of convoy_entry, 19 km from the end of its route.
+fn resume_route(route: Vec<DVec2>, pos: DVec2) -> Vec<DVec2> {
+    if !finite2(pos) { return route; }
+    let mut first = 0;
+    while first + 1 < route.len() {
+        let (a, b) = (route[first], route[first + 1]);
+        let t = super::path::proj_t(a, b, pos);
+        let off = a.lerp(b, t.clamp(0.0, 1.0)).distance(pos);
+        let reached = first == 0 || super::path::proj_t(route[first - 1], a, pos) >= 1.0;
+        if !(reached && t > 0.0 && off <= ON_ROUTE_M) { break; }
+        first += 1;
+    }
+    route[first..].to_vec()
+}
+
 fn follow_directive(c: &CaptainState, s: &Situation<'_>) -> Plan {
     let d = &c.directive;
     let mode = if d.mode == GroupMode::Investigating { CaptainMode::Investigating } else { CaptainMode::Following };
@@ -840,15 +868,28 @@ fn follow_directive(c: &CaptainState, s: &Situation<'_>) -> Plan {
     let route: Vec<DVec2> = d.route.iter().copied().filter(|w| finite2(*w)).collect();
     p.course = match (c.mem.leader, s.own.leader) {
         (Some(l), Some(_)) if l != s.own.vessel && finite2(d.slot) => Course::Formation { leader: l, offset: d.slot, route },
-        _ if !route.is_empty() => Course::Route(route),
+        _ if !route.is_empty() => Course::Route(resume_route(route, s.own.pos)),
         _ => Course::Keep,
     };
     p.speed = if d.speed_kn.is_finite() && d.speed_kn > 0.0 { Speed::Knots(d.speed_kn) } else { Speed::Cruise };
     p.designated = Some(TrackId::NONE);
     p.weapons_tight = Some(d.weapons_tight);
     p.keep_range_m = Some(None);
-    p.emcon = Some(base_emcon(c, s));
+    p.emcon = Some(search_emcon(c, s));
     p
+}
+
+/// Emission setting while following the group: [`base_emcon`], except that a group investigating a contact it
+/// has lost searches with radar unless the group or the doctrine card set the emissions.
+///
+/// DECISION, u1 (L761 leaves the tree's emissions to this unit): Burst radiates only on a passive cue (L509),
+/// and most Act 1 Combine hulls carry no ESM. In feint seed 1 (base 3278162, the player hull radiating Active)
+/// the task group lost its one fire-control track at about 540 s, investigated the last known position in
+/// Burst until 1,200 s and then stood 6.6 to 7.6 km from the radiating hull, none of its five hulls
+/// radiating, until a lookout found it at 1,860 s.
+fn search_emcon(c: &CaptainState, s: &Situation<'_>) -> Emcon {
+    if c.directive.mode == GroupMode::Investigating && c.directive.emcon.is_none() && s.mods.emcon.is_none() { return Emcon::Active; }
+    base_emcon(c, s)
 }
 
 /// Emission setting with nothing pressing: the group's, else the doctrine card's, else the tree's default
@@ -1197,6 +1238,57 @@ mod tests {
         let gun = vec![mount(0, WeaponClass::Decoy, 2_000.0), mount(1, WeaponClass::Gun, 8_000.0)];
         let parts = vec![parts[0].clone(), part(1, PartState::Mount(MountState { ready_rounds: 10, ..Default::default() }))];
         assert!(strike_weapon_works(&gun, &parts), "a loaded, intact gun still works");
+    }
+
+    #[test]
+    fn a_handed_back_route_resumes_from_the_leg_the_hull_is_on() {
+        let mods = DoctrineMods::default();
+        // prize_capture seed 2: the tanker's planned route starts at convoy_entry, where it stood when the plan
+        // was made. After a collision-avoidance turn the route came back whole and the hull turned round for it.
+        let (entry, exit) = (DVec2::new(5_505.0, -19_022.0), DVec2::new(3_000.0, 19_000.0));
+        let mut o = own();
+        o.pos = DVec2::new(5_241.0, -18_508.0);
+        let mut c = new_captain(Behaviour::Merchant, None, None, SurrenderRule::Never);
+        c.directive.route = vec![entry, exit];
+        assert_eq!(run(&mut c, &o, &[], &[], &mods, 10).course, Course::Route(vec![exit]), "a passed start point is dropped");
+        o.pos = DVec2::new(5_505.0, -19_800.0);
+        assert_eq!(run(&mut c, &o, &[], &[], &mods, 20).course, Course::Route(vec![entry, exit]), "a start point ahead is kept");
+        o.pos = DVec2::new(9_000.0, -18_000.0);
+        assert_eq!(run(&mut c, &o, &[], &[], &mods, 30).course, Course::Route(vec![entry, exit]), "far off the route it is kept");
+        // A sharp turn: short of the corner, the hull already lies beside the next leg; it must not cut it.
+        let (a, b, d) = (DVec2::new(0.0, 0.0), DVec2::new(0.0, -5_000.0), DVec2::new(800.0, 0.0));
+        c.directive.route = vec![a, b, d];
+        o.pos = DVec2::new(100.0, -4_000.0);
+        assert_eq!(run(&mut c, &o, &[], &[], &mods, 40).course, Course::Route(vec![b, d]), "the corner is kept until it is passed");
+        o.pos = DVec2::new(150.0, -4_900.0);
+        assert_eq!(run(&mut c, &o, &[], &[], &mods, 50).course, Course::Route(vec![b, d]));
+        o.pos = DVec2::new(400.0, -4_600.0);
+        assert_eq!(run(&mut c, &o, &[], &[], &mods, 60).course, Course::Route(vec![b, d]), "short of the corner along the first leg");
+        // Past an open corner on both legs: both passed points go.
+        let e = DVec2::new(5_000.0, -10_000.0);
+        c.directive.route = vec![a, b, e];
+        o.pos = DVec2::new(600.0, -5_600.0);
+        assert_eq!(run(&mut c, &o, &[], &[], &mods, 70).course, Course::Route(vec![e]));
+    }
+
+    #[test]
+    fn a_group_searching_for_a_lost_contact_radiates() {
+        // feint seed 1: a task group with no ESM lost the player's track and searched for it in Burst, which
+        // waits for a passive cue it could never get.
+        let o = own();
+        let mut c = new_captain(Behaviour::Combatant, None, None, SurrenderRule::Never);
+        c.directive.mode = GroupMode::Investigating;
+        c.directive.route = vec![DVec2::new(0.0, -8_000.0)];
+        let mods = DoctrineMods::default();
+        let p = run(&mut c, &o, &[], &[], &mods, 10);
+        assert_eq!((p.mode, p.emcon), (CaptainMode::Investigating, Some(Emcon::Active)));
+        c.directive.mode = GroupMode::Standing;
+        assert_eq!(run(&mut c, &o, &[], &[], &mods, 20).emcon, Some(Emcon::Burst), "a group standing on its orders stays in Burst");
+        c.directive.mode = GroupMode::Investigating;
+        let quiet = DoctrineMods { emcon: Some(Emcon::Silent), ..Default::default() };
+        assert_eq!(run(&mut c, &o, &[], &[], &quiet, 30).emcon, Some(Emcon::Silent), "a doctrine card's setting stands");
+        c.directive.emcon = Some(Emcon::Silent);
+        assert_eq!(run(&mut c, &o, &[], &[], &mods, 40).emcon, Some(Emcon::Silent), "the group's setting stands");
     }
 
     #[test]

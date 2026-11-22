@@ -381,12 +381,13 @@ fn tier_three(f: &Facts<'_>, out: &mut Vec<ShipNote>) {
                 out.push(note(tier, NoteKind::NoMagazine, Some(mount.slot), 1, text, fix));
             }
         }
+        // Only weapons that need a lock of their own. A surface gun aims at the side's picture, Lock grade
+        // included, whether or not its kit carries a director; its director matters only under local control
+        // after a cut Data link (L394), a damage state. Noting it put an untrue Advisory on every stock gun.
         let needs_lock = matches!(mount.weapon, WeaponClass::PointDefenceGun | WeaponClass::PointDefenceMissile | WeaponClass::Sam);
-        let gun_like = matches!(mount.weapon, WeaponClass::Gun) || needs_lock;
-        if gun_like && mount.director.is_none() {
+        if needs_lock && mount.director.is_none() {
             let fix = add_part_near(f.bp, f.cat, &|d| matches!(d.function, PartFunction::Director), cell_of(mount.pos_local), mount.kit);
-            let tier = if needs_lock { NoteTier::CannotWork } else { NoteTier::Advisory };
-            out.push(note(tier, NoteKind::NoDirector, Some(mount.slot), 1, m("notes.no_director").arg(MsgArg::Part(mount.slot)), fix));
+            out.push(note(NoteTier::CannotWork, NoteKind::NoDirector, Some(mount.slot), 1, m("notes.no_director").arg(MsgArg::Part(mount.slot)), fix));
         }
     }
     // Consumers without a conduit to a source. With no generation at all the tier 1 note already covers every

@@ -17,8 +17,9 @@
 //!   silent; no-ghost attempts none and radiates. Every policy's Helm follows the briefing route.
 //! - Starter hull: the act's starter that carries a weapon of the policy's method (single-method), then the
 //!   one whose analytic Fit Check passes the briefing tags of the most of the act's operations; ties go to
-//!   the act's data order. All bot players sail the same design. The winnability check instead picks, per
-//!   operation, the first starter that passes that operation's tags (else the first starter).
+//!   the act's data order. All bot players sail the same design. The winnability check instead sails, per
+//!   operation, the gate's starter for it ([`op_starter`]: the fast attack craft unless the gate's table
+//!   names another, refitted by the Quartermaster for the operation's tags).
 //! - Chart table, in order ([`choose_action`]): the forced operation; rebuild a lost hull (a short pool
 //!   pays what it holds); wait for the dock while no hull can sail; spend Intel on a queued doctrine card within 48 hours of
 //!   arrival (careful and all-ghost cancel when they can and delay otherwise; mixed and no-ghost only delay;
@@ -174,8 +175,7 @@ pub fn run_campaign(config: &BotConfig, data: TheatreData, resolver: &mut dyn So
 /// Unit: `sys-campaign-bot`.
 ///
 /// Each seed starts a fresh campaign at `act` (campaign seed from the seed index and the operation) with the
-/// operation's starter (the first of the act's starters whose analytic Fit Check passes its briefing tags,
-/// else the first) and builds the operation with the generator as the chart table would. An operation that
+/// operation's starter ([`op_starter`]) and builds the operation with the generator as the chart table would. An operation that
 /// does not generate, or a sortie that cannot be built (aborted), is a loss and has no length. The median of
 /// an even count is the mean of the two middle lengths. The caller's `setup` is used as given: the L317
 /// gate passes `follow_briefing_route: true` (a player hull spawns under a stop order and, without Helm
@@ -378,26 +378,44 @@ fn fits(bp: &Blueprint, op: &OperationDef, act: Act, data: &TheatreData) -> bool
     crate::editor::fitcheck::fit_screen_with(bp, &brief, &data.catalogue, &data.campaign).passes()
 }
 
-/// The operation's starter design (L317 "its starter design"): the first of the act's starters that passes the
-/// operation's briefing tags; when none does (the operation needs a kit no bare starter carries, such as the
-/// mine rail or the boarding kit), the first starter the Quartermaster can refit to pass them, the way the
-/// dock would, from the parts open when the operation can first be offered ([`op_open_parts`]); else the
-/// first starter.
+/// The starter the gate sails when its table names none: the fast attack craft, the first starter a player
+/// meets (L151).
+pub(crate) const GATE_STARTER_DEFAULT: &str = "starters/fac22.bp.ron";
+
+/// The gate's starter per operation, where it is not the default. READING of L317 "its starter design"
+/// (coordinator's ruling, 22 November 2026): one starter per operation, chosen from the act's starters and
+/// refitted the way the Quartermaster would for the operation's tags; another than the default only where a
+/// measurement shows it is the better fit. The numbers behind each entry are in the comment beside it.
+pub(crate) const GATE_STARTERS: &[(&str, &str)] = &[];
+
+/// The operation's starter design (L317 "its starter design"): the gate table's starter for it
+/// ([`GATE_STARTERS`], else [`GATE_STARTER_DEFAULT`]) when it passes the operation's briefing tags, bare or
+/// refitted by the Quartermaster the way the dock would, from the parts open when the operation can first be
+/// offered ([`op_open_parts`]); when it cannot (the fast attack craft is over the cross-section cap of the
+/// stealth briefings, and no refit shrinks a hull), the first other starter of the act, in data order, that
+/// can, by the same two steps; else the first starter. An act whose starters do not include the table's
+/// choice (Acts 2 to 4) goes by data order alone.
 pub(crate) fn op_starter(op: &OperationDef, act: Act, data: &TheatreData) -> Blueprint {
     let list = act_starters(act, data);
-    if let Some((_, b)) = list.iter().find(|(_, b)| fits(b, op, act, data)) { return b.clone(); }
+    let preferred = GATE_STARTERS.iter().find(|(id, _)| *id == op.id.as_str()).map_or(GATE_STARTER_DEFAULT, |x| x.1);
+    let mut order: Vec<&Blueprint> = list.iter().filter(|(p, _)| p == preferred).map(|(_, b)| b).collect();
+    order.extend(list.iter().filter(|(p, _)| p != preferred).map(|(_, b)| b));
+    order.into_iter().find_map(|b| fitted(b, op, act, data)).unwrap_or_else(|| list.first().map(|(_, b)| b.clone()).unwrap_or_else(fallback_hull))
+}
+
+/// A design made to pass the operation's briefing tags: itself when it does, else the Quartermaster's refit
+/// of it from the parts open when the operation can first be offered ([`op_open_parts`]), when that passes.
+pub(crate) fn fitted(bp: &Blueprint, op: &OperationDef, act: Act, data: &TheatreData) -> Option<Blueprint> {
+    if fits(bp, op, act, data) { return Some(bp.clone()); }
     let available = op_open_parts(op, act, data);
     let brief = crate::editor::fitcheck::FitBrief { tags: op.tags.clone(), weather: WeatherState::default(), approach_km: (op.approach_m / 1000.0).max(0.0), threats: Vec::new(), cap_t: act.hull_cap_t() };
     let ruleset = content::ruleset::Ruleset::campaign(act);
-    for (_, b) in &list {
-        let (cat, camp) = (data.catalogue.clone(), data.campaign.clone());
-        let mut deps = move || crate::sim::SimDeps { catalogue: cat.clone(), campaign: camp.clone(), designs: Default::default(), scripts: Box::new(crate::script::NullScriptHost), guest_gate_passed: false, budgets: Default::default(), ladder: Default::default() };
-        let qm = crate::editor::quartermaster::quartermaster(b, &brief, &BTreeMap::new(), Some(&available), &ruleset, &mut deps, &mut crate::editor::NoDeadline);
-        if let crate::editor::quartermaster::QmResult::Refit { blueprint, .. } = qm {
-            if fits(&blueprint, op, act, data) { return *blueprint; }
-        }
+    let (cat, camp) = (data.catalogue.clone(), data.campaign.clone());
+    let mut deps = move || crate::sim::SimDeps { catalogue: cat.clone(), campaign: camp.clone(), designs: Default::default(), scripts: Box::new(crate::script::NullScriptHost), guest_gate_passed: false, budgets: Default::default(), ladder: Default::default() };
+    match crate::editor::quartermaster::quartermaster(bp, &brief, &BTreeMap::new(), Some(&available), &ruleset, &mut deps, &mut crate::editor::NoDeadline) {
+        crate::editor::quartermaster::QmResult::Refit { blueprint, .. } if fits(&blueprint, op, act, data) => Some(*blueprint),
+        _ => None,
     }
-    list.first().map(|(_, b)| b.clone()).unwrap_or_else(fallback_hull)
 }
 
 /// The tier of parts open when `op` can first be offered: the start tiers of the acts up to `act`, raised by

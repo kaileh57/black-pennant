@@ -73,6 +73,7 @@ mod check;
 mod designs;
 mod killcam;
 mod setup;
+mod smoke;
 #[cfg(test)]
 pub(crate) mod testkit;
 
@@ -163,8 +164,9 @@ pub struct FrameFeed {
     /// the link sampled them. Replaced every frame of a sortie; `None` outside one. This is "the newest
     /// snapshot" the HUD and plot docs speak of.
     pub snapshot: Option<Arc<Snapshot>>,
-    /// Increments when the newest received tick changes (`LinkInbox::newest_tick`), about 30 Hz. HUD lists
-    /// rebuild on this, not on every frame.
+    /// Increments when the newest received tick changes (`LinkInbox::newest_tick`), about 30 Hz, and when a
+    /// frame at the same tick carries other sections (a paused sortie filling in). HUD lists rebuild on this,
+    /// not on every frame.
     pub snapshot_rev: u64,
     /// Simulation events that arrived this frame, in order. Every consumer reads them here; nobody removes
     /// them.
@@ -190,6 +192,8 @@ pub struct BpSession {
     pub(crate) input_accum_s: f64,
     /// Everything else the driver keeps between frames.
     pub(crate) run: SessionRun,
+    /// The `--smoke-sortie` run, when the flag is given (`smoke`).
+    pub(crate) smoke: Option<smoke::SmokeSortie>,
     base: Base<Node>,
 }
 
@@ -268,6 +272,9 @@ pub(crate) struct SessionRun {
     /// The newest sampled frame, kept to draw a frozen world after the sortie ends.
     pub(crate) last_frame: Option<(Arc<Snapshot>, f64)>,
     pub(crate) newest_tick: Option<u64>,
+    /// Which sections the last shown snapshot carried ([`snapshot_shape`]), to notice a frame that fills in
+    /// at a tick already seen.
+    pub(crate) snapshot_shape: Option<SnapshotShape>,
     pub(crate) snapshot_rev: u64,
     /// Host side: the latest checkpoint, the result and replay of the ended sortie.
     pub(crate) checkpoint: Option<Box<content::save::SortieCheckpoint>>,
@@ -299,11 +306,12 @@ pub(crate) struct SessionRun {
 #[godot_api]
 impl INode for BpSession {
     fn init(base: Base<Node>) -> Self {
-        Self { state: SessionState::Idle, view_builder: ViewBuilder::new(), inbox: Default::default(), last_summary: None, replay: None, input_accum_s: 0.0, run: SessionRun::default(), base }
+        Self { state: SessionState::Idle, view_builder: ViewBuilder::new(), inbox: Default::default(), last_summary: None, replay: None, input_accum_s: 0.0, run: SessionRun::default(), smoke: None, base }
     }
     fn ready(&mut self) {
         // First in the per-frame order (see the crate docs).
         self.base_mut().set_process_priority(-100);
+        if smoke::wanted() { self.smoke = Some(smoke::SmokeSortie { phase: smoke::SmokePhase::Settling, started_real_s: 0.0, start_time_s: 0.0 }); }
     }
     /// Unit `gd-session`: take a pending sortie from the handoff; poll host notes and the link; refresh
     /// `Services::feed`; run `ViewBuilder::build` on the link's sampled frame into `Services::view`; send
@@ -320,6 +328,8 @@ impl INode for BpSession {
         let live = services.connection.borrow().is_some();
         if live { self.frame(&services, &mut sigs); } else { self.idle_feed(&services); }
         self.emit(sigs);
+        drop(services);
+        if self.smoke.is_some() { self.smoke_step(); }
     }
     /// Stops the host thread and closes the link so the process can exit cleanly.
     fn exit_tree(&mut self) {
@@ -441,6 +451,12 @@ impl BpSession {
         match frame {
             Some(f) => {
                 let snapshot = Arc::new(f.snapshot);
+                // A paused sortie's frames all carry one tick, and the first frame after a (re)load can arrive
+                // without sections the next one fills in (a resumed sortie opens paused): a change of shape at
+                // the same tick counts as new, or the HUD would keep the partial picture until time moves.
+                let shape = snapshot_shape(&snapshot);
+                if self.run.snapshot_shape.is_some_and(|old| old != shape) { self.run.snapshot_rev = self.run.snapshot_rev.wrapping_add(1); }
+                self.run.snapshot_shape = Some(shape);
                 let shells = if shells_from_clip { &self.run.clip_inbox.shells } else { &self.inbox.shells };
                 self.view_builder.build(snapshot.clone(), f.render_tick, f.extrapolating, shells, self.run.delta_s, &tuning, camera, &mut services.view.borrow_mut());
                 if !clip_active && self.replay.is_none() && matches!(self.state, SessionState::Loading | SessionState::InSortie) { self.run.recorder.record_frame(f.render_tick, &snapshot); }
@@ -560,6 +576,7 @@ impl BpSession {
         self.run.world_built = false;
         self.run.last_frame = None;
         self.run.newest_tick = None;
+        self.run.snapshot_shape = None;
         self.run.pacing = None;
         self.run.pacing_from_event = false;
         self.run.rate_in_flight = None;
@@ -1018,6 +1035,13 @@ impl BpSession {
     fn replay_cmd(&mut self, f: impl FnOnce(&mut ReplayControl)) -> bool {
         match self.replay.as_mut() { Some(c) => { f(c); true } None => false }
     }
+}
+
+/// Presence and counts of a snapshot's sections: (own ship, vessels, bodies, decoys, tracks, allies, alerts,
+/// objectives).
+pub(crate) type SnapshotShape = (bool, usize, usize, usize, usize, usize, usize, usize);
+pub(crate) fn snapshot_shape(s: &Snapshot) -> SnapshotShape {
+    (s.ship.is_some(), s.vessels.len(), s.bodies.len(), s.decoys.len(), s.tracks.len(), s.allies.len(), s.alerts.len(), s.objectives.len())
 }
 
 /// The part of the sortie's start the main thread can read before the clock thread builds it.
