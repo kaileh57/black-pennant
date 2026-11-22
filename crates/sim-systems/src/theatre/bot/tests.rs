@@ -294,7 +294,8 @@ fn kit_operations_get_a_fitted_starter_and_open_kit() {
 /// One full-physics sortie traced every `BP_EVERY` seconds (30): own hull, the nearest true hostiles and
 /// whether the player picture holds them, the player's tracks, every mount's engagement state and the
 /// emitters. `BP_OPS` (one operation id substring), `BP_SEED` (0), `BP_MIN` (45); `BP_DROP`, `BP_PILOT` and
-/// `BP_EMCON` as in `gate::gate_act1`.
+/// `BP_EMCON` as in `gate::gate_act1`. `BP_ALL` lists every other hull's position and status, `BP_GROUPS` every AI group's orders,
+/// mode and memory.
 /// `cargo test --release -p sim-systems --lib trace_act1 -- --ignored --nocapture`.
 #[test]
 #[ignore = "full physics; prints for a reader"]
@@ -324,6 +325,7 @@ fn trace_act1() {
     for (i, v) in prepared.vessels.iter().enumerate() {
         eprintln!("  vessel {i}: side {} role {:?} class {:?} tag {:?} pos ({:.0}, {:.0}) arrives {} s", v.side.0, v.role, v.class.as_ref().map(|c| c.as_str()), v.tag, v.pos.x, v.pos.z, v.arrives_s);
     }
+    for g in &prepared.groups { eprintln!("  group {:?}: side {} kind {:?} tag {:?} ace {:?} orders {:?}", g.id, g.side.0, g.kind, g.tag, g.ace.as_ref().map(|a| a.as_str()), g.orders); }
     for m in &prepared.map.markers { eprintln!("  marker {} {:?} ({:.0}, {:.0})", m.name, m.kind, m.pos_m[0], m.pos_m[1]); }
     {
         let terrain = sim_core::terrain::Terrain::new(prepared.map.clone());
@@ -380,6 +382,12 @@ fn trace_act1() {
             let picture = sim.pictures().side(me);
             let mut truths: Vec<(f64, EntityId)> = sim.world().vessels().filter(|v| v.1.side != me).map(|v| ((v.1.kin.pose.pos - pos).length(), v.1.id)).collect();
             truths.sort_by(|a, b| a.0.total_cmp(&b.0));
+            if std::env::var("BP_GROUPS").is_ok() {
+                for g in &sim.ai.groups {
+                    let lead = g.leader.and_then(|l| sim.world().vessel(l)).map(|v| (v.kin.pose.pos.x.round(), v.kin.pose.pos.z.round(), (v.forward_speed() / sim_core::time::KN).round()));
+                    eprintln!("    group {:?} tag {:?} orders {:?} mode {:?} contact {} leader {lead:?} mem {:?}", g.id, g.tag, g.orders, g.mode, g.contact.0, g.mem);
+                }
+            }
             if std::env::var("BP_ALL").is_ok() {
                 let all: Vec<String> = sim.world().vessels().filter(|v| v.1.side != me).map(|v| format!("e{} ({:.0},{:.0}) {:?}", v.1.id.index, v.1.kin.pose.pos.x, v.1.kin.pose.pos.z, v.1.status)).collect();
                 eprintln!("    all {all:?}");

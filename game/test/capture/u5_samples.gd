@@ -87,7 +87,7 @@ static func stats(won: bool) -> Dictionary:
 		"rounds_fired": 412, "rounds_hit": 63, "missiles_fired": 2, "missiles_hit": 1, "torpedoes_fired": 0,
 		"torpedoes_hit": 0, "decoys_fired": 3, "missiles_seduced": 2, "fires": 1, "first_detection_s": 134.0,
 		"radiating_s": 95.0, "enemy_tonnage_disabled_t": 410.0 if won else 120.0, "enemy_tonnage_total_t": 640.0,
-		"own_cells_lost": 0.14 if won else 0.61, "alerts_raised": 9,
+		"own_cells_lost": 0.14 if won else 0.61, "alerts_raised": 9, "enemy_struck": 1 if won else 0,
 		"kills_by_method": [{"method": 0, "count": 2}, {"method": 6, "count": 1}] if won else [{"method": 0, "count": 1}],
 	}
 

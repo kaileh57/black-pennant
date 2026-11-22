@@ -47,6 +47,8 @@ static var firewall_seen := false
 var _name_field: LineEdit
 var _name_hint: Label
 var _code_field: LineEdit
+## The field `default_focus` returned, until its opening edit mode is stopped.
+var _opening_field: LineEdit = null
 var _code_status: Label
 var _join_code: Button
 var _address_field: LineEdit
@@ -296,7 +298,26 @@ func _exit_tree() -> void:
 
 
 func default_focus() -> Control:
-	return _code_field if not _name_field.text.strip_edges().is_empty() else _name_field
+	var field := _code_field if not _name_field.text.strip_edges().is_empty() else _name_field
+	# The screen opens on the field without edit mode, so one Esc (or pad B) leaves; Enter, a click or pad A
+	# starts editing. Godot starts editing when a LineEdit takes focus, so stop it once that has happened.
+	_opening_field = field
+	_stop_opening_edit.call_deferred(2)
+	return field
+
+
+## Leave edit mode on the field `default_focus` handed out, once its deferred focus has landed.
+func _stop_opening_edit(frames: int) -> void:
+	var field := _opening_field
+	if field == null or not is_instance_valid(field):
+		return
+	if not field.has_focus() and frames > 0:
+		await get_tree().process_frame
+		_stop_opening_edit(frames - 1)
+		return
+	_opening_field = null
+	if field.has_focus() and field.is_editing():
+		field.unedit()
 
 
 func _unhandled_input(event: InputEvent) -> void:

@@ -31,8 +31,9 @@
 //!   on a hull or site the objective names, with range and sources; `hostile_s` first Hostile stance on an
 //!   objective hull, `fine_s` first grade Fine or better, the best stance, grade and rung held on one.
 //!   `seen_s`: first time any enemy picture held the player hull.
-//! - Fire: `fire_s` first own round or weapon, `rounds`/`hits` and `missiles`/`mhits` from the sortie stats,
-//!   `shots_ev`/`hits_ev` counted from events; `mounts`, mount-seconds by engagement state while a hostile
+//! - Fire: `fire_s` first own gun round, `rounds`/`hits` and `missiles`/`mhits` from the sortie stats,
+//!   `shots_ev`/`hits_ev` counted from events, `launched_ev` own bodies put in the water or the air (missiles,
+//!   torpedoes, mines and the boarding or landing boat) and `launch_s` the first; `mounts`, mount-seconds by engagement state while a hostile
 //!   hull was tracked (the hold reasons), `ammo_out_s` first mount out of ammunition.
 //! - Events reach the driver once per audience (a side that cannot draw the shooter gets its own copy with
 //!   the shooter scrubbed), so counts take only the copy the player's side receives, and the shooter of a
@@ -174,7 +175,7 @@ pub(super) fn play(op: &content::campaign::OperationDef, index: u32, config: &So
     let (mut best_stance, mut best_grade, mut best_rung): (Option<Stance>, Option<TrackGrade>, Option<IdRung>) = (None, None, None);
     let mut seen: Option<u64> = None;
     // Fire.
-    let mut fire: Option<u64> = None;
+    let (mut fire, mut launch): (Option<u64>, Option<u64>) = (None, None);
     let (mut shots_ev, mut hits_ev, mut hits_in, mut bodies_out, mut bodies_in) = (0u32, 0u32, 0u32, 0u32, 0u32);
     let mut shooters: BTreeMap<EntityId, u32> = BTreeMap::new();
     let mut ammo_out: Option<u64> = None;
@@ -224,7 +225,7 @@ pub(super) fn play(op: &content::campaign::OperationDef, index: u32, config: &So
                 SimEvent::Phys(PhysEvent::ShellImpact { projectile, shooter, .. }) if !mine => { if *shooter != EntityId::NONE { named_shooter.insert(projectile.0 as u64, *shooter); } }
                 SimEvent::Phys(p) if mine => match p {
                     PhysEvent::ProjectileSpawned(ps) if ps.shooter == own => { shots_ev += 1; fire.get_or_insert(i); }
-                    PhysEvent::BodySpawned { launcher, .. } if *launcher == own => { bodies_out += 1; fire.get_or_insert(i); }
+                    PhysEvent::BodySpawned { launcher, .. } if *launcher == own => { bodies_out += 1; launch.get_or_insert(i); }
                     PhysEvent::BodySpawned { side, .. } if *side != me => bodies_in += 1,
                     PhysEvent::ShellImpact { shooter, vessel, .. } if *shooter == own && *vessel != own => hits_ev += 1,
                     PhysEvent::ShellImpact { projectile, shooter, vessel, .. } if *vessel == own => {
@@ -339,11 +340,11 @@ pub(super) fn play(op: &content::campaign::OperationDef, index: u32, config: &So
     let actions_s: Vec<String> = actions.iter().map(|(k, v)| format!("{k}={v}")).collect();
     let end_pos = own_hull.map(|h| DVec2::from(h.pos));
     let line = format!(
-        "op={} seed={} result={} outcome={:?} end={} min={:.1} limit_s={} hostiles={} vessels={} sea={} vis_m={:.0} | contact_s={} contact={} obj_s={} obj={} hostile_s={} fine_s={} best={}/{}/{} seen_s={} | fire_s={} rounds={} hits={} missiles={} mhits={} torps={} shots_ev={} hits_ev={} weapons_ev={} ammo_out_s={} mounts={} | objectives={} prog={} named_out={}/{} named_struck={} named_cells={} named_exits={} enemy_out={}/{} kills={} by_player={} actions={} | own={:?} own_s={} own_lost={} cells_lost={:.3} hits_in={} enemy_weapons={} damage_in={} top_shooter={} grounded={} collisions={} | obj_min_m={} obj_min_s={} obj_end_m={} named_min_m={} exit_min_m={} hostile_min_m={} sailed_m={:.0} stopped_s={} | emcon={} radiating_s={:.0} rad_first_s={} bursts={} | orders={}",
+        "op={} seed={} result={} outcome={:?} end={} min={:.1} limit_s={} hostiles={} vessels={} sea={} vis_m={:.0} | contact_s={} contact={} obj_s={} obj={} hostile_s={} fine_s={} best={}/{}/{} seen_s={} | fire_s={} rounds={} hits={} missiles={} mhits={} torps={} shots_ev={} hits_ev={} launched_ev={} launch_s={} ammo_out_s={} mounts={} | objectives={} prog={} named_out={}/{} named_struck={} named_cells={} named_exits={} enemy_out={}/{} kills={} by_player={} actions={} | own={:?} own_s={} own_lost={} cells_lost={:.3} hits_in={} enemy_weapons={} damage_in={} top_shooter={} grounded={} collisions={} | obj_min_m={} obj_min_s={} obj_end_m={} named_min_m={} exit_min_m={} hostile_min_m={} sailed_m={:.0} stopped_s={} | emcon={} radiating_s={:.0} rad_first_s={} bursts={} | orders={}",
         op.id.as_str(), index, result, r.outcome, end, minutes, prepared.time_limit_s.map_or("-".into(), |s| s.to_string()), hostiles, prepared.vessels.len(), prepared.weather.sea_state.0, prepared.weather.visibility_m,
         secs(contact), if contact_note.is_empty() { "-" } else { &contact_note }, secs(obj_contact), if obj_note.is_empty() { "-" } else { &obj_note }, secs(obj_hostile), secs(obj_fine),
         best_stance.map_or("-".into(), |s| format!("{s:?}")), best_grade.map_or("-".into(), |s| format!("{s:?}")), best_rung.map_or("-".into(), |s| format!("{s:?}")), secs(seen),
-        secs(fire), r.stats.rounds_fired, r.stats.rounds_hit, r.stats.missiles_fired, r.stats.missiles_hit, r.stats.torpedoes_fired, shots_ev, hits_ev, bodies_out, secs(ammo_out), top(&mounts, 4),
+        secs(fire), r.stats.rounds_fired, r.stats.rounds_hit, r.stats.missiles_fired, r.stats.missiles_hit, r.stats.torpedoes_fired, shots_ev, hits_ev, bodies_out, secs(launch), secs(ammo_out), top(&mounts, 4),
         if objectives.is_empty() { "-".into() } else { objectives.join(",") }, if prog_s.is_empty() { "-".into() } else { prog_s.join(",") }, named_out, named_n, named_struck, if named_cells.is_finite() { format!("{named_cells:.3}") } else { "-".into() }, named_exits,
         enemy_out, enemy_n, r.kills.len(), r.kills.iter().filter(|k| k.by_player.is_some()).count(), if actions_s.is_empty() { "-".into() } else { actions_s.join(",") },
         own_status, own_left_afloat.map_or("-".into(), |(t, s)| format!("{}:{s:?}", secs(Some(t)))), own_lost, r.stats.own_cells_lost_fraction, hits_in, bodies_in, top(&damage_in, 4), top_shooter, groundings, collisions,

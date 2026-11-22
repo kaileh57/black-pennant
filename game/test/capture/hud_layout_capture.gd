@@ -12,7 +12,8 @@ extends Node
 ## splashes against the patrol boat, and the dock's splash bar panel (with its Tune and edit toggle) and
 ## its scope readout count as clusters too, so the bar and the HUD's top row must share the width without
 ## overlap or clipping; the Tune dock, opened over the left dock on purpose, must stay on screen and under
-## the bar. Extra states: `tune` (the Tune dock open); any state name may end in
+## the bar. Extra states: `tune` (the Tune dock open), `struck` (the selected track card with its
+## struck-colours line); any state name may end in
 ## `_s2` to take it at UI scale 200%.
 ## Headless, or when instanced by check_project, it does nothing.
 
@@ -137,6 +138,8 @@ func _process(_delta: float) -> void:
 		return
 	if _countdown > 0:
 		_countdown -= 1
+		if _states[_index].trim_suffix("_s2") == "struck":
+			_force_struck(hud)
 		return
 	if _index >= 0:
 		_shoot(hud, _states[_index])
@@ -195,7 +198,7 @@ func _enter(hud: Node, state: String) -> void:
 	match state:
 		"bridge":
 			Hud.select_track(Bp.NONE)
-		"select":
+		"select", "struck":
 			Hud.select_step(1)
 		"plot":
 			Hud.select_step(1)
@@ -219,6 +222,19 @@ func _enter(hud: Node, state: String) -> void:
 		"released":
 			Orders.take_control(Bp.ROLE_HELM, 0, false)
 			Orders.take_control(Bp.ROLE_WEAPON_GROUP, 0, false)
+
+
+## The `struck` state: the selected track's card drawn as if the side had seen the hull strike its
+## colours. No scripted picture strikes, so the flag is laid on the card's own copy each frame.
+func _force_struck(hud: Node) -> void:
+	var card := hud.get_node_or_null(^"Frame/Docks/LeftDock/Column/TrackCard")
+	if card == null:
+		return
+	var data: Variant = card.get(&"_data")
+	if data is Dictionary and not (data as Dictionary).is_empty() and not bool((data as Dictionary).get("struck", false)):
+		var shown := (data as Dictionary).duplicate()
+		shown["struck"] = true
+		card.call(&"show_track", shown, card.get(&"_card"))
 
 
 func _shoot(hud: Node, state: String) -> void:
