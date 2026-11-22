@@ -16,6 +16,7 @@ extends Node
 ## 6. Shader warm-up behind the precompile screen (L1833, L1358).
 ## 7. Hand over to `Screens` routing and open the main menu, or what a flag asks for: `--benchmark`
 ##    opens the benchmark, `--replay <file>` plays a replay, `--join <code>` joins a lobby.
+## 8. If the previous run crashed (`App.previous_run_crashed`), a message names the logs folder.
 ## A headless run (CI, a dedicated test) skips every screen that needs a player or a GPU.
 ## The flow runs only when this scene is the main scene; the compile check instantiates it inert.
 
@@ -88,7 +89,18 @@ func _run() -> void:
 		await _warm_shaders()
 	Screens.start_routing()
 	_route(cmd)
+	if not headless and not automated:
+		_tell_about_crash()
 	queue_free()
+
+
+## The previous run crashed or was killed: name the folder that holds its log, so a tester can attach
+## it whether or not crash reports are on.
+func _tell_about_crash() -> void:
+	if not App.previous_run_crashed():
+		return
+	var body := tr(&"settings_ui.playtest.crash_body").format([App.log_folder()])
+	Screens.open_message(&"settings_ui.playtest.crash_title", body)
 
 
 ## A setting read as a flag; anything that is not a true bool or a non-zero number is false.

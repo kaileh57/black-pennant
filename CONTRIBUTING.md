@@ -40,4 +40,4 @@ Code you contribute is licensed under MIT or Apache 2.0, at the user's option, l
 
 ## Reporting bugs
 
-Open a GitHub issue with the game version from the main menu (for example "Version 0.1.0, build 3f2a9c1"), your system, and what you did. Logs help: on Windows, run `Black Pennant.console.exe`; on macOS, run `"/Applications/Black Pennant.app/Contents/MacOS/Black Pennant"` from Terminal. Playtest operation logs are in the user data folder the README names; attach them if you are reporting a playtest.
+Use the bug report or playtest report form on GitHub issues; [docs/playtest.md](docs/playtest.md) explains both. Give the game version from the main menu (for example "Version 0.1.0, build 3f2a9c1"), your system, and what you did. Logs help: on Windows, run `Black Pennant.console.exe`; on macOS, run `"/Applications/Black Pennant.app/Contents/MacOS/Black Pennant"` from Terminal. After a crash, the game names its logs folder at the next start; attach the newest `godot<date>.log` from there. Playtest logs are copied from Settings, under Playtest.

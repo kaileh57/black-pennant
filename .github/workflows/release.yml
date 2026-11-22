@@ -1,6 +1,7 @@
 # Release builds. DESIGN.md "Distribution and signing" (L1274-1280) and "Automated coverage" (L1284-1294).
 #
-# A tag vX.Y.Z publishes a GitHub release; vX.Y.Z-beta.N (any tag with a hyphen) publishes a pre-release.
+# A tag vX.Y.Z publishes a GitHub release; vX.Y.Z-beta.N (any tag with a hyphen) and every 0.x tag publish a
+# pre-release, since versions stay 0.x until 1.0 and every 0.x build is a playtest build (L1274, L2177).
 # Each platform runs `cargo xtask release`, which builds the release library, runs the generators, exports
 # with Godot 4.7.2 and, on macOS, ad-hoc signs the bundle inside out and verifies it. The publish job adds
 # SHA256SUMS.txt and a build-provenance attestation per asset.
@@ -57,6 +58,12 @@ jobs:
             ~/.cargo/git
             target
           key: cargo-release-${{ runner.os }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+
+      # The cache holds target/, so it can bring back an earlier version's zip; the smoke test and the upload
+      # below would then pick up two archives.
+      - name: Clear earlier release outputs
+        shell: bash
+        run: rm -rf target/bp-release
 
       # The editor and the export templates come from the official release page. The templates archive is
       # large, so it is cached by version.
@@ -169,11 +176,14 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           pre=""
-          case "$TAG" in *-*) pre="--prerelease" ;; esac
+          case "$TAG" in *-*|v0.*) pre="--prerelease" ;; esac
           cat > notes.md <<'EOF'
           Free and unsigned. See the README for how to open an unsigned build:
           on macOS, open the app once, then choose Open Anyway in System Settings > Privacy & Security;
           on Windows, choose More info, then Run anyway.
+
+          Playtesting this build? docs/playtest.md in the repository says what to play, how to copy the logs
+          and where to file the report.
 
           Check a download with `gh attestation verify <file> --repo ${{ github.repository }}`
           or against SHA256SUMS.txt.

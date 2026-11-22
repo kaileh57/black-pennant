@@ -1,2 +1,12 @@
+# Every text file is checked out with LF on every platform. Content files (blueprints, RON data,
+# shaders, scenes) are hashed and byte-compared, so a CRLF checkout on Windows must not change them.
+* text=auto eol=lf
+*.png binary
+*.ttf binary
+*.otf binary
+*.wav binary
+*.ogg binary
+*.bin binary
 # The committed token export is byte-compared by `cargo xtask tokens --check` on every platform.
 game/art/tokens/world_tokens.json text eol=lf
+*.res binary

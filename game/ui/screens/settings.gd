@@ -1,7 +1,8 @@
 extends Control
 ## Settings built from the schema, one page per section.
 ## DESIGN.md L1710-1723. Unit: ui-settings.
-## Reads and calls: Settings.schema, Settings.set_value, Settings.reset_section, App.timing_log_text.
+## Reads and calls: Settings.schema, Settings.set_value, Settings.reset_section, App.timing_log_text,
+## App.operation_log_text, App.diagnostics_text, App.log_folder.
 ##
 ## Opened with `Screens.push(&"settings")` from the main menu and the pause menu; `args.section`
 ## (a section name such as `&"access"`) picks the first page. Every row comes from
@@ -354,18 +355,30 @@ func _add_extras(section: StringName) -> void:
 			var copy_log := Kit.inline_button("settings_ui.playtest.copy_log")
 			copy_log.pressed.connect(_copy_text.bind(&"timing_log_text", &"settings_ui.playtest.log_copied"))
 			_extra_help(copy_log, &"settings_ui.playtest.copy_log.help")
+			var copy_ops := Kit.inline_button("settings_ui.playtest.copy_operations")
+			copy_ops.pressed.connect(_copy_text.bind(&"operation_log_text", &"settings_ui.playtest.operations_copied"))
+			_extra_help(copy_ops, &"settings_ui.playtest.copy_operations.help")
 			var copy_diag := Kit.inline_button("settings_ui.playtest.copy_diagnostics")
 			copy_diag.pressed.connect(_copy_text.bind(&"diagnostics_text", &"settings_ui.playtest.diagnostics_copied"))
 			_extra_help(copy_diag, &"settings_ui.playtest.copy_diagnostics.help")
-			row.add_child(copy_log)
-			row.add_child(copy_diag)
-			Kit.chain_horizontal([copy_log, copy_diag])
+			var open_logs := Kit.inline_button("settings_ui.playtest.open_logs")
+			open_logs.pressed.connect(_open_log_folder)
+			_extra_help(open_logs, &"settings_ui.playtest.open_logs.help")
+			# Two rows of two, so the page still fits at 200% interface scale.
+			var row2 := Kit.hbox(3)
+			for b: Control in [copy_log, copy_ops]:
+				row.add_child(b)
+			for b: Control in [copy_diag, open_logs]:
+				row2.add_child(b)
+			Kit.chain_horizontal([copy_log, copy_ops])
+			Kit.chain_horizontal([copy_diag, open_logs])
+			for b: Control in [copy_log, copy_ops, copy_diag, open_logs]:
+				_page_focus.append(b)
 			_extras.add_child(row)
+			_extras.add_child(row2)
 			_status = Kit.label("", &"Body", true)
 			_status.visible = false
 			_extras.add_child(_status)
-			_page_focus.append(copy_log)
-			_page_focus.append(copy_diag)
 
 
 func _extra_help(control: Control, key: StringName) -> void:
@@ -430,6 +443,17 @@ func _copy_text(method: StringName, done_key: StringName) -> void:
 		DisplayServer.clipboard_set(text)
 	if _status != null and is_instance_valid(_status):
 		_status.text = tr(done_key) if ok else tr(&"settings_ui.playtest.nothing_to_copy")
+		_status.visible = true
+
+
+## Show the logs folder in Finder or Explorer, and name it on the page for a tester who cannot see it.
+func _open_log_folder() -> void:
+	var folder: Variant = Kit.call_on(&"App", &"log_folder")
+	if not (folder is String) or (folder as String).is_empty():
+		return
+	OS.shell_show_in_file_manager(folder as String, true)
+	if _status != null and is_instance_valid(_status):
+		_status.text = tr(&"settings_ui.playtest.logs_at").format([folder])
 		_status.visible = true
 
 

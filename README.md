@@ -36,6 +36,10 @@ On macOS 14 you can instead Control-click the app and choose Open. Each new vers
 
 Smart App Control blocks unsigned programs and has no per-app exception. It is on by default only on clean installs of Windows 11. If it blocks the game, the game cannot run on that machine until you turn Smart App Control off in Windows Security, under App & browser control.
 
+## Playtest
+
+Playtest builds are the pre-releases on the releases page. [docs/playtest.md](docs/playtest.md) says what to play, how to copy the timing and operation logs from Settings, under Playtest, and how to file a playtest report or a bug report on GitHub. It also lists the known issues.
+
 ## Controls
 
 Every binding can be changed in Settings, under Controls, and every order at sea also has a gamepad binding.
@@ -151,7 +155,7 @@ cargo xtask release
 
 That builds the release library, runs the generators, exports with Godot, ad-hoc signs the macOS app and checks the signature, and writes the zip to `target/bp-release/`. The export needs the Godot 4.7.2 export templates, which the editor installs from Editor > Manage Export Templates. On macOS the export opens a Godot window for a few seconds so it can bake shaders for Metal; `--no-bake` skips that.
 
-Pushing a tag such as `v0.1.0` or `v0.1.0-beta.1` runs the same command on GitHub's hosted macOS and Windows runners and publishes the zips, with checksums, as a release (a pre-release when the tag has a hyphen).
+Pushing a tag such as `v0.1.0` or `v0.1.0-beta.1` runs the same command on GitHub's hosted macOS and Windows runners and publishes the zips, with checksums, as a release. Every 0.x tag, and any tag with a hyphen, publishes as a pre-release.
 
 Tests run headless:
 
@@ -167,7 +171,7 @@ Settings, saves, blueprints and replays live in your user data folder:
 - macOS: `~/Library/Application Support/BlackPennant`
 - Windows: `%APPDATA%\BlackPennant`
 
-The game sends nothing unless you choose Send on the crash report prompt. Settings, under Privacy, changes that choice.
+The game sends nothing unless you choose Send on the crash report prompt. Settings, under Privacy, changes that choice. The `logs` folder there holds the game log of each session and the local playtest logs, which never leave your machine unless you paste them into a report.
 
 ## How it was made
 

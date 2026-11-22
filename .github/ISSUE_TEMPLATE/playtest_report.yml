@@ -1,0 +1,130 @@
+name: Playtest report
+description: Paste your timing and operation logs and answer a few questions after a playtest session.
+title: "Playtest report: "
+labels: ["playtest"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for playing. docs/playtest.md says what to play. In the game, open Settings, then Playtest,
+        and use Copy timing log and Copy operation log. Paste each below. The logs hold times, Salvage and
+        results only: no names and no file paths. The game never sends them by itself.
+  - type: input
+    id: version
+    attributes:
+      label: Build
+      description: The line at the bottom of the main menu, for example "Version 0.1.0, build 3f2a9c1".
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: System
+      options:
+        - macOS (Apple silicon)
+        - Windows 10
+        - Windows 11
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware
+      description: Processor, memory and graphics card, for example "MacBook Air M1, 8 GB" or "Ryzen 5 2600, 16 GB, RTX 3050 6 GB".
+    validations:
+      required: true
+  - type: textarea
+    id: timing_log
+    attributes:
+      label: Timing log
+      description: Settings > Playtest > Copy timing log, pasted as it is. It includes the tutorial's step times.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: operation_log
+    attributes:
+      label: Operation log
+      description: Settings > Playtest > Copy operation log, pasted as it is.
+      render: text
+    validations:
+      required: false
+  - type: dropdown
+    id: tutorial
+    attributes:
+      label: Did you finish the tutorial?
+      options:
+        - "Yes"
+        - "No, I stopped partway"
+        - "I skipped it"
+    validations:
+      required: true
+  - type: dropdown
+    id: operations
+    attributes:
+      label: How many campaign operations did you complete after the tutorial?
+      options:
+        - "0"
+        - "1"
+        - "2"
+        - "3"
+        - "4 or more"
+    validations:
+      required: true
+  - type: dropdown
+    id: repetitive
+    attributes:
+      label: If you reached the end of Act 1, did the operations feel repetitive?
+      options:
+        - "I did not reach the end of Act 1"
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+  - type: dropdown
+    id: photograph
+    attributes:
+      label: In the photo reconnaissance operation, did your first Photograph attempt succeed?
+      options:
+        - "I did not play it"
+        - "Yes, on the first try"
+        - "No, it took more than one try"
+    validations:
+      required: true
+  - type: dropdown
+    id: loop_feel
+    attributes:
+      label: How did the time from one briefing to the next feel?
+      options:
+        - "Too short"
+        - "About right"
+        - "Too long"
+    validations:
+      required: false
+  - type: dropdown
+    id: uncertainty
+    attributes:
+      label: At sea, what does the size of the shaded shape around a contact tell you?
+      options:
+        - "How big the ship is"
+        - "Where the ship could be"
+        - "I am not sure"
+    validations:
+      required: false
+  - type: dropdown
+    id: codes
+    attributes:
+      label: Capitalised codes on the plot and log, such as BRG for bearing, feel
+      options:
+        - "Authentic"
+        - "Like a costume"
+        - "No opinion"
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: What confused you, what you enjoyed, what broke. A crash goes in a bug report instead.
+    validations:
+      required: false

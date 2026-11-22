@@ -45,7 +45,9 @@ jobs:
           rustup toolchain install "$NIGHTLY" --profile minimal --component llvm-tools-preview
           echo "NIGHTLY=$NIGHTLY" >> "$GITHUB_ENV"
       - name: cargo-fuzz
-        run: cargo +"$NIGHTLY" install cargo-fuzz --version "$CARGO_FUZZ_VERSION" --locked
+        # No --locked: cargo-fuzz's own lockfile pins rustix 0.36.5, which does not compile on this nightly
+        # (it uses rustc-internal attributes). The version of cargo-fuzz itself stays pinned.
+        run: cargo +"$NIGHTLY" install cargo-fuzz --version "$CARGO_FUZZ_VERSION"
       - name: Clang matching rustc's LLVM, sanitizer flags for the vendored Luau
         run: |
           LLVM=$(rustc +"$NIGHTLY" -vV | sed -n 's/^LLVM version: \([0-9]*\).*/\1/p')

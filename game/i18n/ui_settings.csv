@@ -16,6 +16,14 @@ settings_ui.playtest.copy_diagnostics,Button that copies diagnostics for a bug r
 settings_ui.playtest.copy_diagnostics.help,Help line for the copy diagnostics button; first line 12 words or fewer,"Copies build, renderer and changed settings, without names or paths."
 settings_ui.playtest.diagnostics_copied,Line shown after the diagnostics were copied,Diagnostics copied to the clipboard. Nothing was sent.
 settings_ui.playtest.nothing_to_copy,Line shown when there was nothing to copy,There is nothing to copy yet.
+settings_ui.playtest.copy_operations,Button that copies the playtest operation log to the clipboard,Copy operation log
+settings_ui.playtest.copy_operations.help,Help line for the copy operation log button; first line 12 words or fewer,"Copies loop times, Salvage earned and spent, and ghost conditions met."
+settings_ui.playtest.operations_copied,Line shown after the operation log was copied,Operation log copied to the clipboard. Nothing was sent.
+settings_ui.playtest.open_logs,Button that shows the logs folder in Finder or Explorer,Open log folder
+settings_ui.playtest.open_logs.help,Help line for the open log folder button; first line 12 words or fewer,"Shows the folder with the game log, crash logs and playtest logs."
+settings_ui.playtest.logs_at,"Line shown after the logs folder was opened; {0} the folder path",Logs are in {0}
+settings_ui.playtest.crash_title,Dialog title at start when the previous run crashed or was closed by force,The last session did not close normally
+settings_ui.playtest.crash_body,"Dialog body at start after a crash; {0} the logs folder path","Its log is in {0}, in the newest file named godot followed by a date. Attach that file to a bug report on GitHub. Settings, under Playtest, can open the folder."
 settings_ui.preview.heading,Line above the officer line preview on the Accessibility page,Officer line preview at the chosen size and backing
 settings_ui.preview.speaker,Speaker of the sample officer line in the preview; an officer billet,Helm
 settings_ui.preview.line,"Sample officer radio line in the preview, at most 40 characters","Turning 040, torpedo bearing 210."

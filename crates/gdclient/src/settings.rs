@@ -1202,7 +1202,8 @@ mod tests {
     /// `ACTIONS` lists exactly the project's non-`ui_*` input actions.
     #[test]
     fn actions_match_project_input_map() {
-        let text = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../game/project.godot")).unwrap();
+        // A Windows checkout may carry CRLF line endings.
+        let text = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../game/project.godot")).unwrap().replace("\r\n", "\n");
         let section = text.split("\n[input]\n").nth(1).unwrap().split("\n[").next().unwrap();
         let project: Vec<&str> = section.lines().filter_map(|l| l.strip_suffix("={")).filter(|a| !a.starts_with("ui_")).collect();
         let mut ours: Vec<&str> = ACTIONS.iter().map(|a| a.0).collect();

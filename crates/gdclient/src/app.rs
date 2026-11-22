@@ -3,15 +3,29 @@
 //! go into crash and benchmark reports; safe mode notice), L1330-1347 (crash reports: Sentry, opt-in, Rust
 //! panics through the `sentry` crate after consent, one function sets each tag in both SDKs; a debug command
 //! panics once on the main thread and once on a worker), L1003 (random 64-bit client id per install),
-//! L80 (local playtest timing log: never sent; Settings > Playtest > Copy timing log), L1039 (diagnostics
-//! bundle with the connection log), L1359-1360 (user data paths).
+//! L80 (local playtest timing log: never sent; Settings > Playtest > Copy timing log), L881 (local
+//! operation log: loop times, income, spend, ghost results), L2209 (a copyable playtest report written at
+//! session end), L1039 (diagnostics bundle with the connection log), L1359-1360 (user data paths).
 //! The Sentry Godot SDK is driven from GDScript (`res://boot/consent.gd`); this class owns the Rust side,
 //! the `sentry` crate line of L1338: panics only, no minidumps, no release health. Events carry no host
 //! name, user, or folder of the player: `before_send` strips `server_name`, `user` and the folders of
 //! debug-image paths (symbolication uses the debug id, not the path).
 //!
-//! Files: `user://identity.ron` (client id), `user://logs/timing_log.txt` (playtest timing rows, appended
-//! when a loop closes), [`CONNECTION_LOG`] (written by the lobby, read here for diagnostics).
+//! Files: `user://identity.ron` (client id), [`TIMING_LOG`] and [`OPERATION_LOG`] (one row per core loop,
+//! appended when the loop closes), [`SESSION_REPORT`] (the playtest report, rewritten when a loop closes
+//! and at exit), [`RUNNING_FLAG`] (present while the game runs; a crash leaves it behind),
+//! [`CONNECTION_LOG`] (written by the lobby, read here for diagnostics). Godot's own log, with every Rust
+//! panic and engine crash backtrace, is `user://logs/godot.log`; Godot renames it with a date at the next
+//! start.
+//!
+//! # The loop logs (L80, L881)
+//! No screen marks loop steps: `process` reads the `Campaign` autoload's phase each frame and files the
+//! frame's active time under one step ([`loop_step`]). A loop opens when a briefing opens
+//! ([`starts_new_loop`]) and closes when the next loop opens, when the campaign closes, or at exit. The
+//! clock leaves out sortie pauses over 2 minutes and suspended stretches ([`ActiveClock`]). Splash time is
+//! dry-dock time while a splash session is at sea. Income and spend are the rises and falls of the Salvage
+//! ledger while the loop is open. First attempt means no earlier loop on this install sortied on the same
+//! operation of the same campaign (theatre seed).
 use godot::classes::file_access::ModeFlags;
 use godot::classes::{DirAccess, Engine, FileAccess, Os, Time};
 use godot::obj::Singleton;
@@ -21,6 +35,15 @@ use std::collections::BTreeMap;
 /// The local connection log the lobby appends to (L1039).
 pub const CONNECTION_LOG: &str = "user://logs/connection.log";
 pub const TIMING_LOG: &str = "user://logs/timing_log.txt";
+pub const OPERATION_LOG: &str = "user://logs/operation_log.txt";
+/// The playtest report as one copyable text (L2209), rewritten at session end.
+pub const SESSION_REPORT: &str = "user://logs/playtest_report.txt";
+/// The tutorial's step log (`tutorial.rs`), folded into the copied timing log and the report.
+pub const TUTORIAL_LOG: &str = "user://logs/tutorial_log.txt";
+/// Holds the process id while the game runs; removed at a clean exit.
+pub const RUNNING_FLAG: &str = "user://logs/running.flag";
+/// Godot's own log of this run.
+pub const GODOT_LOG: &str = "user://logs/godot.log";
 pub const IDENTITY_FILE: &str = "user://identity.ron";
 /// The user data folders `user_dirs` creates (L1359-1360).
 pub const USER_DIRS: [(&str, &str); 7] = [
@@ -31,8 +54,6 @@ pub const USER_DIRS: [(&str, &str); 7] = [
 pub const LONG_PAUSE_S: f64 = 120.0;
 /// A frame gap longer than this is time the app was suspended or stalled; it is left out too.
 const SUSPEND_GAP_S: f64 = 5.0;
-/// The steps of one core loop, in order (`timing_mark`).
-pub const TIMING_STEPS: [&str; 8] = ["briefing_open", "refit_done", "splash_start", "splash_end", "sortie_start", "sortie_end", "recover_done", "chart_done"];
 /// Exit budget (doc of `exit_tree`).
 const EXIT_BUDGET: std::time::Duration = std::time::Duration::from_secs(3);
 const CRASH_FLUSH_MAX: std::time::Duration = std::time::Duration::from_secs(2);
@@ -144,21 +165,146 @@ impl ActiveClock {
     pub fn now(&self) -> f64 { self.active_s + if self.paused && self.pause_s <= LONG_PAUSE_S { self.pause_s } else { 0.0 } }
 }
 
-/// One loop of the timing log as a text row: loop start (local date and time) and the seconds each step
-/// took, named by the mark that ended it. `marks` are (step, active seconds) in arrival order.
-pub fn timing_row(started: &str, marks: &[(String, f64)], complete: bool) -> String {
-    let mut row = format!("{started}");
-    for pair in marks.windows(2) {
-        let secs = (pair[1].1 - pair[0].1).max(0.0);
-        row.push_str(&format!("\t{}={:.0}", pair[1].0, secs));
+/// The steps of the core loop (L62-73) the timing log measures, in order.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LoopStep { Briefing, Refit, Splash, Sortie, Recover, Chart }
+impl LoopStep {
+    pub const ALL: [LoopStep; 6] = [LoopStep::Briefing, LoopStep::Refit, LoopStep::Splash, LoopStep::Sortie, LoopStep::Recover, LoopStep::Chart];
+    pub fn name(self) -> &'static str {
+        match self { LoopStep::Briefing => "briefing", LoopStep::Refit => "refit", LoopStep::Splash => "splash", LoopStep::Sortie => "sortie", LoopStep::Recover => "recover", LoopStep::Chart => "chart" }
     }
-    if let (Some(start), Some(sortie_end)) = (marks.iter().find(|m| m.0 == "sortie_start"), marks.iter().rev().find(|m| m.0 == "sortie_end")) {
-        row.push_str(&format!("\tsortie_length={:.0}", (sortie_end.1 - start.1).max(0.0)));
+    fn index(self) -> usize { LoopStep::ALL.iter().position(|s| *s == self).unwrap_or(0) }
+}
+
+/// The step a frame belongs to, from the campaign phase and whether a splash test is at sea. `None` with
+/// no campaign loaded or after an Ironman loss.
+pub fn loop_step(phase: crate::enums::CampaignPhase, splash_live: bool) -> Option<LoopStep> {
+    use crate::enums::CampaignPhase as P;
+    match phase {
+        P::Briefing => Some(LoopStep::Briefing),
+        P::DryDock if splash_live => Some(LoopStep::Splash),
+        P::DryDock => Some(LoopStep::Refit),
+        P::Sortie => Some(LoopStep::Sortie),
+        P::AfterAction => Some(LoopStep::Recover),
+        P::Chart | P::Advancing => Some(LoopStep::Chart),
+        P::None | P::Over => None,
     }
-    if let (Some(first), Some(last)) = (marks.first(), marks.last()) { row.push_str(&format!("\tloop={:.0}", (last.1 - first.1).max(0.0))); }
-    if !complete { row.push_str("\tincomplete"); }
-    row.push('\n');
-    row
+}
+
+/// One core loop as the timing and operation logs see it, from opening a briefing to opening the next.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct OpenLoop {
+    /// Local date and time the briefing opened.
+    pub started: String,
+    /// Version and build id, so a row can be matched to a release.
+    pub build: String,
+    /// Theatre seed in hex: tells one campaign's operations from another's.
+    pub campaign: String,
+    pub operation: String,
+    /// The mission template (`convoy_raid`), or `story`, `ace_duel`, `capstone`, `tutorial`.
+    pub template: String,
+    /// Difficulty preset id, or `custom`.
+    pub difficulty: String,
+    /// Active seconds per [`LoopStep`].
+    pub step_s: [f64; 6],
+    pub sortied: bool,
+    /// Whether this loop's sortie was the first on its operation; `None` before a result.
+    pub first_attempt: Option<bool>,
+    /// Outcome of this loop's sortie (`victory`, `defeat`, `withdrawn`, `aborted`, `draw`).
+    pub outcome: Option<String>,
+    pub salvage: Option<u32>,
+    pub income: u64,
+    pub spend: u64,
+    pub ghosts_met: u32,
+    pub ghosts_total: u32,
+}
+impl OpenLoop {
+    /// File `dt` active seconds under `step`. A negative `dt` (the clock took back a pause that grew past
+    /// 2 minutes) comes off the same step; no step goes below zero.
+    pub fn add_time(&mut self, step: LoopStep, dt: f64) {
+        if !dt.is_finite() { return; }
+        let slot = &mut self.step_s[step.index()];
+        *slot = (*slot + dt).max(0.0);
+    }
+    /// The Salvage ledger now: a rise is income, a fall is spend.
+    pub fn salvage_now(&mut self, salvage: u32) {
+        if let Some(prev) = self.salvage {
+            if salvage > prev { self.income += u64::from(salvage - prev); } else { self.spend += u64::from(prev - salvage); }
+        }
+        self.salvage = Some(salvage);
+    }
+    pub fn loop_s(&self) -> f64 { self.step_s.iter().sum() }
+    fn outcome_text(&self) -> &str { self.outcome.as_deref().unwrap_or("none") }
+    /// The timing log row (L80): briefing-open time, seconds per step, sortie length, template, difficulty
+    /// preset and first-attempt outcome. Tab-separated `key=value`; `incomplete` when the loop never
+    /// reached the next briefing.
+    pub fn timing_row(&self, complete: bool) -> String {
+        let mut row = format!("{}\tbuild={}\tcampaign={}\toperation={}\ttemplate={}\tdifficulty={}", self.started, self.build, self.campaign, self.operation, self.template, self.difficulty);
+        for step in LoopStep::ALL { row.push_str(&format!("\t{}={:.0}", step.name(), self.step_s[step.index()])); }
+        let first = match self.first_attempt { Some(true) => "yes", Some(false) => "no", None => "none" };
+        row.push_str(&format!("\tloop={:.0}\tfirst_attempt={first}\toutcome={}", self.loop_s(), self.outcome_text()));
+        if !complete { row.push_str("\tincomplete"); }
+        row.push('\n');
+        row
+    }
+    /// The operation log row (L881): loop times, income, spend and ghost results.
+    pub fn operation_row(&self, complete: bool) -> String {
+        let mut row = format!(
+            "{}\tbuild={}\tcampaign={}\toperation={}\tloop={:.0}\tsortie={:.0}\tincome={}\tspend={}\tghosts_met={}/{}\toutcome={}",
+            self.started, self.build, self.campaign, self.operation, self.loop_s(), self.step_s[LoopStep::Sortie.index()], self.income, self.spend, self.ghosts_met, self.ghosts_total, self.outcome_text(),
+        );
+        if !complete { row.push_str("\tincomplete"); }
+        row.push('\n');
+        row
+    }
+    /// The key [`attempted_keys`] reads back.
+    pub fn attempt_key(&self) -> String { format!("{}/{}", self.campaign, self.operation) }
+}
+
+/// Opening the briefing of `operation` starts a new loop unless the open loop is the same operation and has
+/// not sortied yet (the player looked at the chart table or the dry dock and came back).
+pub fn starts_new_loop(open: Option<&OpenLoop>, operation: &str) -> bool {
+    match open { None => true, Some(l) => l.sortied || l.operation != operation }
+}
+
+/// `campaign/operation` of every operation-log row that sortied, for first-attempt checks.
+pub fn attempted_keys(operation_log: &str) -> std::collections::BTreeSet<String> {
+    let mut out = std::collections::BTreeSet::new();
+    for line in operation_log.lines() {
+        let field = |k: &str| line.split('\t').find_map(|f| f.strip_prefix(k)).map(str::to_string);
+        let (Some(c), Some(o), Some(outcome)) = (field("campaign="), field("operation="), field("outcome=")) else { continue };
+        if outcome != "none" { out.insert(format!("{c}/{o}")); }
+    }
+    out
+}
+
+/// The template column for an operation kind.
+pub fn template_name(kind: &content::campaign::operation::OperationKind) -> String {
+    use content::campaign::operation::OperationKind as K;
+    match kind {
+        K::Template(m) => snake(&format!("{m:?}")),
+        K::Story => "story".into(),
+        K::AceDuel(_) => "ace_duel".into(),
+        K::Capstone => "capstone".into(),
+        K::Tutorial => "tutorial".into(),
+    }
+}
+
+/// `ConvoyRaid` to `convoy_raid`.
+pub fn snake(camel: &str) -> String {
+    let mut out = String::new();
+    for (i, c) in camel.chars().enumerate() {
+        if c.is_ascii_uppercase() { if i > 0 { out.push('_'); } out.push(c.to_ascii_lowercase()); } else { out.push(c); }
+    }
+    out
+}
+
+/// A log file's text for a copy: the build line, then the file, or `""` when the file holds no rows.
+pub fn copy_text(build_line: &str, title: &str, body: &str) -> String {
+    if body.trim().is_empty() { return String::new(); }
+    let mut t = format!("{build_line}\n{title}\n{body}");
+    if !t.ends_with('\n') { t.push('\n'); }
+    t
 }
 
 /// Hide the player's folders and names in text bound for a bug report: the home and user-data folders
@@ -196,12 +342,19 @@ pub fn scrub(text: &str, home: &str, user_dir: &str) -> String {
 #[class(base = Node)]
 pub struct BpApp {
     pub(crate) crash_reports_on: bool,
-    pub(crate) timing_marks: Vec<(String, f64)>,
     pub(crate) startup: Option<StartupReport>,
     pub(crate) sentry_guard: Option<sentry::ClientInitGuard>,
     pub(crate) tags: BTreeMap<String, String>,
     pub(crate) clock: ActiveClock,
-    pub(crate) loop_started: String,
+    /// The core loop being timed (L80, L881).
+    pub(crate) open_loop: Option<OpenLoop>,
+    /// Campaign phase seen last frame.
+    pub(crate) last_phase: crate::enums::CampaignPhase,
+    /// `campaign/operation` keys that have sortied (read from the operation log on first use).
+    pub(crate) attempted: Option<std::collections::BTreeSet<String>>,
+    pub(crate) campaign_node: Option<Gd<crate::campaign::BpCampaign>>,
+    /// The previous run left [`RUNNING_FLAG`] behind: it crashed or was killed.
+    pub(crate) previous_run_crashed: bool,
     pub(crate) panicked_on_main: bool,
     pub(crate) panicked_on_worker: bool,
     base: Base<Node>,
@@ -210,12 +363,27 @@ pub struct BpApp {
 #[godot_api]
 impl INode for BpApp {
     fn init(base: Base<Node>) -> Self {
-        Self { crash_reports_on: false, timing_marks: Vec::new(), startup: None, sentry_guard: None, tags: BTreeMap::new(), clock: ActiveClock::default(), loop_started: String::new(), panicked_on_main: false, panicked_on_worker: false, base }
+        Self {
+            crash_reports_on: false, startup: None, sentry_guard: None, tags: BTreeMap::new(), clock: ActiveClock::default(), open_loop: None,
+            last_phase: crate::enums::CampaignPhase::None, attempted: None, campaign_node: None, previous_run_crashed: false,
+            panicked_on_main: false, panicked_on_worker: false, base,
+        }
     }
-    /// Advance the timing clock; the sortie pause flag comes from this frame's snapshot.
+    /// Note a crash of the previous run, then mark this one as running.
+    fn ready(&mut self) {
+        // The editor and the headless tools load the autoload too; only a game run keeps the flag.
+        if Engine::singleton().is_editor_hint() { return; }
+        self.previous_run_crashed = check_running_flag();
+        if self.previous_run_crashed { godot_warn!("app: the previous run did not close normally; its log is in the logs folder, named godot<date>.log"); }
+    }
+    /// Advance the timing clock (the sortie pause flag comes from this frame's snapshot) and file the
+    /// frame's active time under the core-loop step the campaign is in.
     fn process(&mut self, delta: f64) {
         let paused = crate::services::services().feed.borrow().snapshot.as_ref().is_some_and(|s| s.pacing.paused);
+        let before = self.clock.now();
         self.clock.advance(delta, paused);
+        let dt = self.clock.now() - before;
+        self.watch_loop(dt);
     }
     /// Unit `gd-app`: on exit, stop the session, the worker and the meshing thread, flush crash reports for
     /// up to 2 s and write pending settings. Must not block longer than 3 s in total.
@@ -226,7 +394,12 @@ impl INode for BpApp {
         let start = std::time::Instant::now();
         // Settings first: a fast local write that must not be lost to a slow join below.
         crate::settings::flush();
-        if self.timing_marks.len() > 1 { self.write_timing_row(false); }
+        // The loop in progress is written as incomplete, then the session's report (L2209).
+        self.close_loop(false);
+        if !Engine::singleton().is_editor_hint() {
+            self.write_session_report();
+            clear_running_flag();
+        }
         let services = crate::services::services();
         let connection = services.connection.borrow_mut().take();
         if let Some(mut c) = connection {
@@ -246,15 +419,108 @@ impl INode for BpApp {
 }
 
 impl BpApp {
-    fn write_timing_row(&mut self, complete: bool) {
-        let marks = std::mem::take(&mut self.timing_marks);
-        if marks.len() < 2 { return; }
-        let row = timing_row(&self.loop_started, &marks, complete);
+    /// Follow the campaign phase: open, time and close core loops. Reads the `Campaign` autoload's fields;
+    /// a file is written only when a loop closes.
+    fn watch_loop(&mut self, dt: f64) {
+        use crate::enums::{CampaignPhase, SessionKind, SessionState};
+        let services = crate::services::services();
+        if !services.settings.borrow().bool("playtest.timing_log") {
+            self.open_loop = None;
+            return;
+        }
+        if self.campaign_node.as_ref().is_none_or(|n| !n.is_instance_valid()) {
+            self.campaign_node = self.base().get_node_or_null("/root/Campaign").and_then(|n| n.try_cast::<crate::campaign::BpCampaign>().ok());
+        }
+        let Some(node) = self.campaign_node.clone() else { return };
+        let splash_live = { let feed = services.feed.borrow(); feed.kind == SessionKind::Splash && feed.state == SessionState::InSortie };
+        drop(services);
+        let campaign = node.bind();
+        let phase = campaign.phase;
+        let entered = phase != self.last_phase;
+        self.last_phase = phase;
+        let state = campaign.state();
+        if entered && phase == CampaignPhase::Briefing {
+            let op = campaign.run.briefed.as_ref().map(|o| o.as_str().to_string()).unwrap_or_default();
+            if starts_new_loop(self.open_loop.as_ref(), &op) {
+                let template = campaign_briefing_kind(&campaign, &op).map(|k| template_name(&k)).unwrap_or_else(|| "unknown".into());
+                let difficulty = state.map(|s| preset_name(&s.difficulty)).unwrap_or_default();
+                let fresh = OpenLoop {
+                    started: Time::singleton().get_datetime_string_from_system().to_string(),
+                    build: build_text(),
+                    campaign: state.map(|s| format!("{:x}", s.seed)).unwrap_or_default(),
+                    operation: op,
+                    template,
+                    difficulty,
+                    salvage: state.map(|s| s.resources.salvage),
+                    ..Default::default()
+                };
+                drop(campaign);
+                self.close_loop(true);
+                self.open_loop = Some(fresh);
+                return;
+            }
+        }
+        let salvage = state.map(|s| s.resources.salvage);
+        let result = if entered && phase == CampaignPhase::AfterAction {
+            campaign.after_action.as_ref().map(|a| (snake(&format!("{:?}", a.outcome)), a.ghosts.iter().filter(|g| g.1).count() as u32, a.ghosts.len() as u32))
+        } else { None };
+        drop(campaign);
+        if phase == CampaignPhase::None {
+            // The campaign closed (back to the main menu): the loop ends there.
+            self.close_loop(false);
+            return;
+        }
+        if self.attempted.is_none() && result.is_some() {
+            let text = if FileAccess::file_exists(OPERATION_LOG) { FileAccess::get_file_as_string(OPERATION_LOG).to_string() } else { String::new() };
+            self.attempted = Some(attempted_keys(&text));
+        }
+        let Some(open) = self.open_loop.as_mut() else { return };
+        if let Some(step) = loop_step(phase, splash_live) { open.add_time(step, dt); }
+        if phase == CampaignPhase::Sortie { open.sortied = true; }
+        if let Some(s) = salvage { open.salvage_now(s); }
+        if let Some((outcome, met, total)) = result {
+            if open.outcome.is_none() {
+                let key = open.attempt_key();
+                let attempted = self.attempted.get_or_insert_with(Default::default);
+                open.first_attempt = Some(!attempted.contains(&key));
+                attempted.insert(key);
+                open.outcome = Some(outcome);
+                open.ghosts_met = met;
+                open.ghosts_total = total;
+                open.sortied = true;
+            }
+        }
+    }
+
+    /// Append the open loop's rows to both logs and refresh the session report.
+    fn close_loop(&mut self, complete: bool) {
+        let Some(open) = self.open_loop.take() else { return };
+        if open.loop_s() < 1.0 && !open.sortied { return; }
+        // A loop that never sailed did not run from one briefing to the next.
+        let complete = complete && open.sortied;
+        append_file(TIMING_LOG, &open.timing_row(complete));
+        append_file(OPERATION_LOG, &open.operation_row(complete));
+        self.write_session_report();
+    }
+
+    /// The playtest report (L2209): build, timing log, operation log and tutorial log in one text.
+    fn session_report(&self) -> String {
+        let mut t = format!("{}\nplaytest report, written {}\n\n", build_line(), Time::singleton().get_datetime_string_from_system());
+        for (title, path) in [("timing log (seconds per step)", TIMING_LOG), ("operation log", OPERATION_LOG), ("tutorial log", TUTORIAL_LOG)] {
+            let body = read_text(path);
+            t.push_str(&format!("{title}:\n{}\n", if body.trim().is_empty() { "empty\n".to_string() } else { body }));
+        }
+        if let Some(open) = &self.open_loop { t.push_str(&format!("loop in progress:\n{}", open.timing_row(false))); }
+        t
+    }
+    fn write_session_report(&self) {
+        // A run that played no loop and no tutorial has nothing to report.
+        if self.open_loop.is_none() && ![TIMING_LOG, OPERATION_LOG, TUTORIAL_LOG].iter().any(|p| FileAccess::file_exists(*p)) { return; }
+        let text = self.session_report();
         ensure_dir("user://logs");
-        let file = if FileAccess::file_exists(TIMING_LOG) { FileAccess::open(TIMING_LOG, ModeFlags::READ_WRITE) } else { FileAccess::open(TIMING_LOG, ModeFlags::WRITE) };
-        match file {
-            Some(mut f) => { f.seek_end(); f.store_string(&row); f.close(); }
-            None => { godot_warn!("app: could not write {TIMING_LOG}"); }
+        match FileAccess::open(SESSION_REPORT, ModeFlags::WRITE) {
+            Some(mut f) => { f.store_string(&text); f.close(); }
+            None => { godot_warn!("app: could not write {SESSION_REPORT}"); }
         }
     }
     fn set_tag_rust(&mut self, key: &str, value: &str) {
@@ -264,6 +530,69 @@ impl BpApp {
 }
 
 fn ensure_dir(path: &str) -> bool { DirAccess::dir_exists_absolute(path) || DirAccess::make_dir_recursive_absolute(path) == godot::global::Error::OK }
+
+fn read_text(path: &str) -> String { if FileAccess::file_exists(path) { FileAccess::get_file_as_string(path).to_string() } else { String::new() } }
+
+fn append_file(path: &str, text: &str) {
+    ensure_dir("user://logs");
+    let file = if FileAccess::file_exists(path) { FileAccess::open(path, ModeFlags::READ_WRITE) } else { FileAccess::open(path, ModeFlags::WRITE) };
+    match file {
+        Some(mut f) => { f.seek_end(); f.store_string(text); f.close(); }
+        None => { godot_warn!("app: could not write {path}"); }
+    }
+}
+
+/// `0.1.0 (build 3f2a9c1)`.
+fn build_text() -> String { format!("{} (build {})", env!("CARGO_PKG_VERSION"), option_env!("BP_BUILD_ID").unwrap_or("local")) }
+/// The first line of every copied log and report.
+fn build_line() -> String { format!("Black Pennant {}, {}", build_text(), Os::singleton().get_name()) }
+
+/// The operation kind of an offered or briefed operation.
+fn campaign_briefing_kind(campaign: &crate::campaign::BpCampaign, op: &str) -> Option<content::campaign::operation::OperationKind> {
+    use crate::campaign::Backend;
+    let id = content::ids::OperationId::new(op.to_string());
+    match &campaign.backend {
+        Some(Backend::Local(t)) => t.briefing(&id).map(|b| b.kind),
+        Some(Backend::Remote { briefings, .. }) => briefings.iter().find(|b| b.operation == id).map(|b| b.kind.clone()),
+        None => None,
+    }
+}
+
+/// The difficulty preset whose sliders match, else `custom`.
+fn preset_name(s: &content::campaign::DifficultySliders) -> String {
+    let data = crate::services::services().campaign();
+    let close = |a: f64, b: f64| (a - b).abs() < 1e-6;
+    data.difficulty.iter().find(|p| {
+        let q = &p.sliders;
+        close(q.ai_accuracy, s.ai_accuracy) && close(q.ai_reaction_s, s.ai_reaction_s) && close(q.adaptation_cadence, s.adaptation_cadence) && q.hull_count == s.hull_count && close(q.economy, s.economy) && q.clock_days == s.clock_days
+    }).map_or_else(|| "custom".to_string(), |p| p.id.as_str().to_string())
+}
+
+/// True when [`RUNNING_FLAG`] names a process that is no longer running (the last run crashed or was
+/// killed). Then writes this process's id into it.
+fn check_running_flag() -> bool {
+    let os = Os::singleton();
+    let mine = os.get_process_id();
+    let crashed = match read_text(RUNNING_FLAG).trim().parse::<i32>() {
+        Ok(pid) if pid > 0 && pid != mine => !os.is_process_running(pid),
+        Ok(_) => false,
+        Err(_) => FileAccess::file_exists(RUNNING_FLAG),
+    };
+    ensure_dir("user://logs");
+    match FileAccess::open(RUNNING_FLAG, ModeFlags::WRITE) {
+        Some(mut f) => { f.store_string(&mine.to_string()); f.close(); }
+        None => { godot_warn!("app: could not write {RUNNING_FLAG}"); }
+    }
+    crashed
+}
+
+/// Remove [`RUNNING_FLAG`] at a clean exit, unless another copy of the game wrote it since.
+fn clear_running_flag() {
+    let mine = Os::singleton().get_process_id();
+    if read_text(RUNNING_FLAG).trim().parse::<i32>().ok() == Some(mine) {
+        let _ = DirAccess::remove_absolute(&godot::classes::ProjectSettings::singleton().globalize_path(RUNNING_FLAG));
+    }
+}
 
 /// Keep only the file name of a path (debug images in crash reports).
 fn file_name_only(path: &str) -> String { path.rsplit(['/', '\\']).next().unwrap_or(path).to_string() }
@@ -329,6 +658,7 @@ impl BpApp {
         let text = |k: &str| crate::convert::get_text(&report, k).unwrap_or_default().chars().take(200).collect::<String>();
         let fallbacks: Vec<String> = report.get("fallbacks").and_then(|v| v.try_to::<PackedStringArray>().ok()).map(|a| a.as_slice().iter().take(16).map(|s| s.to_string()).collect()).unwrap_or_default();
         let r = StartupReport { rendering_method: text("rendering_method"), driver: text("driver"), adapter: text("adapter"), api_version: text("api_version"), fallbacks };
+        godot_print!("{}", build_line());
         godot_print!("{}", r.log_line());
         if r.safe_mode() { godot_warn!("renderer: Compatibility safe mode; the GPU driver lacks Direct3D 12 and Vulkan support"); }
         let safe = r.safe_mode();
@@ -389,6 +719,8 @@ impl BpApp {
     #[func]
     fn crash_reports_init(&mut self, dsn: GString, release: GString, dist: GString, environment: GString) {
         if self.sentry_guard.is_some() { return; }
+        // No DSN configured (every build until the owner supplies one): nothing to start, nothing sent.
+        if dsn.to_string().trim().is_empty() { godot_print!("crash reports: no DSN in this build; nothing is sent"); return; }
         let dsn: Option<sentry::types::Dsn> = match dsn.to_string().trim().parse() { Ok(d) => Some(d), Err(_) => { godot_warn!("crash reports: the DSN does not parse; Rust panics are not reported"); return; } };
         let text = |g: &GString| { let s = g.to_string(); (!s.trim().is_empty()).then(|| std::borrow::Cow::Owned(s)) };
         let dist = text(&dist);
@@ -454,34 +786,42 @@ impl BpApp {
         }
     }
 
-    // ---- Playtest timing log and diagnostics (L80, L1039) ----
+    // ---- Playtest logs and diagnostics (L80, L881, L2209, L1039) ----
 
-    /// Mark a step of the core loop for the local timing log: `&"briefing_open"`, `&"refit_done"`,
-    /// `&"splash_start"`, `&"splash_end"`, `&"sortie_start"`, `&"sortie_end"`, `&"recover_done"`,
-    /// `&"chart_done"`. Pauses over 2 minutes and suspended time are excluded when rows are written.
-    /// `briefing_open` starts a loop and `chart_done` closes it and appends its row to the log file.
-    #[func]
-    fn timing_mark(&mut self, step: StringName) {
-        if !crate::services::services().settings.borrow().bool("playtest.timing_log") { return; }
-        let step = step.to_string();
-        if !TIMING_STEPS.contains(&step.as_str()) { godot_warn!("timing_mark: unknown step {step}"); return; }
-        if step == "briefing_open" {
-            if self.timing_marks.len() > 1 { self.write_timing_row(false); }
-            self.timing_marks.clear();
-            self.loop_started = Time::singleton().get_datetime_string_from_system().to_string();
-        }
-        if self.timing_marks.is_empty() && self.loop_started.is_empty() { self.loop_started = Time::singleton().get_datetime_string_from_system().to_string(); }
-        self.timing_marks.push((step.clone(), self.clock.now()));
-        if step == "chart_done" { self.write_timing_row(true); self.loop_started.clear(); }
-    }
-    /// The timing log as plain text for the clipboard. Never sent anywhere.
+    /// The timing log as plain text for the clipboard (L80): a build line, one row per core loop (the loop
+    /// in progress last, marked `incomplete`), then the tutorial's step log. `""` when there is nothing yet.
+    /// Never sent anywhere. The rows are written by `process`, which follows the campaign phase.
     #[func]
     fn timing_log_text(&self) -> GString {
-        let mut text = String::from("loop started\tstep=seconds...\n");
-        if FileAccess::file_exists(TIMING_LOG) { text.push_str(&FileAccess::get_file_as_string(TIMING_LOG).to_string()); }
-        if self.timing_marks.len() > 1 { text.push_str(&timing_row(&self.loop_started, &self.timing_marks, false)); }
-        GString::from(text.as_str())
+        let mut body = read_text(TIMING_LOG);
+        if let Some(open) = &self.open_loop { body.push_str(&open.timing_row(false)); }
+        let tutorial = read_text(TUTORIAL_LOG);
+        if !tutorial.trim().is_empty() { body.push_str(&format!("tutorial log:\n{tutorial}")); }
+        GString::from(copy_text(&build_line(), "timing log, seconds per step", &body).as_str())
     }
+    /// The operation log as plain text for the clipboard (L881): loop times, income, spend and ghost results
+    /// per loop. `""` when there is nothing yet.
+    #[func]
+    fn operation_log_text(&self) -> GString {
+        let mut body = read_text(OPERATION_LOG);
+        if let Some(open) = &self.open_loop { body.push_str(&open.operation_row(false)); }
+        GString::from(copy_text(&build_line(), "operation log", &body).as_str())
+    }
+    /// The playtest report as one text (L2209): build, timing, operation and tutorial logs. The same text is
+    /// written to `user://logs/playtest_report.txt` whenever a loop closes and when the game quits.
+    #[func]
+    fn playtest_report_text(&self) -> GString { GString::from(self.session_report().as_str()) }
+    /// The logs folder as an absolute path, for "Open log folder" and the crash notice. Holds `godot.log`
+    /// (this run), `godot<date>.log` (earlier runs, a crashed one included), the playtest logs and the
+    /// connection log.
+    #[func]
+    fn log_folder(&self) -> GString {
+        ensure_dir("user://logs");
+        godot::classes::ProjectSettings::singleton().globalize_path("user://logs")
+    }
+    /// True when the previous run crashed or was killed: boot then tells the player where its log is.
+    #[func]
+    fn previous_run_crashed(&self) -> bool { self.previous_run_crashed }
     /// Diagnostics as plain text for a bug report: build, startup report, settings that differ from
     /// defaults, the connection log. No user names or absolute paths.
     #[func]
@@ -491,6 +831,7 @@ impl BpApp {
         let os = Os::singleton();
         let _ = writeln!(t, "Black Pennant {} (build {}, protocol {})", env!("CARGO_PKG_VERSION"), option_env!("BP_BUILD_ID").unwrap_or("local"), sim_systems::protocol::PROTOCOL_VERSION);
         let _ = writeln!(t, "os: {} {}; processor: {}; model: {}", os.get_name(), os.get_version(), os.get_processor_name(), os.get_model_name());
+        let _ = writeln!(t, "previous run closed normally: {}", if self.previous_run_crashed { "no" } else { "yes" });
         if let Some(r) = &self.startup { let _ = writeln!(t, "{}", r.log_line()); } else { let _ = writeln!(t, "renderer: not logged yet"); }
         let quality = crate::services::services().quality.borrow().clone();
         let _ = writeln!(t, "quality: tier {:?}, scale {:.2}, degrade step {}", quality.tier, quality.base_scale * quality.dynamic_scale, quality.degrade_step);
@@ -575,12 +916,59 @@ mod tests {
         assert!((c.now() - 92.0).abs() < 1e-9);
     }
 
+    fn sample_loop() -> OpenLoop {
+        let mut l = OpenLoop { started: "2026-11-14T10:00:00".into(), build: "0.1.0 (build local)".into(), campaign: "2a".into(), operation: "op_7".into(), template: "convoy_raid".into(), difficulty: "normal".into(), salvage: Some(100), ..Default::default() };
+        // Walk the phases as the campaign reports them, one second per frame.
+        use crate::enums::CampaignPhase as P;
+        let frames: &[(P, bool, u32)] = &[(P::Briefing, false, 60), (P::DryDock, false, 240), (P::DryDock, true, 90), (P::Sortie, false, 1200), (P::AfterAction, false, 150), (P::Chart, false, 100)];
+        for (phase, splash, secs) in frames {
+            for _ in 0..*secs { l.add_time(loop_step(*phase, *splash).unwrap(), 1.0); }
+        }
+        l.salvage_now(40);   // refit
+        l.salvage_now(400);  // payout
+        l.sortied = true;
+        l.first_attempt = Some(true);
+        l.outcome = Some("victory".into());
+        (l.ghosts_met, l.ghosts_total) = (1, 3);
+        l
+    }
+
     #[test]
-    fn timing_rows_name_each_step() {
-        let marks: Vec<(String, f64)> = [("briefing_open", 0.0), ("refit_done", 95.0), ("sortie_start", 120.0), ("sortie_end", 720.0), ("chart_done", 800.0)].iter().map(|(s, t)| (s.to_string(), *t)).collect();
-        let row = timing_row("2026-11-14T10:00:00", &marks, true);
-        assert_eq!(row, "2026-11-14T10:00:00\trefit_done=95\tsortie_start=25\tsortie_end=600\tchart_done=80\tsortie_length=600\tloop=800\n");
-        assert!(timing_row("x", &marks[..2], false).ends_with("\tincomplete\n"));
+    fn loop_rows_carry_every_field_the_spec_lists() {
+        let l = sample_loop();
+        assert_eq!(l.timing_row(true), "2026-11-14T10:00:00\tbuild=0.1.0 (build local)\tcampaign=2a\toperation=op_7\ttemplate=convoy_raid\tdifficulty=normal\tbriefing=60\trefit=240\tsplash=90\tsortie=1200\trecover=150\tchart=100\tloop=1840\tfirst_attempt=yes\toutcome=victory\n");
+        assert_eq!(l.operation_row(false), "2026-11-14T10:00:00\tbuild=0.1.0 (build local)\tcampaign=2a\toperation=op_7\tloop=1840\tsortie=1200\tincome=360\tspend=60\tghosts_met=1/3\toutcome=victory\tincomplete\n");
+    }
+
+    #[test]
+    fn loops_open_on_a_new_briefing_and_steps_map_from_phases() {
+        use crate::enums::CampaignPhase as P;
+        assert!(starts_new_loop(None, "a"));
+        let mut l = OpenLoop { operation: "a".into(), ..Default::default() };
+        assert!(!starts_new_loop(Some(&l), "a"), "back to the same briefing from the dry dock");
+        assert!(starts_new_loop(Some(&l), "b"));
+        l.sortied = true;
+        assert!(starts_new_loop(Some(&l), "a"), "a retry after a sortie is a new loop");
+        assert_eq!(loop_step(P::Advancing, false), Some(LoopStep::Chart));
+        assert_eq!(loop_step(P::DryDock, true), Some(LoopStep::Splash));
+        assert_eq!(loop_step(P::None, false), None);
+        // A pause the clock takes back comes off the step and never below zero.
+        l.add_time(LoopStep::Sortie, 50.0);
+        l.add_time(LoopStep::Sortie, -120.0);
+        assert_eq!(l.step_s[3], 0.0);
+    }
+
+    #[test]
+    fn first_attempts_read_back_from_the_operation_log() {
+        let l = sample_loop();
+        let mut never = l.clone();
+        (never.operation, never.outcome) = ("op_8".into(), None);
+        let log = format!("{}{}", l.operation_row(true), never.operation_row(false));
+        let keys = attempted_keys(&log);
+        assert!(keys.contains("2a/op_7") && !keys.contains("2a/op_8"), "{keys:?}");
+        assert_eq!(template_name(&content::campaign::operation::OperationKind::Template(content::campaign::operation::MissionType::HunterGroupSurvival)), "hunter_group_survival");
+        assert_eq!(copy_text("b", "t", " \n"), "");
+        assert!(copy_text("b", "t", "row").starts_with("b\nt\nrow"));
     }
 
     #[test]
