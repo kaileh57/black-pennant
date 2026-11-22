@@ -7,7 +7,8 @@
 # SHA256SUMS.txt and a build-provenance attestation per asset.
 #
 # Zero spend: GitHub-hosted standard runners only (free for public repositories), pinned by label. No
-# signing certificates. A manual run (workflow_dispatch) builds and uploads the workflow artifacts only.
+# signing certificates. A manual run (workflow_dispatch) or a pull request labelled "package" builds and
+# uploads the workflow artifacts only.
 
 name: release
 
@@ -15,6 +16,10 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+  # A pull request labelled "package" builds and smoke-tests both archives on every push and uploads them
+  # as workflow artifacts. Nothing is published: the publish job runs for tags only.
+  pull_request:
+    types: [labeled, synchronize]
 
 concurrency:
   group: release-${{ github.ref }}
@@ -36,6 +41,7 @@ env:
 jobs:
   build:
     name: build (${{ matrix.platform }})
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'package')
     strategy:
       fail-fast: false
       matrix:
