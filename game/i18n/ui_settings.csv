@@ -1,0 +1,62 @@
+keys,?context,en
+settings_ui.title,Settings screen title,Settings
+settings_ui.close,Button that closes the settings screen,Close settings
+settings_ui.reset_page,Button that returns every setting on the shown page to its default,Reset this page
+settings_ui.reset_page.help,Help line for the reset button; first line 12 words or fewer,Return every setting on this page to its default.
+settings_ui.empty.title,Settings page title when no setting could be read,No settings to show
+settings_ui.empty.body,Help line when the settings could not be read,The settings could not be read. Restart the game to try again.
+settings_ui.bindings.open,Button on the Controls page that opens the bindings page,Change keys and buttons
+settings_ui.bindings.help,Help line for the bindings button; first line 12 words or fewer,"Rebind every action on keyboard, mouse and gamepad."
+settings_ui.privacy.holds,Privacy page line above the list of what a crash report holds,A crash report holds:
+settings_ui.option.unset,Closed list text when a setting has no value yet (crash reports before the player answers),Not chosen yet
+settings_ui.playtest.copy_log,Button that copies the playtest timing log to the clipboard,Copy timing log
+settings_ui.playtest.copy_log.help,Help line for the copy timing log button; first line 12 words or fewer,"Copies loop and step times as plain text, for the playtest issue form."
+settings_ui.playtest.log_copied,Line shown after the timing log was copied,Timing log copied to the clipboard. Nothing was sent.
+settings_ui.playtest.copy_diagnostics,Button that copies diagnostics for a bug report to the clipboard,Copy diagnostics
+settings_ui.playtest.copy_diagnostics.help,Help line for the copy diagnostics button; first line 12 words or fewer,"Copies build, renderer and changed settings, without names or paths."
+settings_ui.playtest.diagnostics_copied,Line shown after the diagnostics were copied,Diagnostics copied to the clipboard. Nothing was sent.
+settings_ui.playtest.nothing_to_copy,Line shown when there was nothing to copy,There is nothing to copy yet.
+settings_ui.preview.heading,Line above the officer line preview on the Accessibility page,Officer line preview at the chosen size and backing
+settings_ui.preview.speaker,Speaker of the sample officer line in the preview; an officer billet,Helm
+settings_ui.preview.line,"Sample officer radio line in the preview, at most 40 characters","Turning 040, torpedo bearing 210."
+settings_ui.graphics.not_detected,Graphics page line before automatic quality has measured this machine,Automatic quality has not measured this machine yet.
+settings_ui.graphics.detected,Graphics page line; {0} the quality tier word automatic quality picked,Automatic quality picks {0} on this machine.
+settings_ui.graphics.below_minimum,Graphics page line when the machine is below the minimum specification,This machine is below the minimum specification.
+settings_ui.reset.title,Dialog title asking to reset one settings page; {0} the page name,Reset {0} settings?
+settings_ui.reset.body,Dialog body for resetting a settings page,Every setting on this page returns to its default.
+settings_ui.reset.confirm,Dialog button that resets the settings page,Reset this page
+settings_ui.reset.keep,Dialog button that keeps the current settings,Keep my settings
+settings_ui.needs_restart,Help line suffix for a setting that applies after a restart,Applies after a restart.
+bindings.title,Bindings page title,Keys and buttons
+bindings.close,Button that closes the bindings page and returns to settings,Back to settings
+bindings.reset_keyboard,Button that returns every keyboard and mouse binding to its default,Reset keyboard
+bindings.reset_gamepad,Button that returns every gamepad binding to its default,Reset gamepad
+bindings.hint,Instruction line at the top of the bindings page,"Select a slot, then press the new key or button. Delete, Backspace, a right-click or the top face button of a gamepad clears a slot."
+bindings.column.action,Column heading of the bindings table,Action
+bindings.keyboard_only,Shown in the gamepad column for dry-dock actions,Keyboard and mouse only
+bindings.empty,Shown when no binding could be read,The bindings could not be read.
+bindings.slot.access,"Accessible name of one binding slot; {0} action, {1} device, {2} slot number, {3} current binding","{0}, {1} slot {2}: {3}"
+bindings.listen.slot,Text inside a binding slot while it waits for input,Press now
+bindings.listen.keyboard,"Status while waiting for a key; {0} action, {1} seconds left","Press a key or mouse button for {0}. Stops listening in {1} s."
+bindings.listen.gamepad,"Status while waiting for a gamepad input; {0} action, {1} seconds left","Press a gamepad button or move a stick for {0}. Stops listening in {1} s."
+bindings.listen.timed_out,Status when listening for a binding ended without input,Stopped listening. The binding is unchanged.
+bindings.listen.cancelled,Status when listening was stopped by the other device or Esc,Stopped listening. The binding is unchanged.
+bindings.clear.done,Status after a binding slot was cleared,Binding cleared.
+bindings.clear.nothing,Status when clearing an empty slot,This slot is already empty.
+bindings.clear.failed,Status when a slot could not be cleared,This binding could not be cleared.
+bindings.failed,Status when a rebind failed without a reason,This binding could not be changed.
+bindings.conflict.body,Dialog body when the pressed input already belongs to another action,Move it here and leave the other action without it?
+bindings.conflict.move,Dialog button that moves the binding to the new action,Move the binding
+bindings.conflict.keep,Dialog button that keeps the existing binding,Keep the old binding
+bindings.conflict.kept,Status after the player kept the old binding,The old binding is kept.
+bindings.reset.keyboard_title,Dialog title before resetting the keyboard bindings,Reset every keyboard and mouse binding?
+bindings.reset.gamepad_title,Dialog title before resetting the gamepad bindings,Reset every gamepad binding?
+bindings.reset.body,Dialog body before resetting bindings,Every action on this device returns to its default key or button.
+bindings.reset.confirm,Dialog button that resets the bindings of one device,Reset bindings
+bindings.reset.keep,Dialog button that keeps the current bindings,Keep my bindings
+bindings.reset.done,Status after bindings were reset,Bindings are back to their defaults.
+bindings.dir.up,"Direction after a stick or D-pad glyph in a gamepad binding slot",Up
+bindings.dir.down,"Direction after a stick or D-pad glyph in a gamepad binding slot",Down
+bindings.dir.left,"Direction after a stick or D-pad glyph in a gamepad binding slot",Left
+bindings.dir.right,"Direction after a stick or D-pad glyph in a gamepad binding slot",Right
+bindings.dir.press,"After a stick glyph in a gamepad binding slot: the stick pressed in",Press

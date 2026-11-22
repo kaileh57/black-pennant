@@ -1,0 +1,34 @@
+keys,?context,en
+editor_trials.name,Accessible name of the Trials panel,Trials
+editor_trials.run,Button: run the trial battery now,Run trials
+editor_trials.run.tip,"Tooltip, first line at most 12 words","Turning, acceleration, heel recovery and a fight against three, on the saved design"
+editor_trials.closed,Trials panel while no design is open,No design is open.
+editor_trials.unsaved,Trials panel before the design was ever saved,Trials run each time you save. Save the design to run them.
+editor_trials.none,Trials panel before the first result arrives,Trials run each time you save. No result yet.
+editor_trials.running,Trials panel while the battery runs,"Running trials: three fights of 180 s against three Combine hulls."
+editor_trials.running_short,Trials panel while the short battery runs,Running a short trial: one fight of 90 s.
+editor_trials.failed,Trials panel when the battery could not run,The trials could not run on this design. See the notes, then save again.
+editor_trials.last,Trials panel status; {0} local date and time of the save,Saved design trialled {0}
+editor_trials.short,Marker on a scorecard from the shortened battery,"Short trial: one fight of 90 s instead of three of 180 s, so the score is rougher."
+editor_trials.fight,Scorecard section: the one-against-three fight,Fight against three
+editor_trials.handling,Scorecard section,Handling
+editor_trials.score,Scorecard row: the fight score,Score
+editor_trials.per_seed,Scorecard row: the score of each fight,Each fight
+editor_trials.wins,Scorecard row,Fights won
+editor_trials.wins_value,"Scorecard value; {0} fights won, {1} fights",{0} of {1}
+editor_trials.hull_left,Scorecard row,Hull left after the fight
+editor_trials.rounds_per_kill,Scorecard row,Rounds per kill
+editor_trials.no_kills,Scorecard value when nothing was sunk,No kills
+editor_trials.first_salvo,Scorecard row,First salvo hit rate
+editor_trials.opponents_line,Scorecard line; {0} the Combine classes fought,Fought: {0}
+editor_trials.opponent_count,"Opponent with a count; {0} class name, {1} how many",{0} ({1})
+editor_trials.drift,"Scorecard warning; {0} gauge name, {1} predicted value, {2} simulated value, {3} difference","{0} gauge predicted {1}, the trial measured {2}: {3} apart"
+editor_trials.compare,Label before the list of earlier versions,Compare with
+editor_trials.compare.none,Compare list when there is no earlier version,No earlier version yet
+editor_trials.compare.item,"Compare list entry; {0} local date and time, {1} design name, {2} its score","{0}, {1}, score {2}"
+editor_trials.compare.unnamed,Compare list entry for a design without a name,Unnamed design
+editor_trials.compare.empty,Compare table with nothing to show,Save again after a change to compare versions.
+editor_trials.compare.from_to,"Compare table cell; {0} value before, {1} value now",{0} to {1}
+editor_trials.compare.better,Compare table cell,Better
+editor_trials.compare.worse,Compare table cell,Worse
+editor_trials.compare.same,Compare table cell,Same

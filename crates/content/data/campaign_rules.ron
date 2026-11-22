@@ -1,0 +1,74 @@
+// CampaignRules: the campaign numbers the bot and playtest gates' fallbacks rewrite (DESIGN.md L877-895), written
+// out in full so a fallback edits a value in place. Unit `data-tuning-rules` owns this file. The values are the
+// spec's starting values, the same as `CampaignRules::default()` in crates/content/src/campaign/economy.rs.
+(
+    // Enemy commitment (L94-102): five times the player hulls and four times their tonnage, at most four capitals.
+    // The tonnage multiple moves within 3 to 5 by the success-rate gate; the hull multiple never changes.
+    hull_multiple: 5,
+    tonnage_multiple: 4.0,
+    max_capitals: 4,
+    // Regional Alert (L749).
+    alert_observed_kill: 1.0,
+    alert_unobserved_kill: 0.5,
+    alert_unobserved_delay_h: 12,
+    alert_sighting: 0.5,
+    alert_sighting_cap: 1.0,
+    alert_evidence: 0.25,
+    alert_evidence_cap: 1.0,
+    alert_decay_quiet_h: 48,
+    alert_escalation: 3,
+    hunter_warning_h: 24,
+    retreat_alert: 2.0,
+    normal_coves: 3,
+    retreat_coves: 2,
+    // Logistics (L747-748).
+    supply_window_days: 4,
+    patrol_floor: 0.25,
+    lane_cut_days: 10,
+    task_group_hulls: 5,
+    admiral_replan_h: 6,
+    // Operation clock pushback in theatre days (L750).
+    pushback_template: 1.0,
+    pushback_strike: 2.0,
+    pushback_ace: 2.0,
+    pushback_story: 3.0,
+    // Doctrine cards (L772).
+    tally_threshold: 10.0,
+    tally_half_life_h: 120.0,
+    card_lead_h: 72,
+    card_delay_h: 72,
+    max_cards_per_region: 2,
+    // Intel prices (L814).
+    intel_delay_card: 2,
+    intel_cancel_card: 5,
+    intel_reveal_convoys: 1,
+    intel_reveal_ace: 3,
+    reveal_convoys_days: 4,
+    // Template repeat cap (L780, L873).
+    template_repeat_cap: 3,
+    open_theatre_repeat_window_days: 40,
+    // Approach-distance scale per operation, written by the sortie-length fallback (L85-90) in 25% steps
+    // within 0.5 to 1.5. Operations not listed fly their authored distance.
+    approach_scale: {},
+    // Economy and refits (L805, L820, L826-828).
+    wreck_payout: 0.2,
+    prize_home_payout: 0.6,
+    prize_strip_payout: 0.4,
+    repair_cost_fraction: 0.5,
+    reload_cost_fraction: 0.05,
+    rebuild_cost_fraction: 0.6,
+    rebuild_hours: 48,
+    sextant_loss_fraction: 0.3,
+    sextant_refit_hours: 72,
+    refit_hours_per_module: 2,
+    refit_tonnes_per_hour: 10.0,
+    // Co-op (L832-845).
+    rejoin_minutes: 5,
+    checkpoint_s: 60,
+    // The Combine surrender rule (L537; ruling of 20 November 2026): a hull under fire strikes its colours once it
+    // has lost this share of its original cells. Calibrated so the L610-L612 weapon gates pass.
+    strike_cells_lost: 0.006,
+    // The Act 1 winnability fallback (L317), written by the gate: hostile hulls an operation drops from the end
+    // of its generated force. Operations not listed drop none.
+    hostile_drop: {},
+)

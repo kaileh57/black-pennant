@@ -1,0 +1,12 @@
+[configuration]
+entry_symbol = "gdext_rust_init"
+compatibility_minimum = 4.7
+reloadable = false
+
+[libraries]
+macos.debug = "res://../target/debug/libgdclient.dylib"
+macos.release = "res://../target/release/libgdclient.dylib"
+windows.debug.x86_64 = "res://../target/debug/gdclient.dll"
+windows.release.x86_64 = "res://../target/release/gdclient.dll"
+linux.debug.x86_64 = "res://../target/debug/libgdclient.so"
+linux.release.x86_64 = "res://../target/release/libgdclient.so"

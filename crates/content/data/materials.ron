@@ -1,0 +1,24 @@
+// Vec<MaterialDef> (DESIGN.md L130, L427, L820). Unit `data-weapons-materials` owns this file.
+//
+// A structural cell is one 0.5 m cube of plating and framing with its share of hull outfit (wiring, piping,
+// insulation, paint), not a solid block. Steel at 30 kg is a 6 mm plate on 0.25 m^2 (12 kg) with framing,
+// the staircase surplus of a voxelised curve and outfit. On the default hulls the bare structure then weighs
+// about 37% of the datum displacement at 26 m and 28% at 90 m, the light-ship share of real craft; the 10 m
+// hull still floats with 3 t to spare. Aluminium is 60% and composite 50% of the steel cell for the same
+// strength; glazing is 20 mm laminated glass in its frame.
+//
+// Armour is extra mass per cell for the 5, 15, 40 and 80 mm tiers: one 0.25 m^2 face of rolled steel of
+// that thickness (7,850 kg/m^3), the same on steel and aluminium hulls. Composite armour (ceramic and
+// aramid) buys the same protection at 70% of the mass and twice the price; transparent armour needs 1.3
+// times the mass of steel.
+//
+// Cost: steel structure and steel armour are both about 1.7 Salvage per tonne, which puts a 22 m hull's
+// structure near 70 S of the 1,000 S fitted-hull anchor (L820). Aluminium costs three times steel per tonne
+// and composite six times. Factors: composite is radar-absorbent (a quarter of steel's cross-section) and
+// insulating; glazing returns part of what lies behind it.
+[
+    (material: Steel, cell_mass_kg: 30.0, armour_mass_kg: (9.8, 29.4, 78.5, 157.0), cell_cost: 0.05, armour_cost: (0.016, 0.05, 0.13, 0.26), rcs_factor: 1.0, ir_factor: 1.0),
+    (material: Aluminium, cell_mass_kg: 18.0, armour_mass_kg: (9.8, 29.4, 78.5, 157.0), cell_cost: 0.09, armour_cost: (0.016, 0.05, 0.13, 0.26), rcs_factor: 1.0, ir_factor: 1.0),
+    (material: Composite, cell_mass_kg: 15.0, armour_mass_kg: (6.9, 20.6, 55.0, 110.0), cell_cost: 0.15, armour_cost: (0.032, 0.1, 0.26, 0.52), rcs_factor: 0.25, ir_factor: 0.8),
+    (material: Glass, cell_mass_kg: 20.0, armour_mass_kg: (12.7, 38.2, 102.0, 204.0), cell_cost: 0.06, armour_cost: (0.03, 0.08, 0.2, 0.4), rcs_factor: 0.6, ir_factor: 1.0),
+]

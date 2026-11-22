@@ -1,0 +1,26 @@
+// Stock kit (DESIGN.md L140). Unit `data-kits-act1`. Licensed CC BY 4.0.
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.passengers",
+    version: 1,
+    hash: "",
+    name: "Passenger berths",
+    name_key: "kit.passengers.name",
+    description_key: "kit.passengers.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "berths.passenger", offset: (x: 0, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "floor", offset: (x: 2, y: 0, z: 2), face: YNeg),
+    ],
+    settings: [],
+    graph: (),
+    officer: None,
+    tags: [PassengerBerths],
+    tray_order: 61,
+)

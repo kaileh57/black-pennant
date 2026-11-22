@@ -1,0 +1,38 @@
+# cargo-fuzz targets for the L4 Luau host (DESIGN.md L2125-2142). Its own workspace (excluded from the root
+# one) because libFuzzer needs the dated nightly in fuzz/rust-toolchain.toml; the project builds on stable.
+# Run from the repository root:
+#   cargo +$(sed -n 's/^channel = "\(.*\)"/\1/p' fuzz/rust-toolchain.toml) fuzz run host_api -- -dict=fuzz/host_api.dict
+[package]
+name = "black-pennant-fuzz"
+version = "0.0.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+sim-systems = { path = "../crates/sim-systems", features = ["luau"] }
+
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "host_api"
+path = "fuzz_targets/host_api.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "script_source"
+path = "fuzz_targets/script_source.rs"
+test = false
+doc = false
+bench = false

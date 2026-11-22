@@ -1,0 +1,44 @@
+# Proper nouns that keep their capitals in copy: the game, platforms, tools and third-party screen names the
+# docs quote. One per line, case-sensitive, matched as whole words. Masked before the banned-word and case
+# checks (cargo xtask lint: copy.banned-words, copy.case). Stance, rung, grade and billet words come from the
+# i18n rows whose context names them ("Glossary stance word", "Officer billet").
+Black Pennant
+Apple Silicon
+macOS
+Windows
+Linux
+Steam
+Steamworks
+Godot
+Rust
+GitHub
+Vulkan
+Metal
+Direct3D
+OpenGL
+Apache
+Creative Commons
+Atkinson Hyperlegible Next
+Atkinson Hyperlegible Mono
+Atkinson Hyperlegible
+Braille Institute
+Noto Sans
+Hosted Weblate
+Weblate
+VoiceOver
+UI Automation
+Anthropic
+Claude
+System Settings
+Privacy & Security
+Open Anyway
+SmartScreen
+Smart App Control
+Meridian Combine
+Saltreach
+Task Unit
+Open Theatre
+Ship's Notes
+Alert
+Visual Studio Build Tools
+SIL Open Font License

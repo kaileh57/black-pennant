@@ -1,0 +1,29 @@
+// Stock kit (DESIGN.md L140, L432, L807). Unit `data-act4`. Licensed CC BY 4.0.
+// Long-range search radar at 12 m on a lattice mast, with a navigation radar on a side platform.
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.radar_mast.long",
+    version: 1,
+    hash: "",
+    name: "Long-range radar mast",
+    name_key: "kit.radar_mast.long.name",
+    description_key: "kit.radar_mast.long.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "mast.lattice", offset: (x: 3, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+        (part: "radar.search.long", offset: (x: 0, y: 24, z: 0), rot: (yaw: 0, tilt: 0)),
+        (part: "radar.nav", offset: (x: 3, y: 12, z: 4), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "deck", offset: (x: 4, y: 0, z: 1), face: YNeg),
+    ],
+    settings: [],
+    graph: (),
+    officer: None,
+    tags: [],
+    tray_order: 53,
+)

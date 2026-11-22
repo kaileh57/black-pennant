@@ -1,0 +1,113 @@
+// Vec<AceDef>: the seven named Combine captains (DESIGN.md L774). Unit `data-aces-cards`. Licensed CC BY 4.0.
+//
+// Two arcs in each of Acts 1 to 3 and one in Act 4. Lines are radio text (squelch, static, band-pass), never voiced:
+// one line per cue per arc, at most two 40-character lines each (copy rule 12). Returns are authored and fixed;
+// no ace remembers what the player did. Doctrine cards listed here are always in force when the ace leads a group.
+//
+// Every ace sails a signature ship (enemy_classes/act1.ron to act4.ron) and their arcs name the operations they
+// appear in (the Act 2 ships and arcs are unit `data-act2`'s, the Act 3 ones `data-act3`'s and the Act 4 one
+// `data-act4`'s). Every line is final.
+[
+    // ---- Act 1 -------------------------------------------------------------------------------------------------
+    (
+        id: "ace.auditor", name: "ace.auditor.name", callsign: "ace.auditor.callsign", ship: "class.ace_arrears",
+        doctrine: ["card.silent_ships", "card.press_the_attack"],
+        arcs: [(act: Act1, operations: ["op.act1.story.kessel_toll", "op.act1.duel.auditor"], lines: [
+            (cue: Arrives, text: "ace.auditor.arrives"),
+            (cue: SightsPlayer, text: "ace.auditor.sights"),
+            (cue: FiresFirst, text: "ace.auditor.fires"),
+            (cue: TakesDamage, text: "ace.auditor.hit"),
+            (cue: PlayerDamaged, text: "ace.auditor.scores"),
+            (cue: Withdraws, text: "ace.auditor.withdraws"),
+            (cue: Defeated, text: "ace.auditor.defeated"),
+            (cue: Captured, text: "ace.auditor.captured"),
+        ])],
+    ),
+    (
+        id: "ace.bailiff", name: "ace.bailiff.name", callsign: "ace.bailiff.callsign", ship: "class.ace_covenant",
+        doctrine: ["card.open_the_range", "card.radar_net"],
+        arcs: [(act: Act1, operations: ["op.act1.story.bursars_berth", "op.act1.duel.bailiff", "op.act1.capstone"], lines: [
+            (cue: Arrives, text: "ace.bailiff.arrives"),
+            (cue: SightsPlayer, text: "ace.bailiff.sights"),
+            (cue: FiresFirst, text: "ace.bailiff.fires"),
+            (cue: TakesDamage, text: "ace.bailiff.hit"),
+            (cue: PlayerDamaged, text: "ace.bailiff.scores"),
+            (cue: Withdraws, text: "ace.bailiff.withdraws"),
+            (cue: Defeated, text: "ace.bailiff.defeated"),
+            (cue: Captured, text: "ace.bailiff.captured"),
+        ])],
+    ),
+    // ---- Act 2 -------------------------------------------------------------------------------------------------
+    (
+        id: "ace.underwriter", name: "ace.underwriter.name", callsign: "ace.underwriter.callsign", ship: "class.ace_indemnity",
+        doctrine: ["card.close_at_speed"],
+        arcs: [(act: Act2, operations: ["op.act2.story.amble", "op.act2.duel.underwriter"], lines: [
+            (cue: Arrives, text: "ace.underwriter.arrives"),
+            (cue: SightsPlayer, text: "ace.underwriter.sights"),
+            (cue: FiresFirst, text: "ace.underwriter.fires"),
+            (cue: TakesDamage, text: "ace.underwriter.hit"),
+            (cue: PlayerDamaged, text: "ace.underwriter.scores"),
+            (cue: Withdraws, text: "ace.underwriter.withdraws"),
+            (cue: Defeated, text: "ace.underwriter.defeated"),
+            (cue: Captured, text: "ace.underwriter.captured"),
+        ])],
+    ),
+    (
+        id: "ace.broker", name: "ace.broker.name", callsign: "ace.broker.callsign", ship: "class.ace_commission",
+        doctrine: ["card.gun_line"],
+        arcs: [(act: Act2, operations: ["op.act2.story.blackwater", "op.act2.duel.broker", "op.act2.capstone"], lines: [
+            (cue: Arrives, text: "ace.broker.arrives"),
+            (cue: SightsPlayer, text: "ace.broker.sights"),
+            (cue: FiresFirst, text: "ace.broker.fires"),
+            (cue: TakesDamage, text: "ace.broker.hit"),
+            (cue: PlayerDamaged, text: "ace.broker.scores"),
+            (cue: Withdraws, text: "ace.broker.withdraws"),
+            (cue: Defeated, text: "ace.broker.defeated"),
+            (cue: Captured, text: "ace.broker.captured"),
+        ])],
+    ),
+    // ---- Act 3 -------------------------------------------------------------------------------------------------
+    (
+        id: "ace.liquidator", name: "ace.liquidator.name", callsign: "ace.liquidator.callsign", ship: "class.ace_foreclosure",
+        doctrine: ["card.hold_the_line", "card.close_search"],
+        arcs: [(act: Act3, operations: ["op.act3.story.strand", "op.act3.duel.liquidator", "op.act3.capstone"], lines: [
+            (cue: Arrives, text: "ace.liquidator.arrives"),
+            (cue: SightsPlayer, text: "ace.liquidator.sights"),
+            (cue: FiresFirst, text: "ace.liquidator.fires"),
+            (cue: TakesDamage, text: "ace.liquidator.hit"),
+            (cue: PlayerDamaged, text: "ace.liquidator.scores"),
+            (cue: Withdraws, text: "ace.liquidator.withdraws"),
+            (cue: Defeated, text: "ace.liquidator.defeated"),
+            (cue: Captured, text: "ace.liquidator.captured"),
+        ])],
+    ),
+    (
+        id: "ace.actuary", name: "ace.actuary.name", callsign: "ace.actuary.callsign", ship: "class.ace_contingency",
+        doctrine: ["card.wide_search"],
+        arcs: [(act: Act3, operations: ["op.act3.story.greywater", "op.act3.duel.actuary"], lines: [
+            (cue: Arrives, text: "ace.actuary.arrives"),
+            (cue: SightsPlayer, text: "ace.actuary.sights"),
+            (cue: FiresFirst, text: "ace.actuary.fires"),
+            (cue: TakesDamage, text: "ace.actuary.hit"),
+            (cue: PlayerDamaged, text: "ace.actuary.scores"),
+            (cue: Withdraws, text: "ace.actuary.withdraws"),
+            (cue: Defeated, text: "ace.actuary.defeated"),
+            (cue: Captured, text: "ace.actuary.captured"),
+        ])],
+    ),
+    // ---- Act 4 -------------------------------------------------------------------------------------------------
+    (
+        id: "ace.chairman", name: "ace.chairman.name", callsign: "ace.chairman.callsign", ship: "class.ace_charter",
+        doctrine: ["card.stand_off_gunnery", "card.night_watch"],
+        arcs: [(act: Act4, operations: ["op.act4.story.halden", "op.act4.duel.chairman", "op.act4.capstone"], lines: [
+            (cue: Arrives, text: "ace.chairman.arrives"),
+            (cue: SightsPlayer, text: "ace.chairman.sights"),
+            (cue: FiresFirst, text: "ace.chairman.fires"),
+            (cue: TakesDamage, text: "ace.chairman.hit"),
+            (cue: PlayerDamaged, text: "ace.chairman.scores"),
+            (cue: Withdraws, text: "ace.chairman.withdraws"),
+            (cue: Defeated, text: "ace.chairman.defeated"),
+            (cue: Captured, text: "ace.chairman.captured"),
+        ])],
+    ),
+]

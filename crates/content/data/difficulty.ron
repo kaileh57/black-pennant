@@ -1,0 +1,8 @@
+// Vec<DifficultyPreset>: the three presets over the six sliders (DESIGN.md L847-860). Unit `data-tuning-rules`
+// owns this file. Custom is any other combination of slider values, so it has no row. There is no damage
+// slider: damage is the same physical model at every difficulty (L849).
+[
+    (id: "easy", name: "difficulty.easy", sliders: (ai_accuracy: 1.5, ai_reaction_s: 3.0, adaptation_cadence: 0.5, hull_count: 220, economy: 1.25, clock_days: 50)),
+    (id: "normal", name: "difficulty.normal", sliders: (ai_accuracy: 1.0, ai_reaction_s: 2.0, adaptation_cadence: 1.0, hull_count: 300, economy: 1.0, clock_days: 40)),
+    (id: "hard", name: "difficulty.hard", sliders: (ai_accuracy: 0.75, ai_reaction_s: 1.2, adaptation_cadence: 1.5, hull_count: 380, economy: 0.85, clock_days: 32)),
+]

@@ -1,0 +1,22 @@
+// Vec<PartDef>: parts Act 2 adds to the build (DESIGN.md L551, L801-807, L866-875). Unit `data-act2`. Licensed CC BY 4.0.
+//
+// Act 2 opens part tier 4 at its start (the tier 4 rows already sit in parts/act1.ron, since sandbox, skirmish and
+// PvP offer every part from first launch) and adds one part: the small helicopter deck. It carries the stock
+// helicopter (weapons.ron `helicopter.utility`: search radar, camera, two light torpedoes) that an officer flies;
+// the player never builds the helicopter itself (L551).
+//
+// The deck is 10 by 8 m of landing pad (20 x 1 x 16 cells), the smallest pad the hull-mesh generator draws, so it
+// fits the after deck of a 400 t hull with a beam of 8 m or more. Its 4 t is the pad, lashings, lights and the
+// aviation fuel; the 5 t helicopter is added from its munition row while it is aboard. The fuel burns (Flammable
+// Fuel). Power priority 4 with the drone bays (table at L287-295). Cost (deck and helicopter together) sits between the
+// tier 3 drone catapult and the tier 4 search radar.
+[
+    (
+        id: "deck.heli", name: "part.deck.heli.name", description: "part.deck.heli.desc",
+        category: Offboard, tier: T4, phase: Act2, size: (20, 1, 16), placement: Weather, mass_kg: 4000.0, cost: 160,
+        ports: [(network: Power, role: Consume, rate: 20.0), (network: Data, role: Link)], power_priority: 4,
+        flammable: Fuel, standard_limit: 1,
+        function: HeliDeck(helicopter: "helicopter.utility"),
+        model: (generator: "fit.heli_deck", params: [10.0, 8.0]), icon: "part_offboard",
+    ),
+]

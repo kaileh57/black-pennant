@@ -1,0 +1,104 @@
+keys,?context,en
+editor_gauges.strip,Accessible name of the gauge strip along the top of the dry dock,Gauges
+editor_gauges.float,Gauge name: floating and stability,Float
+editor_gauges.speed,Gauge name,Speed
+editor_gauges.power,Gauge name: electrical power balance,Power
+editor_gauges.endurance,Gauge name: range on fuel,Endurance
+editor_gauges.punch,Gauge name: weight of fire and weapon reach,Punch
+editor_gauges.sight,Gauge name: radar horizon and sensor coverage,Sight
+editor_gauges.resilience,Gauge name: survival after flooding and hits,Resilience
+editor_gauges.complexity,Gauge name: simulation cost in complexity points,Complexity
+editor_gauges.float.tip,"Tooltip, first line at most 12 words","Stability and weight: GM, displacement against the cap, righting arm"
+editor_gauges.speed.tip,"Tooltip, first line at most 12 words",Top speed in knots and the turning circle at full rudder
+editor_gauges.power.tip,"Tooltip, first line at most 12 words",Combat power demand against generation; the short tick is cruise demand
+editor_gauges.endurance.tip,"Tooltip, first line at most 12 words",Range at cruise speed on the fuel aboard
+editor_gauges.punch.tip,"Tooltip, first line at most 12 words",Weight of fire per minute and the reach of each weapon
+editor_gauges.sight.tip,"Tooltip, first line at most 12 words",Radar horizon against three target heights and coverage by sector
+editor_gauges.resilience.tip,"Tooltip, first line at most 12 words",Survival with compartments flooded and systems left after a random hit
+editor_gauges.complexity.tip,"Tooltip, first line at most 12 words",Simulation cost from the 10 s trial; updates after each save
+editor_gauges.split.tip,Tooltip line when slower gauges are computed in the background,This gauge updates in the background while the design is large.
+editor_gauges.split.detail,Detail sheet line; {0} gauge update time in milliseconds,"Split strip: gauge updates take {0} ms at p95, so this gauge updates in the background."
+editor_gauges.waiting,Shown in a gauge before its first value arrives,Measuring
+editor_gauges.check.pass,Editor check word (fallback when the enum word is missing),Pass
+editor_gauges.check.caution,Editor check word (fallback when the enum word is missing),Caution
+editor_gauges.check.fail,Editor check word (fallback when the enum word is missing),Fail
+editor_gauges.check.advisory,Ship's Notes severity word for the lowest tier,Advisory
+editor_gauges.check.updating,Shown on a gauge whose value predates the latest edit,Updating
+editor_gauges.float.gm,"Readout label: metacentric height, a glossary code",GM
+editor_gauges.float.band,"Readout under GM; {0} low edge, {1} high edge with unit",Band {0} to {1}
+editor_gauges.float.displacement,Readout label,Displacement
+editor_gauges.float.cap,Readout under displacement; {0} tonnage cap,Cap {0}
+editor_gauges.float.reserve,Readout under displacement when there is no cap; {0} reserve buoyancy,Reserve {0}
+editor_gauges.float.range,Readout label: range of stability,Range
+editor_gauges.speed.top,Readout label,Top speed
+editor_gauges.speed.turn,Readout label,Turning circle
+editor_gauges.power.combat,Readout label: power demand in combat,Combat demand
+editor_gauges.power.generation,Readout under combat demand; {0} generation,Generation {0}
+editor_gauges.endurance.range,Readout label,Range
+editor_gauges.endurance.cruise,Readout label,Cruise
+editor_gauges.endurance.fuel,Readout label,Fuel
+editor_gauges.punch.weight,Readout label,Weight of fire
+editor_gauges.punch.reach,Readout label: the longest effective range of any weapon,Longest reach
+editor_gauges.punch.weapons,Readout label: number of weapons,Weapons
+editor_gauges.sight.skimmer,Radar horizon target: sea-skimming missile at 5 m,Skimmer at 5 m
+editor_gauges.sight.mast,Radar horizon target: ship mast at 20 m,Mast at 20 m
+editor_gauges.sight.aircraft,"Radar horizon target: aircraft at 1,000 m","Aircraft at 1,000 m"
+editor_gauges.sight.coverage,Readout label: share of sectors the sensors see clearly,Clear
+editor_gauges.resilience.one,Readout label: survival with one compartment flooded,One flooded
+editor_gauges.resilience.two,Readout label: survival with two compartments flooded,Two flooded
+editor_gauges.resilience.hit,Readout label: share of systems that survive a random hit,After a hit
+editor_gauges.complexity.points,Readout label,Points
+editor_gauges.complexity.unmeasured,Complexity before the first trial (it is measured on save),Not measured
+editor_gauges.complexity.limits,"Readout under complexity; {0} Caution threshold, {1} PvP cap","Caution {0}, PvP cap {1}"
+editor_gauges.unit.kg_per_min,Weight of fire; {0} kilograms,{0} kg/min
+editor_gauges.unit.kwh,Battery energy; {0} kilowatt-hours,{0} kWh
+editor_gauges.detail.gm,Detail sheet row,Metacentric height (GM)
+editor_gauges.detail.gm_beam,Detail sheet row,GM as share of beam
+editor_gauges.detail.gm_band,Detail sheet row: GM between the Caution limits,GM band
+editor_gauges.detail.displacement,Detail sheet row,Displacement
+editor_gauges.detail.cap,Detail sheet row,Tonnage cap
+editor_gauges.detail.no_cap,Detail sheet value when the mode has no tonnage cap,No cap
+editor_gauges.detail.reserve,Detail sheet row,Reserve buoyancy
+editor_gauges.detail.draft,Detail sheet row,Draft
+editor_gauges.detail.heel_trim,Detail sheet row,Heel and trim at rest
+editor_gauges.detail.heel_trim_value,"Detail sheet value; {0} heel, {1} trim","{0} heel, {1} trim"
+editor_gauges.detail.range,Detail sheet row,Range of stability
+editor_gauges.detail.gz_legend,Under the righting-arm plot,"Righting arm against heel. The vertical line is the range of stability, where the arm reaches zero."
+editor_gauges.detail.generation,Detail sheet row,Generation
+editor_gauges.detail.cruise,Detail sheet row,Cruise demand
+editor_gauges.detail.combat,Detail sheet row,Combat demand
+editor_gauges.detail.margin,Detail sheet row: generation minus combat demand,Margin in combat
+editor_gauges.detail.battery,Detail sheet row,Battery
+editor_gauges.detail.no_weapons,Detail sheet row when the design has no weapons,No weapons fitted
+editor_gauges.detail.slot,Detail sheet row: an unnamed part; {0} part number,Part {0}
+editor_gauges.detail.antenna,Detail sheet row: height of the highest radar,Radar antenna height
+editor_gauges.detail.target,Table column heading,Target
+editor_gauges.detail.horizon,Table column heading: radar horizon,Horizon
+editor_gauges.detail.radar,Table column heading: radar detection range,Radar
+editor_gauges.detail.visual,Table column heading: visual detection range,Visual
+editor_gauges.detail.coverage_legend,"Under the coverage rose; {0} share counted as clear, {1} share of clear sectors","Sensor coverage by 10° sector, bow up. A sector at {0} or more counts as clear; {1} of sectors are clear."
+editor_gauges.detail.worst,Detail sheet heading over the worst flooding cases,Worst flooding cases
+editor_gauges.detail.one_comp,Flooding case; {0} compartment number,Compartment {0}
+editor_gauges.detail.two_comps,Flooding case; {0} and {1} compartment numbers,Compartments {0} and {1}
+editor_gauges.detail.case,"Flooding case outcome; {0} heel, {1} trim, {2} survives or lost","{0} heel, {1} trim: {2}"
+editor_gauges.detail.survives,Flooding case outcome,stays afloat
+editor_gauges.detail.lost,Flooding case outcome,lost
+editor_gauges.detail.caution_at,Detail sheet row,Caution above
+editor_gauges.detail.pvp_cap,Detail sheet row,PvP cap per vessel
+editor_gauges.float.band.short,"Short form when the strip is narrow; {0} low edge, {1} high edge",{0} to {1}
+editor_gauges.float.displacement.short,Short form when the strip is narrow: displacement,Weight
+editor_gauges.speed.top.short,Short form when the strip is narrow,Top
+editor_gauges.speed.turn.short,Short form when the strip is narrow: turning circle,Turn
+editor_gauges.power.combat.short,Short form when the strip is narrow: combat demand,Combat
+editor_gauges.power.generation.short,Short form when the strip is narrow; {0} generation,of {0}
+editor_gauges.punch.weight.short,Short form when the strip is narrow: weight of fire,Fire
+editor_gauges.punch.reach.short,Short form when the strip is narrow: longest reach,Reach
+editor_gauges.sight.skimmer.short,Short form when the strip is narrow: skimmer at 5 m,Skimmer
+editor_gauges.sight.mast.short,Short form when the strip is narrow: mast at 20 m,Mast
+editor_gauges.sight.aircraft.short,"Short form when the strip is narrow: aircraft at 1,000 m",Aircraft
+editor_gauges.resilience.one.short,Short form when the strip is narrow: one compartment flooded,1 flooded
+editor_gauges.resilience.two.short,Short form when the strip is narrow: two compartments flooded,2 flooded
+editor_gauges.resilience.hit.short,Short form when the strip is narrow: systems left after a hit,Hit
+editor_gauges.complexity.limits.short,"Short form when the strip is narrow; {0} Caution threshold, {1} PvP cap",Cap {1}
+editor_gauges.complexity.unmeasured.short,Short form when the strip is narrow: not measured yet,None yet
+editor_gauges.unit.t_per_min,Weight of fire; {0} tonnes,{0} t/min

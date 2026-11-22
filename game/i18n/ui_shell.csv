@@ -1,0 +1,5 @@
+keys,?context,en
+shell.loading.sortie,Loading cover status while a sortie or replay loads,Loading sortie
+shell.dialog.close,Button that closes a message dialog,Close
+shell.session.failed_title,Dialog title when a session could not start or its connection closed,Session ended
+shell.session.failed_body,Dialog body used when the session gave no reason,The session stopped and could not continue.

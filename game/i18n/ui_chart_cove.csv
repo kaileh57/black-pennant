@@ -1,0 +1,48 @@
+keys,?context,en
+chart.cove.no_campaign,Cove panel with no campaign loaded,No campaign is loaded.
+chart.cove.at,Cove panel line; {0} cove name,SEXTANT lies at {0}.
+chart.cove.passage,Cove panel line while SEXTANT is under way,SEXTANT is on passage. Cove services open when it arrives.
+chart.cove.away,Cove panel line when SEXTANT is not at an open cove,"SEXTANT is not at an open cove. Transit to one to refit, repair and save."
+chart.cove.closed,Tooltip of a cove service that is closed now,Open only while SEXTANT lies at a cove between operations
+chart.cove.dock,Button: open the dry dock on your hull,Enter dry dock
+chart.cove.dock_tip,Tooltip of Enter dry dock,Refit your hull; the dock quotes Salvage and theatre hours before you commit
+chart.cove.dock_failed,Dialog title when the dry dock could not open,The dry dock did not open
+chart.cove.no_hull,Cove panel hull heading when this player has no hull,No hull
+chart.cove.hull_ready,Hull state word,Ready.
+chart.cove.hull_lost,Hull state when lost,Lost. Its design is kept; the fitted parts are gone.
+chart.cove.hull_refit,"Hull state; {0} ready date-time group, {1} hours left","In the dock until {0}, {1} left."
+chart.cove.other,"Co-op line for another player's hull; {0} player name, {1} hull name, {2} hull state","{0}, {1}: {2}"
+chart.cove.fuel,Gauge label: fuel aboard,Fuel
+chart.cove.ammo,Gauge label: ammunition aboard,Ammunition
+chart.cove.damage,Gauge label: repair bill as a share of build cost,Damage
+chart.cove.no_trend,Gauge note: hull figures change only at the cove or in a sortie,Changes only with a service or a sortie
+chart.cove.services,Section title: cove services,Services
+chart.cove.repair,Button: repair all damage; {0} Salvage cost,"Repair all damage, {0}"
+chart.cove.repair_tip,Tooltip of the full repair,Repairs cost half the damaged parts' price
+chart.cove.repair_part,Button: repair what the pool can pay; {0} Salvage in the pool,Repair what {0} pays for
+chart.cove.repair_part_tip,Tooltip of the partial repair,"Destroyed parts first, then damaged parts, then hull cells"
+chart.cove.rearm,Button: rearm and refuel buying the shortfall; {0} Salvage cost,"Rearm and refuel, {0}"
+chart.cove.rearm_stock,Button: rearm and refuel from SEXTANT's stock at no Salvage cost,Rearm and refuel from stock
+chart.cove.rearm_tip,Tooltip of rearm,Loads from SEXTANT's stock; Salvage buys only what the stock lacks
+chart.cove.rebuild,"Button: rebuild a lost hull; {0} Salvage cost, {1} hours","Rebuild hull, {0}, {1}"
+chart.cove.rebuild_tip,Tooltip of rebuild,Rebuilds the design at 60% of its build cost
+chart.cove.short,Tooltip of a service the pool cannot pay; {0} Salvage short,The pool is {0} short
+chart.cove.wait_refit,Button: wait at the cove until refits and rebuilds finish,Wait until refits finish
+chart.cove.wait_refit_tip,Tooltip of wait until refits finish,Theatre time runs until every hull is out of the dock
+chart.cove.no_damage,Services note,No damage to repair.
+chart.cove.full,Services note,Magazines and tanks are full.
+chart.cove.ironman_lost,Services note under Ironman with the hull lost,Ironman: a lost hull cannot be rebuilt.
+chart.cove.store,Section title: SEXTANT's parts store,Parts store
+chart.cove.store_row,"Parts store row; {0} part name, {1} count",{0}: {1}
+chart.cove.store_empty,Parts store empty state,Empty. Parts removed in a refit wait here and refit for free.
+chart.cove.blueprints,Section title: blueprints recovered from enemy parts,Blueprints
+chart.cove.tier,Blueprint section line; {0} highest open part tier word,Parts open to {0}.
+chart.cove.blueprint_recent,Blueprint row recovered in the last operation; {0} part name,"{0}, recovered last operation"
+chart.cove.blueprints_none,Blueprints empty state,None recovered yet. Capture or board enemy ships to recover their parts.
+chart.cove.saving,Section title: saving the campaign,Saving
+chart.cove.save,Button: write a full save,Save campaign
+chart.cove.save_ok,Save note when saving is allowed,Each cove is a full save point.
+chart.cove.save_sortie,Save note while a sortie is out,Saving waits until the sortie ends.
+chart.cove.save_away,Save note away from a cove,Saving is possible at a cove between operations.
+chart.cove.save_closed,Save note when saving is closed for another reason,Saving is not possible now.
+chart.cove.save_ironman,Save note under Ironman,Ironman keeps one rolling save.

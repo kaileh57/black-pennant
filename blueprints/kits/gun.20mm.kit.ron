@@ -1,0 +1,28 @@
+// Stock kit (DESIGN.md L140). Unit `data-kits-act1`. Licensed CC BY 4.0.
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.gun.20mm",
+    version: 1,
+    hash: "",
+    name: "20 mm gun",
+    name_key: "kit.gun.20mm.name",
+    description_key: "kit.gun.20mm.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "gun.20mm.single", offset: (x: 0, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "deck", offset: (x: 1, y: 0, z: 1), face: YNeg),
+    ],
+    settings: [
+        (key: "gunnery.open_fire_range", label: "tuning.slider.gunnery.open_fire_range", min: 0.5, max: 1.0, default: 1.0),
+    ],
+    graph: (),
+    officer: None,
+    tags: [],
+    tray_order: 10,
+)

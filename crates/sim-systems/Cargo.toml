@@ -1,0 +1,30 @@
+[package]
+name = "sim-systems"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[features]
+default = []
+# L4 Luau host (DESIGN.md L355-390): `script::luau::LuauHost` over mlua =0.12.2 (Luau, never luau-jit).
+# `send` is required because `ScriptHost: Send` (the Sim moves to the sim thread and ticks on its pool).
+# Everything else compiles against the `script::ScriptHost` trait seam, so the default build has no mlua.
+luau = ["dep:mlua", "mlua/send"]
+
+[dependencies]
+content.workspace = true
+sim-core.workspace = true
+libm.workspace = true
+rayon.workspace = true
+serde.workspace = true
+bincode.workspace = true
+indexmap.workspace = true
+bitflags.workspace = true
+thiserror.workspace = true
+glam.workspace = true
+pathfinding.workspace = true
+dubins_paths.workspace = true
+mlua = { workspace = true, optional = true }

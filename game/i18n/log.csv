@@ -1,0 +1,116 @@
+keys,?context,en
+hud.name,"A name the player typed, shown as typed; {0} the name",{0}
+hud.candidate.civilian,Track card candidate that is civilian traffic,Civilian traffic
+hud.candidate.unknown,Track card candidate of no known class,Unknown class
+hud.group.name,"A weapons group the player can take as one role; {0} its takeover key",Weapons group {0}
+hud.action.part_lost,Why a station action cannot start,The part for this action is destroyed
+hud.action.running,Why a station action cannot start,Already under way
+hud.action.rhib_busy,Why a station action cannot start; the boat is in use,The RHIB is out on another action
+hud.action.not_offered,Why a station action cannot start,Not part of this operation
+hud.action.no_hull,Why a station action cannot start,The ship is lost
+hud.track.name,"Track name for screen readers; {0} track number, {1} stance word, {2} bearing in three digits","Track {0}, {1}, bearing {2}"
+hud.track.name_no_bearing,"Track name for screen readers without an own ship; {0} track number, {1} stance word","Track {0}, {1}"
+hud.track.name_last_known,"Track name for screen readers, last-known mark; {0} track number, {1} stance word","Track {0}, {1}, last known"
+hud.legend.wedge,Plot legend: bearing-only uncertainty wedge,Bearing only: the contact is inside the wedge
+hud.legend.ellipse,Plot legend: uncertainty ellipse,Position inside the ellipse 95% of the time
+hud.legend.circle,Plot legend: small circle of a fire-control lock,Fire-control lock
+hud.legend.hostile,Plot legend: stance frame,Hostile
+hud.legend.suspect,Plot legend: stance frame,Suspect
+hud.legend.neutral,Plot legend: stance frame,Neutral
+hud.legend.friend,Plot legend: stance frame,Friend
+hud.legend.climbing,Plot legend: vertical trend glyph,Climbing
+hud.legend.diving,Plot legend: vertical trend glyph,Diving
+hud.legend.last_known,Plot legend: mark kept after a track drops,Last-known position
+hud.legend.selected,Plot legend: white selection bracket,Selected track
+orders.rules.no_sortie,Rules table refused,Rules can be sent only during a sortie
+orders.rules.too_many,"Rules table refused; {0} rules given, {1} the limit",{0} rules is over the limit of {1}
+orders.rules.invalid,"Rules table refused; {0} the rule's row number",Rule {0} is incomplete
+log.system.started,HUD log,Sortie started
+log.system.ended,"HUD log; {0} outcome word",Sortie over: {0}
+log.system.rejected,"HUD log; {0} why the server refused an order",Order refused. {0}
+log.system.script,"HUD log; {0} why the script stopped",A script node stopped. {0}
+log.pacing.paused,HUD log,Paused
+log.pacing.resumed,HUD log,Resumed
+log.pacing.rate,"HUD log; {0} time compression factor",Time rate {0}x
+log.pacing.blocked,"HUD log; {0} why time compression is held",{0}
+log.pacing.unblocked,HUD log,Time compression available
+log.pacing.scale,"HUD log; {0} simulation speed as a percentage",Simulation running at {0} of real time
+log.pacing.ladder_up,"HUD log; host overload ladder; {0} rung, {1} step",Host load rising: step {0}.{1}
+log.pacing.ladder_down,"HUD log; host overload ladder; {0} rung, {1} step",Host load easing: step {0}.{1}
+log.network.joined,"HUD log; {0} player name",{0} joined
+log.network.dropped,"HUD log; {0} player name",{0} dropped; officers in command
+log.network.left,"HUD log; {0} player name",{0} left
+log.track.created,"HUD log; {0} track number, {1} domain word","New track {0}, {1}"
+log.track.dropped,"HUD log; {0} track number",Track {0} dropped
+log.track.merged,"HUD log; {0} retired track number, {1} track it merged into",Track {0} merged into track {1}
+log.track.split,"HUD log; {0} track number, {1} new track number",Track {0} split; new track {1}
+log.track.rung,"HUD log; {0} track number, {1} identification rung word, {2} the evidence",Track {0} identified to {1}. {2}
+log.track.rung_class,"HUD log; {0} track number, {1} class name, {2} the evidence",Track {0} identified as {1}. {2}
+log.track.stance,"HUD log; {0} track number, {1} stance word, {2} the reason",Track {0} now {1}. {2}
+log.track.reinforcements,HUD log,Enemy reinforcements reported
+log.officer.radiating,"HUD log; {0} emitter part",{0} radiating
+log.officer.silent,"HUD log; {0} emitter part",{0} silent
+log.engage.engaging,"HUD log; {0} mount, {1} track number, {2} the fire reason","{0}, track {1}. {2}"
+log.engage.holding,"HUD log; {0} mount, {1} track number, {2} the hold reason","{0}, track {1}. {2}"
+log.engage.holding_none,"HUD log; {0} mount, {1} the hold reason",{0}. {1}
+log.engage.unconverged,"HUD log; {0} mount, {1} track number, {2} solution error","{0}, track {1}: solution unconverged, error {2}"
+log.engage.seduced,HUD log,A missile was drawn off by a decoy
+log.engage.lost,"HUD log; {0} track number",Track {0} destroyed
+log.engage.lost_vessel,HUD log; an enemy hull no track held,Enemy vessel destroyed
+log.engage.disabled,"HUD log; {0} track number",Track {0} disabled
+log.engage.struck,"HUD log; {0} track number; the hull surrendered",Track {0} struck her colours
+log.control.take.helm,HUD log; the player took the role,You have the helm
+log.control.back.helm,HUD log; the officer drives the role again,Helm back with the officer
+log.control.take.sensors,HUD log; the player took the role,You have the sensors
+log.control.back.sensors,HUD log; the officer drives the role again,Sensors back with the officer
+log.control.take.mount,"HUD log; the player took the role; {0} mount",You have {0}
+log.control.back.mount,"HUD log; the officer drives the role again; {0} mount",{0} back with the officer
+log.control.take.group,"HUD log; the player took the role; {0} group key",You have weapons group {0}
+log.control.back.group,"HUD log; the officer drives the role again; {0} group key",Weapons group {0} back with the officer
+log.control.overridden,HUD log; an automatic value was set by hand,Value overridden
+log.control.reverted,HUD log; a hand-set value went back to its default,Value back to default
+log.alert.cleared,"HUD log; {0} the alert that was rectified",Cleared. {0}
+log.alert.silenced,"HUD log; {0} how long",Alert sounds silenced for {0}
+log.alert.flood_on,HUD log; more than 10 alerts in 10 minutes,Alert flood: lower priorities summarised
+log.alert.flood_off,HUD log,Alert flood over
+log.objective.done,"HUD log; {0} the objective",Objective complete. {0}
+log.objective.failed,"HUD log; {0} the objective",Objective failed. {0}
+log.objective.ghost_done,"HUD log; {0} the optional condition",Optional condition met. {0}
+log.objective.ghost_failed,"HUD log; {0} the optional condition",Optional condition lost. {0}
+log.objective.unnamed,HUD log; an objective with no text,The objective
+log.action.done,"HUD log; {0} station action word",{0} complete
+log.action.aborted,"HUD log; {0} station action word, {1} why",{0} aborted. {1}
+log.action.paused,"HUD log; {0} station action word, {1} why",{0} paused. {1}
+log.action.running,"HUD log; {0} station action word",{0} under way
+log.action.no_reason,HUD log; a station action stopped with no reason reported,No reason reported
+log.action.photo,"HUD log; {0} track number",Track {0} photographed
+log.action.prize,HUD log,Prize taken
+log.action.prize_class,"HUD log; {0} class name",{0} taken as a prize
+log.damage.part,"HUD log; {0} part, {1} damage word",{0}: {1}
+log.damage.breach,"HUD log; {0} compartment",Hull breached in {0}
+log.damage.breach_below,"HUD log; {0} compartment",Hull breached below the waterline in {0}
+log.damage.conduit,"HUD log; {0} conduit number",Conduit {0} cut
+log.damage.fire,"HUD log; {0} compartment",Fire in {0}
+log.damage.fire_out,"HUD log; {0} compartment",Fire out in {0}
+log.damage.half_flooded,"HUD log; {0} compartment",Water past half in {0}
+log.damage.magazine_flooded,"HUD log; {0} magazine part",{0} flooded
+log.damage.cook_off,"HUD log; {0} magazine part",{0} cooked off
+log.damage.passengers,"HUD log; {0} how many",Passengers lost: {0}
+log.damage.jury_rigged,"HUD log; {0} conduit number",Conduit {0} jury-rigged
+log.damage.patched,"HUD log; {0} compartment",Breach patched in {0}
+log.damage.repaired,"HUD log; {0} part",{0} repaired
+log.damage.fire_fought,"HUD log; {0} compartment",Damage control fought the fire in {0}
+log.damage.grounded,HUD log,Ran aground
+log.damage.collision,HUD log,Collision
+log.damage.own_lost,HUD log,Our ship is lost
+log.damage.ally_lost,"HUD log; {0} ship name",{0} lost
+hud.dc.compartment,"Damage-control schematic label of a compartment; {0} its number",Compartment {0}
+hud.dc.valve,"Damage-control button that opens or closes a counter-flooding valve; {0} the compartment number","Flood valve, compartment {0}"
+hud.dc.magazine_flood,"Damage-control button that floods a magazine from the fire main; {0} the magazine's name",Flood {0}
+hud.dc.team.idle,A damage-control team with no job,Standing by
+hud.dc.team.fire,"A damage-control team's job; {0} the compartment, such as compartment 3",Fighting the fire in {0}
+hud.dc.team.patch,"A damage-control team's job; {0} the compartment, such as compartment 3",Patching a breach in {0}
+hud.dc.team.jury_rig,"A damage-control team's job; {0} the conduit number",Jury-rigging conduit {0}
+hud.dc.team.repair,"A damage-control team's job; {0} the part's name",Repairing {0}
+hud.role.helm,A role the player can take from the helm officer,Helm
+hud.role.sensors,A role the player can take from the sensors officer,Sensors

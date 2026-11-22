@@ -1,0 +1,68 @@
+// Vec<EnemyClassDef>: the Meridian Combine's Act 3 classes (DESIGN.md L756-758, L866-875, L451, L551). Unit
+// `data-act3`. Licensed CC BY 4.0.
+//
+// Every class is a stock blueprint under blueprints/combine/act3/, built by the editor's steps in
+// crates/content/tests/combine/ (the shared builder, with the Act 3 build sheets in classes_act3.rs) and validated
+// in enemy-class mode by crates/content/tests/combine_act3.rs. Full-load tonnages, for fleet and commitment
+// arithmetic:
+//   T1  island packet 240 t, bulk carrier 618 t, fleet tanker 734 t
+//   T2  Tontine coastal submarine 236 t, corvette 474 t
+//   T3  Accrual patrol submarine 353 t, corvette batch 2 628 t, missile frigate 766 t, gun frigate 925 t
+//   T4  Contingency 1,016 t, destroyer 1,022 t, gun frigate batch 2 1,118 t
+//   T5  heavy destroyer 1,474 t, Foreclosure 2,038 t (capital, 108 m)
+// Act 3 commits 3,600 t per player (4 x the 900 t cap) in five surface hulls, about 720 t a hull, so its line runs
+// from 470 t corvettes to 1,500 t destroyers; heavy guns (130 to 155 mm) arrive on the frigates, destroyers and the
+// cruiser. Only the Liquidator's Foreclosure exceeds 90 m, so no operation can field more capitals than the limit
+// of 4 (L126). The Act 1 and Act 2 classes stay in service and fill out Act 3 patrols and the Hollin order of
+// battle. Tiers rank the Combine's own ladder: the first T5 surface combatant in this file (the heavy destroyer)
+// fills the Act 3 Alert 5 hunter group (L749), so it is listed before the ace ship of the same tier.
+//
+// The two submarine classes are AI-only boats (L451): `role: Submarine`, `submersible: true` and the `submarine`
+// behaviour key, so sim-core holds the depth their captains order and the sonar model's layer and shadow zone
+// decide who hears whom. They are never task-group or hunter-group hulls; they sail in submarine patrols added
+// beside an operation's surface force, so the commitment floors hold on surface hulls alone and the act still
+// stands if submarines are cut (L875). The Tontine is the reference submarine of the depth-charge gate (L618).
+//
+// Behaviour keys as Acts 1 and 2 (sim-systems `behaviour_from_key`). The corvette is the anti-submarine escort (it
+// stays between the threat and its charge). The Liquidator's cruiser keeps a doctrine range of 16 km, inside its
+// 155 mm reach and outside a 400 t raider's 127 mm. The two helicopter-deck classes declare the stock helicopter.
+// Surrender: every class strikes under the Combine rule (`Combine`, the campaign's strike_cells_lost) except the aces, which never strike (`surrender: Never`, L537). Variants are the batch-2 hulls the generator swaps in for
+// co-op and the use-variants doctrine cards (L834).
+[
+    // ---- Tier 1 -------------------------------------------------------------------------------------------------
+    (id: "class.bulk_carrier", name: "class.bulk_carrier.name", blueprint: "combine/act3/bulk_carrier.bp.ron", role: Freighter, tier: T1, act: Act3,
+        behaviour: "merchant"),
+    (id: "class.fleet_tanker", name: "class.fleet_tanker.name", blueprint: "combine/act3/fleet_tanker.bp.ron", role: Tanker, tier: T1, act: Act3,
+        behaviour: "merchant"),
+    (id: "class.packet", name: "class.packet.name", blueprint: "combine/act3/packet.bp.ron", role: Civilian, tier: T1, act: Act3,
+        behaviour: "merchant"),
+    // ---- Tier 2 -------------------------------------------------------------------------------------------------
+    (id: "class.pledge", name: "class.pledge.name", blueprint: "combine/act3/pledge.bp.ron", role: Corvette, tier: T2, act: Act3,
+        behaviour: "escort", variants: ["class.pledge_b"]),
+    (id: "class.tontine", name: "class.tontine.name", blueprint: "combine/act3/tontine.bp.ron", role: Submarine, tier: T2, act: Act3,
+        behaviour: "submarine", submersible: true),
+    // ---- Tier 3 -------------------------------------------------------------------------------------------------
+    (id: "class.pledge_b", name: "class.pledge_b.name", blueprint: "combine/act3/pledge_b.bp.ron", role: Corvette, tier: T3, act: Act3,
+        behaviour: "escort"),
+    (id: "class.accrual", name: "class.accrual.name", blueprint: "combine/act3/accrual.bp.ron", role: Submarine, tier: T3, act: Act3,
+        behaviour: "submarine", submersible: true),
+    (id: "class.collateral", name: "class.collateral.name", blueprint: "combine/act3/collateral.bp.ron", role: Frigate, tier: T3, act: Act3,
+        behaviour: "combatant", variants: ["class.collateral_b"]),
+    (id: "class.annuity", name: "class.annuity.name", blueprint: "combine/act3/annuity.bp.ron", role: Frigate, tier: T3, act: Act3,
+        behaviour: "striker"),
+    // ---- Tier 4 -------------------------------------------------------------------------------------------------
+    (id: "class.collateral_b", name: "class.collateral_b.name", blueprint: "combine/act3/collateral_b.bp.ron", role: Frigate, tier: T4, act: Act3,
+        behaviour: "combatant"),
+    (id: "class.dividend", name: "class.dividend.name", blueprint: "combine/act3/dividend.bp.ron", role: Destroyer, tier: T4, act: Act3,
+        behaviour: "combatant", air_wing: [("helicopter.utility", 1)]),
+    // The Actuary's ship: a sensor-heavy destroyer leader with two search radars, a fixed-wing drone, hull sonar and a
+    // helicopter, built to find a target by plot and strike it with heavy missiles.
+    (id: "class.ace_contingency", name: "class.ace_contingency.name", blueprint: "combine/act3/ace_contingency.bp.ron", role: Destroyer, tier: T4, act: Act3,
+        behaviour: "striker", air_wing: [("helicopter.utility", 1)], surrender: Never),
+    // ---- Tier 5 -------------------------------------------------------------------------------------------------
+    (id: "class.equity", name: "class.equity.name", blueprint: "combine/act3/equity.bp.ron", role: Destroyer, tier: T5, act: Act3,
+        behaviour: "combatant"),
+    // The Liquidator's ship: a 108 m heavy cruiser with three twin 155 mm turrets and a 40 mm belt, the act's capital.
+    (id: "class.ace_foreclosure", name: "class.ace_foreclosure.name", blueprint: "combine/act3/ace_foreclosure.bp.ron", role: Capital, tier: T5, act: Act3,
+        behaviour: "combatant", engagement_range_m: Some(16000.0), capital: true, surrender: Never),
+]

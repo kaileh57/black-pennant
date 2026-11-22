@@ -1,0 +1,62 @@
+keys,?context,en
+skirmish.title,Skirmish setup screen title,Skirmish
+skirmish.back,Button that returns to the main menu from skirmish or sandbox setup,Back to the menu
+skirmish.start,Button that starts the skirmish,Start the skirmish
+skirmish.operation,Skirmish setup section heading for the operation template,Operation
+skirmish.opposition,Skirmish setup section heading,Opposition
+skirmish.act,Skirmish setup field name for the act and its tonnage cap,Tonnage cap
+skirmish.act.row,"Tonnage cap choice; {0} act such as Act 1, {1} its tonnage cap","{0}, {1} cap"
+skirmish.enemies,Skirmish setup field name,Enemy hulls
+skirmish.enemies.one,Enemy hull count; {0} is 1,{0} hull
+skirmish.enemies.many,Enemy hull count; {0} more than 1,{0} hulls
+skirmish.difficulty,Skirmish setup field name,Difficulty
+skirmish.templates.empty,Shown when no operation template could be read,No operation templates could be read.
+skirmish.needs,Line under an operation; {0} the comma-separated fittings a hull needs,Your ship needs: {0}.
+skirmish.need_template,Why Start is unavailable: no operation chosen,Choose an operation.
+skirmish.need_design,Why Start is unavailable: no design chosen,Choose a design to field.
+skirmish.design_blocked,Why Start is unavailable: the design does not fit,The chosen design cannot be fielded. The reasons are under it.
+skirmish.failed,Shown when the skirmish could not start and gave no reason,The skirmish could not start.
+skirmish.conditions,Setup section heading for weather and time,Conditions
+skirmish.weather,Setup field name,Weather
+skirmish.sea_state,Setup field name,Sea state
+skirmish.time_of_day,Setup field name,Time of day
+skirmish.seed,Setup field name,Seed
+skirmish.seed.placeholder,Placeholder of the empty seed field,Random
+skirmish.sea.row,"Sea state value; {0} WMO code 0 to 8, {1} its name","{0}, {1}"
+skirmish.sea.0,WMO sea state 0 name,"calm, glassy"
+skirmish.sea.1,WMO sea state 1 name,"calm, rippled"
+skirmish.sea.2,WMO sea state 2 name,smooth
+skirmish.sea.3,WMO sea state 3 name,slight
+skirmish.sea.4,WMO sea state 4 name,moderate
+skirmish.sea.5,WMO sea state 5 name,rough
+skirmish.sea.6,WMO sea state 6 name,very rough
+skirmish.sea.7,WMO sea state 7 name,high
+skirmish.sea.8,WMO sea state 8 name,very high
+skirmish.design.title,Setup section heading for the design to field,Your ship
+skirmish.design.empty,Shown when no design was found,No designs found. Open the dry dock to build one.
+skirmish.design.edit,Button that opens the chosen design in the dry dock,Edit in the dry dock
+skirmish.design.build,Button that opens the dry dock when there is no design,Build a design in the dry dock
+skirmish.design.group.stock,Group row in the design list,Starter hulls
+skirmish.design.group.own,Group row in the design list,Your designs
+skirmish.design.none,Shown when no design is chosen,Choose a design from the list.
+skirmish.design.unnamed,Name shown for a design with an empty name,Unnamed design
+skirmish.design.row,"Design list row; {0} name, {1} length, {2} displacement","{0}, {1}, {2}"
+skirmish.design.facts,"Design facts; {0} length, {1} beam, {2} displacement, {3} build cost, {4} part count","{0} long, {1} beam, {2}, {3} to build, {4} parts."
+skirmish.design.author,Design facts suffix; {0} the designer's name,Designed by {0}.
+skirmish.design.newer_format,Why a design cannot be fielded,A newer version of the game saved this design.
+skirmish.design.too_long,"Why a design cannot be fielded; {0} its length, {1} the player hull limit",{0} long: player modes take hulls up to {1}.
+skirmish.design.over_cap,"Why a design cannot be fielded; {0} its displacement, {1} the act's tonnage cap",{0} is over this act's {1} cap.
+sandbox.title,Sandbox setup screen title,Sandbox
+sandbox.start,Button that opens the sandbox with the chosen setup,Open the sandbox
+sandbox.targets,Sandbox setup section heading,Target ships
+sandbox.targets.help,Line under the target ships heading,Free play with no end condition. Ships marked Hostile fight back.
+sandbox.targets.empty,Shown when no target ship could be read,No target ships could be read. The sandbox opens with your ship alone.
+sandbox.targets.add,Button that adds a row of target ships,Add a target ship
+sandbox.target.class,"Target ship choice; {0} enemy class name, {1} length, {2} tonnage","{0}, {1}, {2}"
+sandbox.target.ship,Accessible name of the target ship picker,Target ship
+sandbox.target.hostile,Toggle on a target row; a stance word,Hostile
+sandbox.target.count,Accessible name of the target count slider,Number of ships
+sandbox.target.count_one,Target count; {0} is 1,{0} ship
+sandbox.target.count_many,Target count; {0} more than 1,{0} ships
+sandbox.target.remove,Icon button that removes a target row,Remove this target
+sandbox.failed,Shown when the sandbox could not open and gave no reason,The sandbox could not open.

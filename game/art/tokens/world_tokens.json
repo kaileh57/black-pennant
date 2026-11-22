@@ -1,0 +1,1274 @@
+{
+ "_about": "World colour tokens. DESIGN.md L1788-1803 (swatches), L1801 (boot-topping, antifouling), L1941 (primer), L1917 (island bands), L1857-1872 (presets: sun, sky, ambient floor, fog, exposure), L1846 and L1824 (LUT grades, no teal-orange), L1953 (VFX ramps). The only place a world colour may be written. Each colour is authored as linear luminance Y plus a small OKLCH chroma and hue; OKLCH lightness is solved so luminance equals Y (chroma drops first if the sRGB gamut clips), then linear RGB, sRGB and CIE L* are derived. Munsell notation is authored and checked against Y by ASTM D1535. Written by `cargo xtask tokens` from crates/xtask/src/art/tokens.rs (unit xt-art-tokens); never edit by hand.",
+ "sources": {
+  "paint": "https://en.wikipedia.org/wiki/World_War_II_ship_camouflage_measures_of_the_United_States_Navy",
+  "oklab": "https://bottosson.github.io/posts/oklab/",
+  "munsell_value": "ASTM D1535"
+ },
+ "limits": {
+  "hull": {
+   "max_y": 0.60,
+   "max_chroma": 0.06
+  },
+  "marking": {
+   "max_y": 0.70,
+   "max_chroma": 0.12
+  },
+  "hue": "5PB or neutral",
+  "deck_steps_darker": 3
+ },
+ "hull": [
+  {
+   "token": "hull.pale",
+   "paint": "5-P Pale Gray",
+   "table_srgb_grey": 196,
+   "table_l_star": 79,
+   "citation": "USN 5-P Pale Gray (Ships-2 camouflage paints); Y per DESIGN.md L1790-1799",
+   "chroma": 0.0080,
+   "hue_deg": 265.0,
+   "y": 0.5500,
+   "oklch": [0.8193, 0.0080, 265.0],
+   "linear_rgb": [0.5347, 0.5510, 0.5853],
+   "srgb8": [193, 196, 201],
+   "srgb": "#C1C4C9",
+   "l_star": 79.04,
+   "munsell": "5PB 7.8/0.5"
+  },
+  {
+   "token": "hull.light",
+   "paint": "5-L Light Gray",
+   "table_srgb_grey": 160,
+   "table_l_star": 66,
+   "citation": "USN 5-L Light Gray (Ships-2 camouflage paints); Y per DESIGN.md L1790-1799",
+   "chroma": 0.0120,
+   "hue_deg": 265.0,
+   "y": 0.3500,
+   "oklch": [0.7048, 0.0120, 265.0],
+   "linear_rgb": [0.3331, 0.3510, 0.3896],
+   "srgb8": [156, 160, 168],
+   "srgb": "#9CA0A8",
+   "l_star": 65.75,
+   "munsell": "5PB 6.5/1"
+  },
+  {
+   "token": "hull.haze",
+   "paint": "5-H Haze Gray",
+   "table_srgb_grey": 144,
+   "table_l_star": 60,
+   "citation": "USN 5-H Haze Gray (Ships-2 camouflage paints); Y per DESIGN.md L1790-1799",
+   "chroma": 0.0160,
+   "hue_deg": 265.0,
+   "y": 0.2800,
+   "oklch": [0.6543, 0.0160, 265.0],
+   "linear_rgb": [0.2607, 0.2811, 0.3259],
+   "srgb8": [140, 145, 155],
+   "srgb": "#8C919B",
+   "l_star": 59.89,
+   "munsell": "5PB 5.9/1"
+  },
+  {
+   "token": "hull.ocean",
+   "paint": "5-O Ocean Gray",
+   "table_srgb_grey": 115,
+   "table_l_star": 48,
+   "citation": "USN 5-O Ocean Gray (Ships-2 camouflage paints); Y per DESIGN.md L1790-1799",
+   "chroma": 0.0220,
+   "hue_deg": 265.0,
+   "y": 0.1700,
+   "oklch": [0.5541, 0.0220, 265.0],
+   "linear_rgb": [0.1512, 0.1709, 0.2162],
+   "srgb8": [108, 115, 128],
+   "srgb": "#6C7380",
+   "l_star": 48.26,
+   "munsell": "5PB 4.7/1.5"
+  },
+  {
+   "token": "hull.sea",
+   "paint": "5-S Sea Blue",
+   "table_srgb_grey": 93,
+   "table_l_star": 40,
+   "citation": "USN 5-S Sea Blue (Ships-2 camouflage paints); Y per DESIGN.md L1790-1799",
+   "chroma": 0.0320,
+   "hue_deg": 265.0,
+   "y": 0.1100,
+   "oklch": [0.4795, 0.0320, 265.0],
+   "linear_rgb": [0.0900, 0.1107, 0.1622],
+   "srgb8": [85, 93, 112],
+   "srgb": "#555D70",
+   "l_star": 39.58,
+   "munsell": "5PB 3.9/2"
+  },
+  {
+   "token": "hull.navy",
+   "paint": "5-N Navy Blue",
+   "table_srgb_grey": 85,
+   "table_l_star": 36,
+   "citation": "USN 5-N Navy Blue (Ships-2 camouflage paints); Y per DESIGN.md L1790-1799",
+   "chroma": 0.0400,
+   "hue_deg": 265.0,
+   "y": 0.0900,
+   "oklch": [0.4486, 0.0400, 265.0],
+   "linear_rgb": [0.0685, 0.0904, 0.1489],
+   "srgb8": [74, 85, 108],
+   "srgb": "#4A556C",
+   "l_star": 35.98,
+   "munsell": "5PB 3.5/2.5"
+  },
+  {
+   "token": "hull.deck",
+   "paint": "20-B Deck Blue",
+   "table_srgb_grey": 63,
+   "table_l_star": 27,
+   "citation": "USN 20-B Deck Blue (Ships-2 camouflage paints); Y per DESIGN.md L1790-1799",
+   "chroma": 0.0360,
+   "hue_deg": 265.0,
+   "y": 0.0500,
+   "oklch": [0.3689, 0.0360, 265.0],
+   "linear_rgb": [0.0370, 0.0502, 0.0862],
+   "srgb8": [54, 63, 83],
+   "srgb": "#363F53",
+   "l_star": 26.73,
+   "munsell": "5PB 2.6/2.5"
+  },
+  {
+   "token": "hull.black",
+   "paint": "Dull Black",
+   "table_srgb_grey": 48,
+   "table_l_star": 20,
+   "citation": "USN Dull Black (boot-topping); Y per DESIGN.md L1790-1799",
+   "chroma": 0.0000,
+   "hue_deg": 0.0,
+   "y": 0.0300,
+   "oklch": [0.3107, 0.0000, 0.0],
+   "linear_rgb": [0.0300, 0.0300, 0.0300],
+   "srgb8": [48, 48, 48],
+   "srgb": "#303030",
+   "l_star": 20.04,
+   "munsell": "N 2.0/"
+  }
+ ],
+ "antifouling": {
+  "token": "hull.antifouling",
+  "citation": "Red-brown antifouling below the boot-topping, Y 0.08 (DESIGN.md L1801); chroma held to the hull limit",
+  "chroma": 0.0600,
+  "hue_deg": 35.0,
+  "y": 0.0800,
+  "oklch": [0.4371, 0.0600, 35.0],
+  "linear_rgb": [0.1583, 0.0604, 0.0437],
+  "srgb8": [111, 70, 59],
+  "srgb": "#6F463B",
+  "l_star": 33.98,
+  "munsell": "5R 3.3/4"
+ },
+ "primer": {
+  "token": "hull.primer",
+  "citation": "Warm primer on exposed interiors, Y 0.25, C <= 0.06 (DESIGN.md L1941)",
+  "chroma": 0.0500,
+  "hue_deg": 75.0,
+  "y": 0.2500,
+  "oklch": [0.6314, 0.0500, 75.0],
+  "linear_rgb": [0.3311, 0.2372, 0.1382],
+  "srgb8": [156, 134, 104],
+  "srgb": "#9C8668",
+  "l_star": 57.08,
+  "munsell": "5YR 5.6/3.5"
+ },
+ "island_bands": [
+  {
+   "token": "island.shore",
+   "top_m": 3,
+   "citation": "Wet shingle and sand at the waterline; flat-shaded with fog (DESIGN.md L1917)",
+   "chroma": 0.0350,
+   "hue_deg": 80.0,
+   "y": 0.2000,
+   "oklch": [0.5854, 0.0350, 80.0],
+   "linear_rgb": [0.2423, 0.1946, 0.1294],
+   "srgb8": [135, 122, 101],
+   "srgb": "#877A65",
+   "l_star": 51.84,
+   "munsell": "5Y 5.1/2.5"
+  },
+  {
+   "token": "island.scrub",
+   "top_m": 15,
+   "citation": "Salt-burnt scrub above the shore; flat-shaded with fog (DESIGN.md L1917)",
+   "chroma": 0.0450,
+   "hue_deg": 125.0,
+   "y": 0.0800,
+   "oklch": [0.4275, 0.0450, 125.0],
+   "linear_rgb": [0.0672, 0.0878, 0.0399],
+   "srgb8": [73, 84, 56],
+   "srgb": "#495438",
+   "l_star": 33.98,
+   "munsell": "5GY 3.3/3"
+  },
+  {
+   "token": "island.forest",
+   "top_m": 70,
+   "citation": "Dark conifer and maquis; flat-shaded with fog (DESIGN.md L1917)",
+   "chroma": 0.0400,
+   "hue_deg": 140.0,
+   "y": 0.0500,
+   "oklch": [0.3644, 0.0400, 140.0],
+   "linear_rgb": [0.0332, 0.0571, 0.0289],
+   "srgb8": [51, 68, 47],
+   "srgb": "#33442F",
+   "l_star": 26.73,
+   "munsell": "5G 2.6/2.5"
+  },
+  {
+   "token": "island.rock",
+   "top_m": 220,
+   "citation": "Weathered bare rock; flat-shaded with fog (DESIGN.md L1917)",
+   "chroma": 0.0200,
+   "hue_deg": 60.0,
+   "y": 0.1200,
+   "oklch": [0.4944, 0.0200, 60.0],
+   "linear_rgb": [0.1457, 0.1150, 0.0941],
+   "srgb8": [107, 95, 86],
+   "srgb": "#6B5F56",
+   "l_star": 41.22,
+   "munsell": "5YR 4.0/1.5"
+  },
+  {
+   "token": "island.summit",
+   "top_m": 10000,
+   "citation": "Pale summit stone, cooled by distance; flat-shaded with fog (DESIGN.md L1917)",
+   "chroma": 0.0080,
+   "hue_deg": 250.0,
+   "y": 0.2200,
+   "oklch": [0.6034, 0.0080, 250.0],
+   "linear_rgb": [0.2075, 0.2219, 0.2380],
+   "srgb8": [126, 130, 134],
+   "srgb": "#7E8286",
+   "l_star": 54.03,
+   "munsell": "5PB 5.3/0.5"
+  }
+ ],
+ "sea": [
+  {
+   "token": "sea.deep",
+   "citation": "Deep water body colour",
+   "chroma": 0.0400,
+   "hue_deg": 230.0,
+   "y": 0.0180,
+   "oklch": [0.2597, 0.0400, 230.0],
+   "linear_rgb": [0.0036, 0.0207, 0.0338],
+   "srgb8": [12, 39, 52],
+   "srgb": "#0C2734",
+   "l_star": 14.40,
+   "munsell": "5B 1.4/2.5"
+  },
+  {
+   "token": "sea.scatter",
+   "citation": "Subsurface scattering on wave crests facing the sun",
+   "chroma": 0.0500,
+   "hue_deg": 205.0,
+   "y": 0.0600,
+   "oklch": [0.3862, 0.0500, 205.0],
+   "linear_rgb": [0.0132, 0.0717, 0.0816],
+   "srgb8": [30, 76, 81],
+   "srgb": "#1E4C51",
+   "l_star": 29.41,
+   "munsell": "5BG 2.9/3.5"
+  },
+  {
+   "token": "sea.shallow",
+   "citation": "Shoal water near islands",
+   "chroma": 0.0500,
+   "hue_deg": 185.0,
+   "y": 0.0900,
+   "oklch": [0.4419, 0.0500, 185.0],
+   "linear_rgb": [0.0297, 0.1075, 0.0944],
+   "srgb8": [48, 92, 87],
+   "srgb": "#305C57",
+   "l_star": 35.98,
+   "munsell": "5BG 3.5/3.5"
+  },
+  {
+   "token": "sea.foam",
+   "citation": "Foam, wakes and whitecaps",
+   "chroma": 0.0100,
+   "hue_deg": 230.0,
+   "y": 0.7000,
+   "oklch": [0.8872, 0.0100, 230.0],
+   "linear_rgb": [0.6547, 0.7095, 0.7391],
+   "srgb8": [211, 219, 223],
+   "srgb": "#D3DBDF",
+   "l_star": 87.00,
+   "munsell": "5B 8.7/0.5"
+  }
+ ],
+ "sky": [
+  {
+   "time": "dusk",
+   "zenith": {
+    "token": "sky.dusk.zenith",
+    "citation": "Dusk zenith, deepening blue above a low sun",
+    "chroma": 0.0600,
+    "hue_deg": 262.0,
+    "y": 0.0600,
+    "oklch": [0.3923, 0.0600, 262.0],
+    "linear_rgb": [0.0340, 0.0604, 0.1328],
+    "srgb8": [52, 69, 102],
+    "srgb": "#344566",
+    "l_star": 29.41,
+    "munsell": "5PB 2.9/4"
+   },
+   "horizon": {
+    "token": "sky.dusk.horizon",
+    "citation": "Dusk horizon band, warm under a low sun",
+    "chroma": 0.0750,
+    "hue_deg": 62.0,
+    "y": 0.3300,
+    "oklch": [0.6954, 0.0750, 62.0],
+    "linear_rgb": [0.5219, 0.2910, 0.1513],
+    "srgb8": [191, 147, 108],
+    "srgb": "#BF936C",
+    "l_star": 64.16,
+    "munsell": "5YR 6.3/5"
+   },
+   "key_light": {
+    "token": "sky.dusk.key_light",
+    "citation": "Low warm sun at dusk, the hero light",
+    "chroma": 0.1200,
+    "hue_deg": 55.0,
+    "y": 0.7000,
+    "oklch": [0.8924, 0.0661, 55.0],
+    "linear_rgb": [1.0000, 0.6363, 0.4477],
+    "srgb8": [255, 209, 178],
+    "srgb": "#FFD1B2",
+    "l_star": 87.00,
+    "munsell": "5YR 8.7/4.5",
+    "chroma_clamped_from": 0.1200
+   }
+  },
+  {
+   "time": "day",
+   "zenith": {
+    "token": "sky.day.zenith",
+    "citation": "Day zenith",
+    "chroma": 0.0700,
+    "hue_deg": 245.0,
+    "y": 0.2200,
+    "oklch": [0.6016, 0.0700, 245.0],
+    "linear_rgb": [0.1082, 0.2359, 0.3922],
+    "srgb8": [92, 133, 168],
+    "srgb": "#5C85A8",
+    "l_star": 54.03,
+    "munsell": "5B 5.3/4.5"
+   },
+   "horizon": {
+    "token": "sky.day.horizon",
+    "citation": "Day horizon, pale with aerial haze",
+    "chroma": 0.0300,
+    "hue_deg": 235.0,
+    "y": 0.5200,
+    "oklch": [0.8024, 0.0300, 235.0],
+    "linear_rgb": [0.4163, 0.5401, 0.6264],
+    "srgb8": [173, 194, 207],
+    "srgb": "#ADC2CF",
+    "l_star": 77.28,
+    "munsell": "5B 7.7/2"
+   },
+   "key_light": {
+    "token": "sky.day.key_light",
+    "citation": "High sun, near white",
+    "chroma": 0.0200,
+    "hue_deg": 85.0,
+    "y": 0.9000,
+    "oklch": [0.9655, 0.0200, 85.0],
+    "linear_rgb": [0.9544, 0.8957, 0.7825],
+    "srgb8": [250, 243, 229],
+    "srgb": "#FAF3E5",
+    "l_star": 96.00,
+    "munsell": "5Y 9.6/1.5"
+   }
+  },
+  {
+   "time": "night",
+   "zenith": {
+    "token": "sky.night.zenith",
+    "citation": "Night zenith, kept above black",
+    "chroma": 0.0300,
+    "hue_deg": 265.0,
+    "y": 0.0025,
+    "oklch": [0.1366, 0.0300, 265.0],
+    "linear_rgb": [0.0012, 0.0024, 0.0073],
+    "srgb8": [4, 8, 21],
+    "srgb": "#040815",
+    "l_star": 2.26,
+    "munsell": "5PB 0.2/2"
+   },
+   "horizon": {
+    "token": "sky.night.horizon",
+    "citation": "Night horizon glow",
+    "chroma": 0.0200,
+    "hue_deg": 258.0,
+    "y": 0.0080,
+    "oklch": [0.2000, 0.0200, 258.0],
+    "linear_rgb": [0.0053, 0.0082, 0.0138],
+    "srgb8": [16, 22, 31],
+    "srgb": "#10161F",
+    "l_star": 7.23,
+    "munsell": "5PB 0.7/1.5"
+   },
+   "key_light": {
+    "token": "sky.night.key_light",
+    "citation": "Moonlight, cool",
+    "chroma": 0.0200,
+    "hue_deg": 250.0,
+    "y": 0.3000,
+    "oklch": [0.6689, 0.0200, 250.0],
+    "linear_rgb": [0.2620, 0.3056, 0.3566],
+    "srgb8": [140, 150, 161],
+    "srgb": "#8C96A1",
+    "l_star": 61.65,
+    "munsell": "5PB 6.1/1.5"
+   }
+  }
+ ],
+ "fog": [
+  {
+   "weather": "clear",
+   "time": "dusk",
+   "y": 0.3300,
+   "oklch": [0.6954, 0.0750, 62.0],
+   "linear_rgb": [0.5219, 0.2910, 0.1513],
+   "srgb8": [191, 147, 108],
+   "srgb": "#BF936C",
+   "l_star": 64.16
+  },
+  {
+   "weather": "haze",
+   "time": "dusk",
+   "y": 0.3465,
+   "oklch": [0.7048, 0.0450, 62.0],
+   "linear_rgb": [0.4620, 0.3240, 0.2296],
+   "srgb8": [181, 154, 132],
+   "srgb": "#B59A84",
+   "l_star": 65.48
+  },
+  {
+   "weather": "overcast",
+   "time": "dusk",
+   "y": 0.2640,
+   "oklch": [0.6427, 0.0225, 286.0],
+   "linear_rgb": [0.2595, 0.2592, 0.3252],
+   "srgb8": [139, 139, 154],
+   "srgb": "#8B8B9A",
+   "l_star": 58.41
+  },
+  {
+   "weather": "rain",
+   "time": "dusk",
+   "y": 0.1980,
+   "oklch": [0.5835, 0.0187, 278.0],
+   "linear_rgb": [0.1891, 0.1963, 0.2411],
+   "srgb8": [120, 122, 135],
+   "srgb": "#787A87",
+   "l_star": 51.61
+  },
+  {
+   "weather": "storm",
+   "time": "dusk",
+   "y": 0.1320,
+   "oklch": [0.5091, 0.0150, 262.0],
+   "linear_rgb": [0.1199, 0.1330, 0.1581],
+   "srgb8": [97, 102, 111],
+   "srgb": "#61666F",
+   "l_star": 43.06
+  },
+  {
+   "weather": "fog_bank",
+   "time": "dusk",
+   "y": 0.3300,
+   "oklch": [0.6921, 0.0112, 310.0],
+   "linear_rgb": [0.3419, 0.3236, 0.3578],
+   "srgb8": [158, 154, 161],
+   "srgb": "#9E9AA1",
+   "l_star": 64.16
+  },
+  {
+   "weather": "clear",
+   "time": "day",
+   "y": 0.5200,
+   "oklch": [0.8024, 0.0300, 235.0],
+   "linear_rgb": [0.4163, 0.5401, 0.6264],
+   "srgb8": [173, 194, 207],
+   "srgb": "#ADC2CF",
+   "l_star": 77.28
+  },
+  {
+   "weather": "haze",
+   "time": "day",
+   "y": 0.5460,
+   "oklch": [0.8162, 0.0180, 235.0],
+   "linear_rgb": [0.4811, 0.5588, 0.6108],
+   "srgb8": [184, 197, 205],
+   "srgb": "#B8C5CD",
+   "l_star": 78.81
+  },
+  {
+   "weather": "overcast",
+   "time": "day",
+   "y": 0.4160,
+   "oklch": [0.7461, 0.0090, 243.5],
+   "linear_rgb": [0.3918, 0.4202, 0.4454],
+   "srgb8": [168, 173, 178],
+   "srgb": "#A8ADB2",
+   "l_star": 70.59
+  },
+  {
+   "weather": "rain",
+   "time": "day",
+   "y": 0.3120,
+   "oklch": [0.6779, 0.0075, 244.0],
+   "linear_rgb": [0.2955, 0.3149, 0.3323],
+   "srgb8": [148, 152, 156],
+   "srgb": "#94989C",
+   "l_star": 62.68
+  },
+  {
+   "weather": "storm",
+   "time": "day",
+   "y": 0.2080,
+   "oklch": [0.5923, 0.0060, 245.0],
+   "linear_rgb": [0.1981, 0.2097, 0.2205],
+   "srgb8": [123, 126, 129],
+   "srgb": "#7B7E81",
+   "l_star": 52.73
+  },
+  {
+   "weather": "fog_bank",
+   "time": "day",
+   "y": 0.5200,
+   "oklch": [0.8039, 0.0045, 242.0],
+   "linear_rgb": [0.5056, 0.5226, 0.5367],
+   "srgb8": [188, 191, 194],
+   "srgb": "#BCBFC2",
+   "l_star": 77.28
+  },
+  {
+   "weather": "clear",
+   "time": "night",
+   "y": 0.0080,
+   "oklch": [0.2000, 0.0200, 258.0],
+   "linear_rgb": [0.0053, 0.0082, 0.0138],
+   "srgb8": [16, 22, 31],
+   "srgb": "#10161F",
+   "l_star": 7.23
+  },
+  {
+   "weather": "haze",
+   "time": "night",
+   "y": 0.0084,
+   "oklch": [0.2032, 0.0120, 258.0],
+   "linear_rgb": [0.0067, 0.0086, 0.0118],
+   "srgb8": [19, 23, 28],
+   "srgb": "#13171C",
+   "l_star": 7.59
+  },
+  {
+   "weather": "overcast",
+   "time": "night",
+   "y": 0.0064,
+   "oklch": [0.1857, 0.0060, 263.9],
+   "linear_rgb": [0.0058, 0.0064, 0.0078],
+   "srgb8": [17, 19, 22],
+   "srgb": "#111316",
+   "l_star": 5.78
+  },
+  {
+   "weather": "rain",
+   "time": "night",
+   "y": 0.0048,
+   "oklch": [0.1687, 0.0050, 264.3],
+   "linear_rgb": [0.0044, 0.0048, 0.0058],
+   "srgb8": [14, 15, 17],
+   "srgb": "#0E0F11",
+   "l_star": 4.34
+  },
+  {
+   "weather": "storm",
+   "time": "night",
+   "y": 0.0032,
+   "oklch": [0.1474, 0.0040, 265.0],
+   "linear_rgb": [0.0030, 0.0032, 0.0038],
+   "srgb8": [10, 11, 12],
+   "srgb": "#0A0B0C",
+   "l_star": 2.89
+  },
+  {
+   "weather": "fog_bank",
+   "time": "night",
+   "y": 0.0080,
+   "oklch": [0.2000, 0.0030, 262.9],
+   "linear_rgb": [0.0076, 0.0080, 0.0088],
+   "srgb8": [21, 22, 23],
+   "srgb": "#151617",
+   "l_star": 7.23
+  }
+ ],
+ "presets": [
+  {
+   "weather": "clear",
+   "time": "dusk",
+   "phase": "r010",
+   "lut": "art/gen/lut_dusk_clear_17.bin",
+   "lut_high": "art/gen/lut_dusk_clear_33.bin",
+   "visibility_m": 30000,
+   "fog_density": 0.0001304,
+   "sun_color": [1.0000, 0.6363, 0.4477],
+   "sun_energy": 1.8000,
+   "sky_zenith": [0.0340, 0.0604, 0.1328],
+   "sky_horizon": [0.5219, 0.2910, 0.1513],
+   "ambient": [0.2951, 0.3080, 0.5118],
+   "ambient_energy": 0.3200,
+   "ambient_floor": 0.1200,
+   "fog_color": [0.5219, 0.2910, 0.1513],
+   "exposure": 1.1000,
+   "lift": [0.0120, 0.0080, 0.0060],
+   "gamma": [1.0000, 1.0000, 1.0000],
+   "gain": [1.0200, 1.0000, 0.9700],
+   "saturation": 1.0000
+  },
+  {
+   "weather": "haze",
+   "time": "dusk",
+   "phase": "r010",
+   "lut": "art/gen/lut_dusk_haze_17.bin",
+   "lut_high": "art/gen/lut_dusk_haze_33.bin",
+   "visibility_m": 8000,
+   "fog_density": 0.0004890,
+   "sun_color": [1.0000, 0.6363, 0.4477],
+   "sun_energy": 1.2600,
+   "sky_zenith": [0.0996, 0.1138, 0.1640],
+   "sky_horizon": [0.4620, 0.3240, 0.2296],
+   "ambient": [0.3634, 0.3428, 0.4097],
+   "ambient_energy": 0.3520,
+   "ambient_floor": 0.1200,
+   "fog_color": [0.4620, 0.3240, 0.2296],
+   "exposure": 1.1550,
+   "lift": [0.0120, 0.0080, 0.0060],
+   "gamma": [1.0000, 1.0000, 1.0000],
+   "gain": [1.0200, 1.0000, 0.9700],
+   "saturation": 0.9500
+  },
+  {
+   "weather": "overcast",
+   "time": "dusk",
+   "phase": "r010",
+   "lut": "art/gen/lut_dusk_overcast_17.bin",
+   "lut_high": "art/gen/lut_dusk_overcast_33.bin",
+   "visibility_m": 12000,
+   "fog_density": 0.0003260,
+   "sun_color": [1.0000, 0.7159, 0.5602],
+   "sun_energy": 0.5400,
+   "sky_zenith": [0.1912, 0.2046, 0.2786],
+   "sky_horizon": [0.2595, 0.2592, 0.3252],
+   "ambient": [0.3928, 0.4101, 0.5432],
+   "ambient_energy": 0.4160,
+   "ambient_floor": 0.1200,
+   "fog_color": [0.2595, 0.2592, 0.3252],
+   "exposure": 1.2650,
+   "lift": [0.0120, 0.0080, 0.0060],
+   "gamma": [1.0000, 1.0000, 1.0000],
+   "gain": [1.0200, 1.0000, 0.9700],
+   "saturation": 0.9000
+  },
+  {
+   "weather": "rain",
+   "time": "dusk",
+   "phase": "r010",
+   "lut": "art/gen/lut_dusk_rain_17.bin",
+   "lut_high": "art/gen/lut_dusk_rain_33.bin",
+   "visibility_m": 2000,
+   "fog_density": 0.0019560,
+   "sun_color": [1.0000, 0.7450, 0.6027],
+   "sun_energy": 0.3600,
+   "sky_zenith": [0.1659, 0.1781, 0.2289],
+   "sky_horizon": [0.1891, 0.1963, 0.2411],
+   "ambient": [0.3444, 0.3655, 0.4624],
+   "ambient_energy": 0.3680,
+   "ambient_floor": 0.1200,
+   "fog_color": [0.1891, 0.1963, 0.2411],
+   "exposure": 1.3200,
+   "lift": [0.0120, 0.0080, 0.0060],
+   "gamma": [1.0000, 1.0000, 1.0000],
+   "gain": [1.0200, 1.0000, 0.9700],
+   "saturation": 0.8500
+  },
+  {
+   "weather": "storm",
+   "time": "dusk",
+   "phase": "r010",
+   "lut": "art/gen/lut_dusk_storm_17.bin",
+   "lut_high": "art/gen/lut_dusk_storm_33.bin",
+   "visibility_m": 1500,
+   "fog_density": 0.0026080,
+   "sun_color": [1.0000, 0.7756, 0.6481],
+   "sun_energy": 0.2160,
+   "sky_zenith": [0.1140, 0.1286, 0.1570],
+   "sky_horizon": [0.1199, 0.1330, 0.1581],
+   "ambient": [0.2589, 0.2903, 0.3512],
+   "ambient_energy": 0.2880,
+   "ambient_floor": 0.1200,
+   "fog_color": [0.1199, 0.1330, 0.1581],
+   "exposure": 1.3750,
+   "lift": [0.0120, 0.0080, 0.0060],
+   "gamma": [0.9700, 0.9700, 0.9700],
+   "gain": [1.0200, 1.0000, 0.9700],
+   "saturation": 0.8000
+  },
+  {
+   "weather": "fog_bank",
+   "time": "dusk",
+   "phase": "r010",
+   "lut": "art/gen/lut_dusk_fog_17.bin",
+   "lut_high": "art/gen/lut_dusk_fog_33.bin",
+   "visibility_m": 400,
+   "fog_density": 0.0097800,
+   "sun_color": [1.0000, 0.6618, 0.4831],
+   "sun_energy": 0.6300,
+   "sky_zenith": [0.3419, 0.3236, 0.3578],
+   "sky_horizon": [0.3419, 0.3236, 0.3578],
+   "ambient": [0.4642, 0.4394, 0.4858],
+   "ambient_energy": 0.4480,
+   "ambient_floor": 0.1200,
+   "fog_color": [0.3419, 0.3236, 0.3578],
+   "exposure": 1.1550,
+   "lift": [0.0120, 0.0080, 0.0060],
+   "gamma": [1.0000, 1.0000, 1.0000],
+   "gain": [1.0200, 1.0000, 0.9700],
+   "saturation": 0.8500
+  },
+  {
+   "weather": "clear",
+   "time": "day",
+   "phase": "r010",
+   "lut": "art/gen/lut_day_clear_17.bin",
+   "lut_high": "art/gen/lut_day_clear_33.bin",
+   "visibility_m": 30000,
+   "fog_density": 0.0001304,
+   "sun_color": [1.0000, 0.9385, 0.8199],
+   "sun_energy": 2.2000,
+   "sky_zenith": [0.1082, 0.2359, 0.3922],
+   "sky_horizon": [0.4163, 0.5401, 0.6264],
+   "ambient": [0.2399, 0.4242, 0.6321],
+   "ambient_energy": 0.4000,
+   "ambient_floor": 0.1500,
+   "fog_color": [0.4163, 0.5401, 0.6264],
+   "exposure": 0.9500,
+   "lift": [0.0040, 0.0040, 0.0060],
+   "gamma": [1.0000, 1.0000, 1.0000],
+   "gain": [1.0000, 1.0000, 1.0000],
+   "saturation": 0.9700
+  },
+  {
+   "weather": "haze",
+   "time": "day",
+   "phase": "r010",
+   "lut": "art/gen/lut_day_haze_17.bin",
+   "lut_high": "art/gen/lut_day_haze_33.bin",
+   "visibility_m": 8000,
+   "fog_density": 0.0004890,
+   "sun_color": [1.0000, 0.9505, 0.8538],
+   "sun_energy": 1.5400,
+   "sky_zenith": [0.1873, 0.3152, 0.4533],
+   "sky_horizon": [0.4811, 0.5588, 0.6108],
+   "ambient": [0.3155, 0.4601, 0.6073],
+   "ambient_energy": 0.4400,
+   "ambient_floor": 0.1500,
+   "fog_color": [0.4811, 0.5588, 0.6108],
+   "exposure": 0.9975,
+   "lift": [0.0040, 0.0040, 0.0060],
+   "gamma": [1.0000, 1.0000, 1.0000],
+   "gain": [1.0000, 1.0000, 1.0000],
+   "saturation": 0.9215
+  },
+  {
+   "weather": "overcast",
+   "time": "day",
+   "phase": "r010",
+   "lut": "art/gen/lut_day_overcast_17.bin",
+   "lut_high": "art/gen/lut_day_overcast_33.bin",
+   "visibility_m": 12000,
+   "fog_density": 0.0003260,
+   "sun_color": [1.0000, 0.9749, 0.9247],
+   "sun_energy": 0.6600,
+   "sky_zenith": [0.3189, 0.3788, 0.4363],
+   "sky_horizon": [0.3918, 0.4202, 0.4454],
+   "ambient": [0.4626, 0.5297, 0.5931],
+   "ambient_energy": 0.5200,
+   "ambient_floor": 0.1500,
+   "fog_color": [0.3918, 0.4202, 0.4454],
+   "exposure": 1.0925,
+   "lift": [0.0040, 0.0040, 0.0060],
+   "gamma": [1.0000, 1.0000, 1.0000],
+   "gain": [1.0000, 1.0000, 1.0000],
+   "saturation": 0.8730
+  },
+  {
+   "weather": "rain",
+   "time": "day",
+   "phase": "r010",
+   "lut": "art/gen/lut_day_rain_17.bin",
+   "lut_high": "art/gen/lut_day_rain_33.bin",
+   "visibility_m": 2000,
+   "fog_density": 0.0019560,
+   "sun_color": [1.0000, 0.9780, 0.9339],
+   "sun_energy": 0.4400,
+   "sky_zenith": [0.2727, 0.3069, 0.3389],
+   "sky_horizon": [0.2955, 0.3149, 0.3323],
+   "ambient": [0.4225, 0.4664, 0.5071],
+   "ambient_energy": 0.4600,
+   "ambient_floor": 0.1500,
+   "fog_color": [0.2955, 0.3149, 0.3323],
+   "exposure": 1.1400,
+   "lift": [0.0040, 0.0040, 0.0060],
+   "gamma": [1.0000, 1.0000, 1.0000],
+   "gain": [1.0000, 1.0000, 1.0000],
+   "saturation": 0.8245
+  },
+  {
+   "weather": "storm",
+   "time": "day",
+   "phase": "r010",
+   "lut": "art/gen/lut_day_storm_17.bin",
+   "lut_high": "art/gen/lut_day_storm_33.bin",
+   "visibility_m": 1500,
+   "fog_density": 0.0026080,
+   "sun_color": [1.0000, 0.9811, 0.9431],
+   "sun_energy": 0.2640,
+   "sky_zenith": [0.1934, 0.2112, 0.2279],
+   "sky_horizon": [0.1981, 0.2097, 0.2205],
+   "ambient": [0.3369, 0.3639, 0.3892],
+   "ambient_energy": 0.3600,
+   "ambient_floor": 0.1500,
+   "fog_color": [0.1981, 0.2097, 0.2205],
+   "exposure": 1.1875,
+   "lift": [0.0040, 0.0040, 0.0060],
+   "gamma": [0.9700, 0.9700, 0.9700],
+   "gain": [1.0000, 1.0000, 1.0000],
+   "saturation": 0.7760
+  },
+  {
+   "weather": "fog_bank",
+   "time": "day",
+   "phase": "r010",
+   "lut": "art/gen/lut_day_fog_17.bin",
+   "lut_high": "art/gen/lut_day_fog_33.bin",
+   "visibility_m": 400,
+   "fog_density": 0.0097800,
+   "sun_color": [1.0000, 0.9687, 0.9066],
+   "sun_energy": 0.7700,
+   "sky_zenith": [0.5056, 0.5226, 0.5367],
+   "sky_horizon": [0.5056, 0.5226, 0.5367],
+   "ambient": [0.5444, 0.5628, 0.5780],
+   "ambient_energy": 0.5600,
+   "ambient_floor": 0.1500,
+   "fog_color": [0.5056, 0.5226, 0.5367],
+   "exposure": 0.9975,
+   "lift": [0.0040, 0.0040, 0.0060],
+   "gamma": [1.0000, 1.0000, 1.0000],
+   "gain": [1.0000, 1.0000, 1.0000],
+   "saturation": 0.8245
+  },
+  {
+   "weather": "clear",
+   "time": "night",
+   "phase": "r010",
+   "lut": "art/gen/lut_night_clear_17.bin",
+   "lut_high": "art/gen/lut_night_clear_33.bin",
+   "visibility_m": 30000,
+   "fog_density": 0.0001304,
+   "sun_color": [0.7347, 0.8568, 1.0000],
+   "sun_energy": 0.2200,
+   "sky_zenith": [0.0012, 0.0024, 0.0073],
+   "sky_horizon": [0.0053, 0.0082, 0.0138],
+   "ambient": [0.0378, 0.0689, 0.1757],
+   "ambient_energy": 0.0700,
+   "ambient_floor": 0.0350,
+   "fog_color": [0.0053, 0.0082, 0.0138],
+   "exposure": 2.6000,
+   "lift": [0.0060, 0.0080, 0.0140],
+   "gamma": [1.0600, 1.0600, 1.0600],
+   "gain": [0.9700, 0.9850, 1.0200],
+   "saturation": 0.8200
+  },
+  {
+   "weather": "haze",
+   "time": "night",
+   "phase": "r100",
+   "lut": "art/gen/lut_night_haze_17.bin",
+   "lut_high": "art/gen/lut_night_haze_33.bin",
+   "visibility_m": 8000,
+   "fog_density": 0.0004890,
+   "sun_color": [0.7812, 0.8828, 1.0000],
+   "sun_energy": 0.1540,
+   "sky_zenith": [0.0022, 0.0038, 0.0086],
+   "sky_horizon": [0.0067, 0.0086, 0.0118],
+   "ambient": [0.0509, 0.0773, 0.1511],
+   "ambient_energy": 0.0770,
+   "ambient_floor": 0.0350,
+   "fog_color": [0.0067, 0.0086, 0.0118],
+   "exposure": 2.7300,
+   "lift": [0.0060, 0.0080, 0.0140],
+   "gamma": [1.0600, 1.0600, 1.0600],
+   "gain": [0.9700, 0.9850, 1.0200],
+   "saturation": 0.7790
+  },
+  {
+   "weather": "overcast",
+   "time": "night",
+   "phase": "r010",
+   "lut": "art/gen/lut_night_overcast_17.bin",
+   "lut_high": "art/gen/lut_night_overcast_33.bin",
+   "visibility_m": 12000,
+   "fog_density": 0.0003260,
+   "sun_color": [0.8835, 0.9385, 1.0000],
+   "sun_energy": 0.0660,
+   "sky_zenith": [0.0045, 0.0055, 0.0078],
+   "sky_horizon": [0.0058, 0.0064, 0.0078],
+   "ambient": [0.0779, 0.0916, 0.1236],
+   "ambient_energy": 0.0910,
+   "ambient_floor": 0.0350,
+   "fog_color": [0.0058, 0.0064, 0.0078],
+   "exposure": 2.9900,
+   "lift": [0.0060, 0.0080, 0.0140],
+   "gamma": [1.0600, 1.0600, 1.0600],
+   "gain": [0.9700, 0.9850, 1.0200],
+   "saturation": 0.7380
+  },
+  {
+   "weather": "rain",
+   "time": "night",
+   "phase": "r100",
+   "lut": "art/gen/lut_night_rain_17.bin",
+   "lut_high": "art/gen/lut_night_rain_33.bin",
+   "visibility_m": 2000,
+   "fog_density": 0.0019560,
+   "sun_color": [0.8973, 0.9459, 1.0000],
+   "sun_energy": 0.0440,
+   "sky_zenith": [0.0040, 0.0046, 0.0059],
+   "sky_horizon": [0.0044, 0.0048, 0.0058],
+   "ambient": [0.0714, 0.0810, 0.1025],
+   "ambient_energy": 0.0805,
+   "ambient_floor": 0.0350,
+   "fog_color": [0.0044, 0.0048, 0.0058],
+   "exposure": 3.1200,
+   "lift": [0.0060, 0.0080, 0.0140],
+   "gamma": [1.0600, 1.0600, 1.0600],
+   "gain": [0.9700, 0.9850, 1.0200],
+   "saturation": 0.6970
+  },
+  {
+   "weather": "storm",
+   "time": "night",
+   "phase": "r100",
+   "lut": "art/gen/lut_night_storm_17.bin",
+   "lut_high": "art/gen/lut_night_storm_33.bin",
+   "visibility_m": 1500,
+   "fog_density": 0.0026080,
+   "sun_color": [0.9112, 0.9533, 1.0000],
+   "sun_energy": 0.0264,
+   "sky_zenith": [0.0028, 0.0032, 0.0039],
+   "sky_horizon": [0.0030, 0.0032, 0.0038],
+   "ambient": [0.0572, 0.0633, 0.0771],
+   "ambient_energy": 0.0630,
+   "ambient_floor": 0.0350,
+   "fog_color": [0.0030, 0.0032, 0.0038],
+   "exposure": 3.2500,
+   "lift": [0.0060, 0.0080, 0.0140],
+   "gamma": [1.0282, 1.0282, 1.0282],
+   "gain": [0.9700, 0.9850, 1.0200],
+   "saturation": 0.6560
+  },
+  {
+   "weather": "fog_bank",
+   "time": "night",
+   "phase": "r100",
+   "lut": "art/gen/lut_night_fog_17.bin",
+   "lut_high": "art/gen/lut_night_fog_33.bin",
+   "visibility_m": 400,
+   "fog_density": 0.0097800,
+   "sun_color": [0.8567, 0.9241, 1.0000],
+   "sun_energy": 0.0770,
+   "sky_zenith": [0.0076, 0.0080, 0.0088],
+   "sky_horizon": [0.0076, 0.0080, 0.0088],
+   "ambient": [0.0935, 0.0984, 0.1077],
+   "ambient_energy": 0.0980,
+   "ambient_floor": 0.0350,
+   "fog_color": [0.0076, 0.0080, 0.0088],
+   "exposure": 2.7300,
+   "lift": [0.0060, 0.0080, 0.0140],
+   "gamma": [1.0600, 1.0600, 1.0600],
+   "gain": [0.9700, 0.9850, 1.0200],
+   "saturation": 0.6970
+  }
+ ],
+ "ramps": [
+  {
+   "id": "flash",
+   "path": "art/gen/ramp_flash.bin",
+   "bands": 4,
+   "emission_peak": 16.00,
+   "alpha": "emission / emission_peak",
+   "stops": [
+    {
+     "t": 0.000,
+     "linear_rgba": [1.000, 0.930, 0.800, 1.000],
+     "emission": 16.00
+    },
+    {
+     "t": 0.250,
+     "linear_rgba": [1.000, 0.740, 0.400, 1.000],
+     "emission": 14.00
+    },
+    {
+     "t": 0.600,
+     "linear_rgba": [0.960, 0.460, 0.160, 1.000],
+     "emission": 11.00
+    },
+    {
+     "t": 1.000,
+     "linear_rgba": [0.600, 0.200, 0.060, 1.000],
+     "emission": 8.00
+    }
+   ]
+  },
+  {
+   "id": "foam",
+   "path": "art/gen/ramp_foam.bin",
+   "bands": 5,
+   "emission_peak": 0.00,
+   "alpha": "opacity",
+   "stops": [
+    {
+     "t": 0.000,
+     "linear_rgba": [0.700, 0.750, 0.780, 1.000],
+     "emission": 0.00
+    },
+    {
+     "t": 0.200,
+     "linear_rgba": [0.660, 0.710, 0.740, 1.000],
+     "emission": 0.00
+    },
+    {
+     "t": 0.600,
+     "linear_rgba": [0.520, 0.570, 0.600, 1.000],
+     "emission": 0.00
+    },
+    {
+     "t": 1.000,
+     "linear_rgba": [0.380, 0.430, 0.460, 1.000],
+     "emission": 0.00
+    }
+   ]
+  },
+  {
+   "id": "fire",
+   "path": "art/gen/ramp_fire.bin",
+   "bands": 5,
+   "emission_peak": 4.00,
+   "alpha": "emission / emission_peak",
+   "stops": [
+    {
+     "t": 0.000,
+     "linear_rgba": [1.000, 0.820, 0.420, 1.000],
+     "emission": 4.00
+    },
+    {
+     "t": 0.200,
+     "linear_rgba": [1.000, 0.560, 0.160, 1.000],
+     "emission": 3.60
+    },
+    {
+     "t": 0.550,
+     "linear_rgba": [0.860, 0.300, 0.070, 1.000],
+     "emission": 2.80
+    },
+    {
+     "t": 1.000,
+     "linear_rgba": [0.480, 0.110, 0.030, 1.000],
+     "emission": 2.00
+    }
+   ]
+  },
+  {
+   "id": "hit_puff",
+   "path": "art/gen/ramp_hit_puff.bin",
+   "bands": 5,
+   "emission_peak": 1.00,
+   "alpha": "emission / emission_peak",
+   "stops": [
+    {
+     "t": 0.000,
+     "linear_rgba": [0.900, 0.890, 0.860, 1.000],
+     "emission": 1.00
+    },
+    {
+     "t": 0.200,
+     "linear_rgba": [0.620, 0.620, 0.610, 1.000],
+     "emission": 0.40
+    },
+    {
+     "t": 0.600,
+     "linear_rgba": [0.360, 0.360, 0.360, 1.000],
+     "emission": 0.00
+    },
+    {
+     "t": 1.000,
+     "linear_rgba": [0.220, 0.220, 0.220, 1.000],
+     "emission": 0.00
+    }
+   ]
+  },
+  {
+   "id": "smoke",
+   "path": "art/gen/ramp_smoke.bin",
+   "bands": 5,
+   "emission_peak": 0.00,
+   "alpha": "opacity",
+   "stops": [
+    {
+     "t": 0.000,
+     "linear_rgba": [0.420, 0.420, 0.420, 0.900],
+     "emission": 0.00
+    },
+    {
+     "t": 0.250,
+     "linear_rgba": [0.460, 0.460, 0.460, 0.800],
+     "emission": 0.00
+    },
+    {
+     "t": 0.600,
+     "linear_rgba": [0.520, 0.520, 0.530, 0.600],
+     "emission": 0.00
+    },
+    {
+     "t": 1.000,
+     "linear_rgba": [0.580, 0.580, 0.590, 0.350],
+     "emission": 0.00
+    }
+   ]
+  },
+  {
+   "id": "defence_smoke",
+   "path": "art/gen/ramp_defence_smoke.bin",
+   "bands": 4,
+   "emission_peak": 0.00,
+   "alpha": "opacity",
+   "stops": [
+    {
+     "t": 0.000,
+     "linear_rgba": [0.640, 0.650, 0.660, 1.000],
+     "emission": 0.00
+    },
+    {
+     "t": 0.250,
+     "linear_rgba": [0.620, 0.630, 0.640, 1.000],
+     "emission": 0.00
+    },
+    {
+     "t": 0.600,
+     "linear_rgba": [0.580, 0.590, 0.600, 1.000],
+     "emission": 0.00
+    },
+    {
+     "t": 1.000,
+     "linear_rgba": [0.550, 0.560, 0.570, 1.000],
+     "emission": 0.00
+    }
+   ]
+  },
+  {
+   "id": "debris",
+   "path": "art/gen/ramp_debris.bin",
+   "bands": 5,
+   "emission_peak": 1.00,
+   "alpha": "emission / emission_peak",
+   "stops": [
+    {
+     "t": 0.000,
+     "linear_rgba": [0.920, 0.420, 0.120, 1.000],
+     "emission": 1.00
+    },
+    {
+     "t": 0.100,
+     "linear_rgba": [0.550, 0.240, 0.100, 1.000],
+     "emission": 0.50
+    },
+    {
+     "t": 0.400,
+     "linear_rgba": [0.130, 0.130, 0.140, 1.000],
+     "emission": 0.00
+    },
+    {
+     "t": 1.000,
+     "linear_rgba": [0.100, 0.100, 0.110, 1.000],
+     "emission": 0.00
+    }
+   ]
+  },
+  {
+   "id": "flak",
+   "path": "art/gen/ramp_flak.bin",
+   "bands": 5,
+   "emission_peak": 1.00,
+   "alpha": "emission / emission_peak",
+   "stops": [
+    {
+     "t": 0.000,
+     "linear_rgba": [1.000, 0.620, 0.260, 1.000],
+     "emission": 1.00
+    },
+    {
+     "t": 0.120,
+     "linear_rgba": [0.100, 0.080, 0.070, 1.000],
+     "emission": 0.20
+    },
+    {
+     "t": 0.500,
+     "linear_rgba": [0.050, 0.050, 0.050, 1.000],
+     "emission": 0.00
+    },
+    {
+     "t": 1.000,
+     "linear_rgba": [0.080, 0.080, 0.080, 1.000],
+     "emission": 0.00
+    }
+   ]
+  },
+  {
+   "id": "trail",
+   "path": "art/gen/ramp_trail.bin",
+   "bands": 6,
+   "emission_peak": 0.00,
+   "alpha": "opacity",
+   "stops": [
+    {
+     "t": 0.000,
+     "linear_rgba": [0.780, 0.780, 0.780, 0.850],
+     "emission": 0.00
+    },
+    {
+     "t": 0.250,
+     "linear_rgba": [0.720, 0.720, 0.730, 0.700],
+     "emission": 0.00
+    },
+    {
+     "t": 0.600,
+     "linear_rgba": [0.630, 0.630, 0.640, 0.450],
+     "emission": 0.00
+    },
+    {
+     "t": 1.000,
+     "linear_rgba": [0.550, 0.550, 0.560, 0.200],
+     "emission": 0.00
+    }
+   ]
+  }
+ ]
+}

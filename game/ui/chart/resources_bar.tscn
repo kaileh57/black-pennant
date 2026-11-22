@@ -1,0 +1,31 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/chart/resources_bar.gd" id="1"]
+
+[node name="ResourcesBar" type="HBoxContainer"]
+size_flags_horizontal = 8
+script = ExtResource("1")
+
+[node name="Salvage" type="Label" parent="."]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 0
+theme_type_variation = &"Body"
+
+[node name="Intel" type="Label" parent="."]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 0
+theme_type_variation = &"Body"
+
+[node name="Fuel" type="Label" parent="."]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 0
+theme_type_variation = &"Body"
+
+[node name="Ammo" type="Label" parent="."]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 0
+theme_type_variation = &"Body"

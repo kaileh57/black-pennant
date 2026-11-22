@@ -1,0 +1,62 @@
+keys,?context,en
+editor_fit.name,Accessible name of the Fit Check panel,Fit check
+editor_fit.closed,Fit Check panel while no design is open,No design is open.
+editor_fit.outside,Fit Check panel outside a campaign dock,Fit check scores a design against the tags of a campaign briefing. Open the dry dock from a briefing to use it.
+editor_fit.intro,Fit Check panel opening line,"The briefing's tags, tested in its forecast sea: a full-power run, then a 180° turn."
+editor_fit.check,Button: run Fit Check,Run fit check
+editor_fit.check_again,Button: run Fit Check again,Check again
+editor_fit.check.tip,"Tooltip, first line at most 12 words",Runs 30 s of the forecast sea and scores each briefing tag
+editor_fit.running,Fit Check status while it runs,Testing the design in the forecast sea.
+editor_fit.stale,Fit Check status when the result predates the latest edit,This result is for an earlier version of the design.
+editor_fit.failed,Fit Check status when the run failed,Fit check could not run on this design. The notes say why.
+editor_fit.not_run,Fit Check before the first run,Not checked yet.
+editor_fit.no_tags,Fit Check verdict when the briefing has no tags,This briefing sets no constraint tags.
+editor_fit.all_pass,Fit Check verdict,The design meets every tag of the briefing.
+editor_fit.fails_one,"Fit Check verdict; {0} is 1, {1} number of tags",{0} of {1} tags fails.
+editor_fit.fails,"Fit Check verdict; {0} failing tags, {1} number of tags",{0} of {1} tags fail.
+editor_fit.tag_value,"Fit Check tag line; {0} the design's value, {1} the tag's limit","{0}, limit {1}"
+editor_fit.top_speed,Fit Check row,Top speed
+editor_fit.turn,Fit Check row,Time to turn 180°
+editor_fit.range,Fit Check row,Range
+editor_fit.detect,Fit Check heading over detection ranges against known threats,Detection against known threats
+editor_fit.detect.ranges,"Detection line; {0} range at which we see the threat, {1} range at which it sees us","We see it at {0}, it sees us at {1}"
+editor_fit.estimated,Fit Check note when values come from the gauges instead of a run,Estimated from the gauges; the run did not finish.
+editor_fit.qm.ask,Button: ask the Quartermaster for a legal refit,Ask the quartermaster
+editor_fit.qm.ask.tip,"Tooltip, first line at most 12 words",Searches curated kit swaps for the cheapest refit that passes every tag
+editor_fit.qm.idle,Quartermaster before it was asked,"The quartermaster swaps kits to pass failing tags, never the hull."
+editor_fit.qm.running,Quartermaster status while it searches,The quartermaster is checking kit swaps.
+editor_fit.qm.stale,Quartermaster status when the proposal predates the latest edit,This proposal is for an earlier version of the design. Ask again.
+editor_fit.qm.failed,Quartermaster status when the search failed,The quartermaster could not search this design.
+editor_fit.qm.fits,Quartermaster answer,The design already passes every tag. No refit needed.
+editor_fit.qm.none,Quartermaster answer,No legal refit found.
+editor_fit.qm.blocking,Quartermaster answer detail; {0} the blocking tag as a sentence,Blocking tag: {0}
+editor_fit.qm.proposal,Heading over the Quartermaster's list of changed parts,Proposed refit
+editor_fit.qm.passes,Under a Quartermaster proposal,This refit passes every tag in the fit check.
+editor_fit.qm.preview,Button: show the proposed refit as a ghost,Preview refit
+editor_fit.qm.preview.tip,"Tooltip, first line at most 12 words",Shows every changed part as a ghost before you accept
+editor_fit.qm.accept,Button: apply the proposed refit,Accept refit
+editor_fit.qm.cancel,Button: drop the refit preview,Cancel
+editor_fit.change.added,"Refit change; {0} part name, {1} cell",Add {0} at {1}
+editor_fit.change.removed,"Refit change; {0} part name, {1} cell",Remove {0} from {1}
+editor_fit.change.moved,"Refit change; {0} part name, {1} old cell, {2} new cell",Move {0} from {1} to {2}
+editor_fit.cell,"A cell position; {0} x, {1} y, {2} z","cell {0}, {1}, {2}"
+editor_fit.cost.title,Heading of the refit cost section,Refit cost against the fielded ship
+editor_fit.cost.line,"Refit cost; {0} Salvage, {1} theatre hours",{0} and {1} of theatre time
+editor_fit.cost.store,Refit cost detail; {0} number of parts,"{0} parts from the parts store, free"
+editor_fit.cost.store_one,Refit cost detail; {0} is 1,"{0} part from the parts store, free"
+editor_fit.cost.structure,Refit cost detail; {0} structure change in tonnes,Structure changes by {0}
+editor_fit.cost.count,Refit cost detail; {0} number of changed parts,{0} parts changed
+editor_fit.cost.count_one,Refit cost detail; {0} is 1,{0} part changed
+editor_fit.cost.no_changes,Refit cost when the design matches the fielded ship,No changes from the fielded ship.
+editor_fit.cost.short,Refit cost warning; {0} Salvage on hand,More than the {0} on hand. Launch waits until it is affordable.
+editor_fit.cost.short_unknown,Refit cost warning without a known budget,More Salvage than is on hand. Launch waits until it is affordable.
+editor_fit.sea.safe,"Fit Check seakeeping verdict; {0} WMO sea state code, {1} worst heel in degrees with unit","Rides out sea state {0} at full power with the sea from every side, heeling {1} at worst."
+editor_fit.sea.rolls,"Fit Check seakeeping verdict; {0} WMO sea state code, {1} where the sea came from in the run that went over (for example: on the port bow)",Can roll over in sea state {0} with the sea {1}.
+editor_fit.sea.short,"Fit Check seakeeping verdict when the range of stability is too small; {0} WMO sea state code, {1} heel in degrees with unit at which the righting arm is gone","Can roll over in sea state {0}: its righting arm is gone at {1} of heel."
+editor_fit.sea.unfinished,"Fit Check seakeeping verdict when the sweep was cut short; {0} sea directions run, {1} directions due, {2} WMO sea state code","Seakeeping did not finish: {0} of {1} sea directions ran in sea state {2}. It is not known to be safe."
+editor_fit.sea.from.0,Where the sea came from; completes 'with the sea ...',from ahead
+editor_fit.sea.from.60,Where the sea came from; completes 'with the sea ...',on the starboard bow
+editor_fit.sea.from.120,Where the sea came from; completes 'with the sea ...',on the starboard quarter
+editor_fit.sea.from.180,Where the sea came from; completes 'with the sea ...',from astern
+editor_fit.sea.from.240,Where the sea came from; completes 'with the sea ...',on the port quarter
+editor_fit.sea.from.300,Where the sea came from; completes 'with the sea ...',on the port bow

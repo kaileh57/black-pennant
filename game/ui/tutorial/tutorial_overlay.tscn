@@ -1,0 +1,192 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/tutorial/tutorial_overlay.gd" id="1"]
+
+[node name="TutorialOverlay" type="CanvasLayer"]
+layer = 50
+script = ExtResource("1")
+
+[node name="Pointer" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Card" type="PanelContainer" parent="."]
+visible = false
+custom_minimum_size = Vector2(600, 0)
+offset_right = 600.0
+offset_bottom = 120.0
+theme_type_variation = &"PopupPanel"
+
+[node name="Margin" type="MarginContainer" parent="Card"]
+layout_mode = 2
+
+[node name="Column" type="VBoxContainer" parent="Card/Margin"]
+layout_mode = 2
+
+[node name="After" type="HBoxContainer" parent="Card/Margin/Column"]
+visible = false
+layout_mode = 2
+
+[node name="Check" type="TextureRect" parent="Card/Margin/Column/After"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Line" type="Label" parent="Card/Margin/Column/After"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Body"
+autowrap_mode = 3
+
+[node name="Text" type="Label" parent="Card/Margin/Column"]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+theme_type_variation = &"Body"
+autowrap_mode = 3
+
+[node name="Kits" type="Label" parent="Card/Margin/Column"]
+visible = false
+layout_mode = 2
+theme_type_variation = &"Body"
+autowrap_mode = 3
+
+[node name="Footer" type="HBoxContainer" parent="Card/Margin/Column"]
+layout_mode = 2
+
+[node name="Progress" type="Label" parent="Card/Margin/Column/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_type_variation = &"Meta"
+
+[node name="Skip" type="Button" parent="Card/Margin/Column/Footer"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_type_variation = &"FlatButton"
+text = "tutorial_overlay.skip"
+
+[node name="Back" type="Button" parent="Card/Margin/Column/Footer"]
+visible = false
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "tutorial_overlay.back_to_dock"
+
+[node name="Continue" type="Button" parent="Card/Margin/Column/Footer"]
+visible = false
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+text = "tutorial_overlay.continue"
+
+[node name="Finish" type="Control" parent="."]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Scrim" type="ColorRect" parent="Finish"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Finish"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="Center" type="CenterContainer" parent="Finish/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Finish/Scroll/Center"]
+custom_minimum_size = Vector2(720, 0)
+layout_mode = 2
+theme_type_variation = &"PopupPanel"
+
+[node name="Margin" type="MarginContainer" parent="Finish/Scroll/Center/Panel"]
+layout_mode = 2
+
+[node name="Column" type="VBoxContainer" parent="Finish/Scroll/Center/Panel/Margin"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Finish/Scroll/Center/Panel/Margin/Column"]
+layout_mode = 2
+theme_type_variation = &"ScreenTitle"
+text = "tutorial_overlay.finish.title"
+autowrap_mode = 3
+
+[node name="Body" type="Label" parent="Finish/Scroll/Center/Panel/Margin/Column"]
+custom_minimum_size = Vector2(672, 0)
+layout_mode = 2
+theme_type_variation = &"Body"
+autowrap_mode = 3
+
+[node name="Actions" type="VBoxContainer" parent="Finish/Scroll/Center/Panel/Margin/Column"]
+layout_mode = 2
+
+[node name="Menu" type="Button" parent="Finish/Scroll/Center/Panel/Margin/Column/Actions"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+text = "tutorial_overlay.finish.menu"
+alignment = 0
+
+[node name="Row" type="HBoxContainer" parent="Finish/Scroll/Center/Panel/Margin/Column/Actions"]
+layout_mode = 2
+
+[node name="Open" type="Button" parent="Finish/Scroll/Center/Panel/Margin/Column/Actions/Row"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "tutorial_overlay.finish.open"
+alignment = 0
+
+[node name="Stay" type="Button" parent="Finish/Scroll/Center/Panel/Margin/Column/Actions/Row"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "tutorial_overlay.finish.stay_dock"
+alignment = 0
+
+[node name="Rule" type="HSeparator" parent="Finish/Scroll/Center/Panel/Margin/Column"]
+layout_mode = 2
+
+[node name="LogNote" type="Label" parent="Finish/Scroll/Center/Panel/Margin/Column"]
+custom_minimum_size = Vector2(672, 0)
+layout_mode = 2
+theme_type_variation = &"Body"
+text = "tutorial_overlay.finish.log_note"
+autowrap_mode = 3
+
+[node name="LogRow" type="HBoxContainer" parent="Finish/Scroll/Center/Panel/Margin/Column"]
+layout_mode = 2
+
+[node name="Copy" type="Button" parent="Finish/Scroll/Center/Panel/Margin/Column/LogRow"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "tutorial_overlay.finish.copy"
+
+[node name="Copied" type="Label" parent="Finish/Scroll/Center/Panel/Margin/Column/LogRow"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"Body"
+text = "tutorial_overlay.finish.copied"

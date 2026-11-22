@@ -1,0 +1,70 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/editor/parts_tray.gd" id="1"]
+
+[node name="PartsTray" type="VBoxContainer"]
+script = ExtResource("1")
+
+[node name="Search" type="LineEdit" parent="."]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+placeholder_text = "editor_tray.search.placeholder"
+clear_button_enabled = true
+
+[node name="Filters" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Category" type="OptionButton" parent="Filters"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+fit_to_longest_item = false
+
+[node name="Filters2" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Tier" type="OptionButton" parent="Filters2"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+fit_to_longest_item = false
+
+[node name="Kind" type="OptionButton" parent="Filters2"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+clip_text = true
+fit_to_longest_item = false
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="List" type="VBoxContainer" parent="Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Empty" type="VBoxContainer" parent="."]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Text" type="Label" parent="Empty"]
+layout_mode = 2
+theme_type_variation = &"Body"
+autowrap_mode = 3
+
+[node name="Clear" type="Button" parent="Empty"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "editor_tray.empty.clear"
+
+[node name="Rule" type="HSeparator" parent="."]
+layout_mode = 2
+
+[node name="Spec" type="VBoxContainer" parent="."]
+layout_mode = 2

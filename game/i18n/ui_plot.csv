@@ -1,0 +1,34 @@
+keys,?context,en
+plot.label.track,"Plot label of a track; {0} track number, {1} stance word","{0} {1}"
+plot.label.last_known,"Plot label of a last-known mark; {0} track number",{0} last known
+plot.label.own,Plot label of the player's own ship,Own ship
+plot.label.ally,Plot label of an allied ship whose name is not known,Allied ship
+plot.label.designated,Second line of the label of the track the officers were told to engage,Designated
+plot.label.designated_with,"Second line of the designated track's label; {0} its class or ID rung","Designated, {0}"
+plot.label.rung,"Second line of the selected track's label when its class is not known; {0} the ID rung word",ID {0}
+plot.label.waypoint,"Plot label of a route waypoint; {0} its number",Waypoint {0}
+plot.ring.own_envelope,"Label on the ring of the own ship's longest weapon range; {0} the range",Weapon range {0}
+plot.ring.envelope,"Label on a track's weapon range ring; {0} track number, {1} the range",{0} weapon range {1}
+plot.grid.east,"Graticule label east of the map centre; {0} distance",{0} east
+plot.grid.west,"Graticule label west of the map centre; {0} distance",{0} west
+plot.grid.north,"Graticule label north of the map centre; {0} distance",{0} north
+plot.grid.south,"Graticule label south of the map centre; {0} distance",{0} south
+plot.bearing_range,"Bearing and range readout of the plot cursor and the measure tool; {0} bearing in three digits, {1} range","{0}, {1}"
+plot.empty.sortie,Plot table before the first picture of a sortie arrives,Waiting for the first picture
+plot.empty.chart,Briefing or after-action chart with no map,No chart for this operation
+plot.legend.own,Plot legend: the player's own ship,Own ship and heading
+plot.legend.ally,Plot legend: an allied ship,Allied ship and heading
+plot.legend.leader,Plot legend: line ahead of a moving symbol,"Where it will be in a minute, or in 10 s for aircraft and weapons"
+plot.legend.steady,Plot legend: dash beside an air or underwater symbol,Holding height or depth
+plot.legend.envelope,Plot legend: weapon range ring,Weapon range
+plot.legend.range_ring,Plot legend: range rings around the own ship,Range from your ship
+plot.legend.emitter,Plot legend: arcs beside a radiating enemy emitter,Emitter radiating now
+plot.legend.route,Plot legend: planned route line,Planned route
+plot.legend.objective,Plot legend: objective marker,Objective
+plot.legend.mine,Plot legend: a laid mine,Mine laid
+plot.legend.history,Plot legend: track history line,Where the track has been
+plot.legend.changed,Plot legend: box around a track whose identity changed,Identity changed in the last 10 s
+plot.legend.belief,Plot legend: after-action map of where the enemy believed you were,Where the enemy thought you were
+plot.legend.marker,Plot legend: chart marker,Chart marker
+plot.access.name,Screen-reader name of the plot table,Plot table
+plot.access.description,Screen-reader description of the plot table,Every track on the plot is also in the track table.

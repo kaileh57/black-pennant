@@ -1,0 +1,21 @@
+[package]
+name = "sim-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+content.workspace = true
+rapier3d-f64.workspace = true
+libm.workspace = true
+rayon.workspace = true
+serde.workspace = true
+bincode.workspace = true
+indexmap.workspace = true
+bitflags.workspace = true
+thiserror.workspace = true
+glam.workspace = true
+blake3.workspace = true

@@ -1,0 +1,31 @@
+keys,?context,en
+tutorial_overlay.card.name,Accessible name of the tutorial instruction panel,Tutorial
+tutorial_overlay.progress,"Tutorial card, after the instruction: {0} is the step number, {1} the number of steps",Step {0} of {1}
+tutorial_overlay.continue,Tutorial card button: go to the next step,Continue
+tutorial_overlay.finish_step,Tutorial card button on the last step: end the tutorial,Finish tutorial
+tutorial_overlay.skip,Tutorial card button: leave the tutorial (asks first),Skip tutorial
+tutorial_overlay.back_to_dock,"Tutorial card button, shown in a test basin when the step asks for a new splash: end this splash",Return to dry dock
+tutorial_overlay.skip.title,Dialog title before leaving the tutorial,Skip the tutorial?
+tutorial_overlay.skip.body,Dialog body before leaving the tutorial,You go back to the main menu. You can play the tutorial again from there at any time.
+tutorial_overlay.skip.confirm,Dialog button: leave the tutorial now,Skip tutorial
+tutorial_overlay.skip.keep,Dialog button: stay in the tutorial,Keep going
+tutorial_overlay.finish.title,Title of the panel shown when the tutorial ends,Tutorial complete
+tutorial_overlay.finish.reward_name,"Stand-in for the reward hull's name when its file gives none",The fully fitted fast attack craft
+tutorial_overlay.finish.facts,"Reward hull facts: {0} length with unit, {1} displacement with unit, {2} number of parts","{0}, {1}, {2} parts"
+tutorial_overlay.finish.added,"Finish panel: {0} is the reward hull's name, {1} its facts line",{0} is now in your blueprints: {1}.
+tutorial_overlay.finish.kept,"Finish panel when an unchanged copy was already saved: {0} name, {1} facts",{0} is already in your blueprints: {1}.
+tutorial_overlay.finish.failed,Finish panel when the reward could not be saved to the player's folder,The fully fitted fast attack craft could not be saved to your blueprints. Open it in the dry dock and save it from there.
+tutorial_overlay.finish.none,Finish panel when the tutorial grants no hull,You have finished the tutorial.
+tutorial_overlay.finish.menu,"Finish panel button, the main action",Return to main menu
+tutorial_overlay.finish.open,Finish panel button: open the reward hull in a free dry dock,Open it in the dry dock
+tutorial_overlay.finish.stay_dock,Finish panel button: close the panel and keep the dry dock open,Stay in the dry dock
+tutorial_overlay.finish.stay_basin,Finish panel button: close the panel and keep sailing in the test basin,Keep sailing
+tutorial_overlay.finish.log_note,Finish panel: what the timing log is and that it is never sent,"Your step times are kept on this computer and never sent. To help tune the tutorial, paste them into a GitHub issue."
+tutorial_overlay.finish.copy,Finish panel button: copy the tutorial timing log to the clipboard,Copy step times
+tutorial_overlay.finish.copied,Finish panel: shown beside the copy button once the log is on the clipboard,Step times copied
+tutorial_overlay.open_failed.title,Message title when the reward hull cannot be opened,The fitted craft did not open
+tutorial_overlay.open_failed.body,Message body when the reward hull cannot be opened,Its file could not be read. Pick it from your blueprints in the dry dock instead.
+tutorial_overlay.splash_again,"Tutorial card button, shown in the dry dock when the step is played in the test basin: splash again",Splash again
+tutorial_overlay.kits.none,"Tutorial card, kit step: none of the lesson kits is on the hull yet; {0} is how many the step asks for",None of the {0} kits is fitted yet.
+tutorial_overlay.kits.some,"Tutorial card, kit step: {0} kits fitted of {1}; {2} names them, comma-separated","{0} of {1} fitted: {2}."
+tutorial_overlay.hull_name,Name the hull built in the tutorial is saved under; the stock reward keeps its own name (Fast attack craft),Tutorial fast attack craft

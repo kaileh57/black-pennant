@@ -1,0 +1,108 @@
+keys,?context,en
+officer.helm.task.hold_heading,"Bridge Board, Helm task; {0} course, {1} speed","Holding course {0} at {1}"
+officer.helm.task.route,"Bridge Board, Helm task; {0} waypoint number, {1} waypoints in route","Following route, waypoint {0} of {1}"
+officer.helm.task.station,"Bridge Board, Helm task",Holding station
+officer.helm.task.formation,"Bridge Board, Helm task",Keeping formation
+officer.helm.task.evading,"Bridge Board, Helm task",Evading
+officer.helm.task.stopped,"Bridge Board, Helm task",Stopped
+officer.helm.reason.ordered,"Bridge Board, Helm reason; {0} course, {1} speed","Ordered course {0}, speed {1}"
+officer.helm.reason.waypoint,"Bridge Board, Helm reason; {0} waypoint number, {1} distance",Waypoint {0} is {1} away
+officer.helm.reason.station,"Bridge Board, Helm reason; {0} distance to the station point",Station point {0} away
+officer.helm.reason.formation,"Bridge Board, Helm reason",Keeping the ordered offset from the leader
+officer.helm.reason.threat,"Bridge Board, Helm reason; {0} weapon track number",Weapon track {0} inbound
+officer.helm.reason.torpedo,"Bridge Board, Helm reason; {0} torpedo track number",Torpedo track {0} inbound
+officer.helm.reason.evade_ordered,"Bridge Board, Helm reason",Evasion ordered
+officer.helm.reason.stop,"Bridge Board, Helm reason",Ordered speed is zero
+officer.helm.next.waypoint,"Bridge Board, Helm next action; {0} waypoint number",Then waypoint {0}
+officer.helm.next.last,"Bridge Board, Helm next action",Hold course after the last waypoint
+officer.helm.next.hold,"Bridge Board, Helm next action; {0} course",Hold course {0}
+officer.helm.next.resume,"Bridge Board, Helm next action",Resume course when the threat passes
+officer.helm.next.station,"Bridge Board, Helm next action",Hold here until ordered
+officer.helm.advisory,"Bridge Board, Helm advisory while the player steers; {0} course, {1} speed","Suggested course {0}, speed {1}"
+officer.engineer.task.supplying,"Bridge Board, Engineer task",Supplying every consumer
+officer.engineer.task.shedding,"Bridge Board, Engineer task; {0} consumers shed",Shedding {0} consumers
+officer.engineer.reason.balance,"Bridge Board, Engineer reason; {0} generation, {1} demand","Generation {0}, demand {1}"
+officer.engineer.reason.short,"Bridge Board, Engineer reason; {0} demand, {1} generation",Demand {0} over generation {1}
+officer.engineer.next.endurance,"Bridge Board, Engineer next action; {0} hours of fuel",Fuel for {0} at this rate
+officer.engineer.next.restore,"Bridge Board, Engineer next action; {0} generation",Restore loads when demand falls under {0}
+officer.engineer.next.fuel_low,"Bridge Board, Engineer next action; {0} percent of fuel","Fuel at {0}, conserve speed"
+officer.engineer.next.standby,"Bridge Board, Engineer next action",Shed priority 5 loads first if power runs short
+officer.sensors.task.tracking,"Bridge Board, Sensors task; {0} contacts, {1} of them Hostile","Tracking {0} contacts, {1} Hostile"
+officer.sensors.task.no_contacts,"Bridge Board, Sensors task",No contacts
+officer.sensors.next.burst_in,"Bridge Board, Sensors next action; {0} seconds",Next burst in {0}
+officer.sensors.next.burst_trigger,"Bridge Board, Sensors next action; {0} trigger range",Burst when a contact closes inside {0}
+officer.sensors.next.silent,"Bridge Board, Sensors next action",Stay silent until ordered
+officer.sensors.next.radiate,"Bridge Board, Sensors next action",Keep radiating
+officer.sensors.next.hold_lock,"Bridge Board, Sensors next action",Hold lock until our weapons arrive
+officer.sensors.advisory,"Bridge Board, Sensors advisory while the player runs sensors; {0} emission setting",Suggested emission setting {0}
+officer.gunnery.task.engaging,"Bridge Board, Gunnery task; {0} track number",Engaging track {0}
+officer.gunnery.task.engaging_many,"Bridge Board, Gunnery task; {0} tracks",Engaging {0} tracks
+officer.gunnery.task.holding,"Bridge Board, Gunnery task; {0} track number",Holding fire on track {0}
+officer.gunnery.task.weapons_tight,"Bridge Board, Gunnery task",Weapons tight
+officer.gunnery.task.no_target,"Bridge Board, Gunnery task",No target
+officer.gunnery.task.no_mounts,"Bridge Board, Gunnery task",No weapon mounts
+officer.gunnery.reason.weapons_tight,"Bridge Board, Gunnery reason","Point defence only, by order"
+officer.gunnery.reason.none_ranked,"Bridge Board, Gunnery reason",No Hostile or inbound track ranked
+officer.gunnery.reason.none_hostile,"Bridge Board, Gunnery reason; {0} contacts","{0} contacts, none Hostile or inbound"
+officer.gunnery.reason.no_mounts,"Bridge Board, Gunnery reason",This hull carries no weapons
+officer.gunnery.next.next_target,"Bridge Board, Gunnery next action; {0} track number",Then track {0}
+officer.gunnery.next.continue,"Bridge Board, Gunnery next action",Continue until the target is lost
+officer.gunnery.next.in_range,"Bridge Board, Gunnery next action; {0} range limit",Fire when inside {0}
+officer.gunnery.next.wait,"Bridge Board, Gunnery next action",Fire when the hold clears
+officer.gunnery.next.engage_first,"Bridge Board, Gunnery next action",Engage the first Hostile in range
+officer.gunnery.next.none,"Bridge Board, Gunnery next action",Nothing to fire
+officer.gunnery.advisory,"Bridge Board, Gunnery advisory while the player holds a mount; {0} track, {1} range",Suggested target: track {0} at {1}
+officer.gunnery.advisory_none,"Bridge Board, Gunnery advisory while the player holds a mount",No target to suggest
+officer.dc.task.working,"Bridge Board, Damage Control task; {0} teams on jobs, {1} teams",{0} of {1} teams working
+officer.dc.task.standing_by,"Bridge Board, Damage Control task; {0} teams",All {0} teams standing by
+officer.dc.task.no_teams,"Bridge Board, Damage Control task; no berth survives","No berths left, no team can work"
+officer.dc.reason.fire_magazine,"Bridge Board, Damage Control reason; {0} the compartment, such as compartment 3",Fire next to a magazine in {0}
+officer.dc.reason.fire,"Bridge Board, Damage Control reason; {0} the compartment, such as compartment 3",Fighting fire in {0}
+officer.dc.reason.breach,"Bridge Board, Damage Control reason; {0} the compartment, such as compartment 3",Patching a breach in {0}
+officer.dc.reason.conduit_critical,"Bridge Board, Damage Control reason; {0} conduit number",Jury-rigging conduit {0} to vital loads
+officer.dc.reason.conduit,"Bridge Board, Damage Control reason; {0} conduit number",Jury-rigging conduit {0}
+officer.dc.reason.repair,"Bridge Board, Damage Control reason; {0} part name",Repairing {0}
+officer.dc.reason.flooding_magazine,"Bridge Board, Damage Control reason; {0} magazine part name",Flooding {0}: cook-off near
+officer.dc.reason.no_damage,"Bridge Board, Damage Control reason",No damage to repair
+officer.dc.next.pumping,"Bridge Board, Damage Control next action; {0} the compartment, such as compartment 3",Pumping {0}
+officer.dc.next.stand_by,"Bridge Board, Damage Control next action",Stand by for damage
+officer.dc.next.list,"Bridge Board, Damage Control next action",Work down the repair list
+officer.radio.helm.evading,"Radio line, Helm; {0} track number",Evading track {0}.
+officer.radio.helm.evading_ordered,"Radio line, Helm",Evading as ordered.
+officer.radio.helm.route_done,"Radio line, Helm","Last waypoint reached, holding course."
+officer.radio.engineer.shedding,"Radio line, Engineer; {0} loads","Power short, shedding {0} loads."
+officer.radio.engineer.restored,"Radio line, Engineer",All loads back on.
+officer.radio.sensors.radiating,"Radio line, Sensors; {0} emitters","Radar on, {0} emitters radiating."
+officer.radio.sensors.esm,"Radio line, Sensors",Enemy ESM has probably detected us.
+officer.radio.gunnery.engaging,"Radio line, Gunnery; {0} track number",Engaging track {0}.
+officer.radio.gunnery.struck,"Radio line, Gunnery; {0} track number of an enemy hull that surrendered",Track {0} has struck her colours.
+officer.radio.dc.fire,"Radio line, Damage Control; {0} the compartment, such as compartment 3","Fire in {0}, team on it."
+officer.radio.dc.breach,"Radio line, Damage Control; {0} the compartment, such as compartment 3","Breach in {0}, patching."
+officer.radio.dc.flood_magazine,"Radio line, Damage Control; {0} magazine part name",Flooding {0} to stop a cook-off.
+officer.why.no_part,"Why chain; {0} slot number",No part in slot {0}
+officer.why.destroyed,"Why chain; {0} part name",{0} destroyed: repair at the tender
+officer.why.heavy,"Why chain; {0} part name",{0} heavily damaged: output halved
+officer.why.shed,"Why chain; {0} part name, {1} power priority","{0} shed: power priority {1}, power short"
+officer.why.power_short,"Why chain; {0} generation, {1} demand","Generation {0}, demand {1}"
+officer.why.no_power,"Why chain; {0} part name",{0} has no power: supply conduit cut
+officer.why.buffer,"Why chain; {0} part name, {1} seconds of battery","{0} on its local buffer, {1} left"
+officer.why.no_fuel,"Why chain; {0} part name",{0} has no fuel: fuel line cut
+officer.why.local_control,"Why chain; {0} part name",{0} on local control: data link lost
+officer.why.player_holds,"Why chain; {0} part name",You hold {0}
+officer.why.engaging,"Why chain; {0} part name, {1} track number",{0} engaging track {1}
+officer.why.holding,"Why chain; {0} part name, {1} track number",{0} holding fire on track {1}
+officer.why.idle,"Why chain; {0} part name",{0} idle: no target assigned
+officer.why.rule,"Why chain; {0} rule number",Set by rule {0}
+officer.why.pinned,"Why chain",Set by a pinned node
+officer.why.replacement,"Why chain",Set by your replacement subgraph
+officer.why.script,"Why chain",Set by a script node
+officer.why.radiating,"Why chain; {0} part name",{0} radiating
+officer.why.silent,"Why chain; {0} part name",{0} silent
+officer.why.pump_running,"Why chain; {0} part name, {1} the compartment, such as compartment 3",{0} pumping {1}
+officer.why.pump_idle,"Why chain; {0} part name",{0} stopped: no water within reach
+officer.why.manual,"Why chain",Set by you
+officer.why.door_closed,"Why chain; {0} part name",{0} closed for action
+officer.why.door_open,"Why chain; {0} part name",{0} open
+officer.why.magazine_flooded,"Why chain; {0} magazine part name",{0} flooded: ammunition lost until rearmed
+officer.why.magazine_autoflood,"Why chain",Flooded by damage control: cook-off was near
+officer.why.working,"Why chain; {0} part name",{0} working normally

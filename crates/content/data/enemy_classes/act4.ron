@@ -1,0 +1,66 @@
+// Vec<EnemyClassDef>: the Meridian Combine's Act 4 classes (DESIGN.md L756-758, L866-875, L126, L533). Unit
+// `data-act4`. Licensed CC BY 4.0.
+//
+// Every class is a stock blueprint under blueprints/combine/act4/, built by the editor's steps in
+// crates/content/tests/combine/ (the shared builder, with the Act 4 build sheets in classes_act4.rs) and validated
+// in enemy-class mode by crates/content/tests/combine_act4.rs. Full-load tonnages, for fleet and commitment
+// arithmetic:
+//   T1  motor yacht 201 t, cargo liner 676 t, replenishment ship 823 t
+//   T2  Option missile corvette 526 t, Surety corvette 666 t
+//   T3  Surety batch 2 884 t, Yield missile frigate 1,424 t, Debenture gun frigate 1,475 t
+//   T4  Escrow destroyer 1,511 t, Margin destroyer 1,539 t, Debenture batch 2 1,901 t
+//   T5  Consol destroyer 2,067 t, Principal heavy cruiser 3,489 t (capital, 128 m), Charter 4,651 t (capital,
+//       150 m)
+// Act 4 commits 7,200 t per player (4 x the 1,800 t cap, L747) in five surface hulls, about 1,440 t a hull, so
+// its line runs from 1,400 t frigates to 2,000 t destroyers, every one at 90 m or under; the corvettes sail in
+// patrols and garrisons. Two classes exceed 90 m, the heavy cruiser and the Chairman's flagship, and they sail
+// only in their own groups that an operation names, never in a task group, hunter-killer, escort or
+// reinforcement wave, so no operation can field more capitals than the limit of 4 (L126). The Act 1 to Act 3
+// classes stay in service and fill out patrols, garrisons and the Meridian order of battle; the submarine patrols
+// sail Act 3's boats. Tiers rank the Combine's own ladder: the first T5 surface combatant in this file (the Consol
+// destroyer) fills the Act 4 Alert 5 hunter group (L749), so it is listed before the capitals of the same tier.
+//
+// Behaviour keys as the earlier acts (sim-systems `behaviour_from_key`). The corvettes and the anti-submarine and
+// air-defence destroyers are escorts (they stay between the threat and their charge). The Chairman's Charter keeps
+// a doctrine range of 17 km, inside her 155 mm reach and outside a 1,800 t raider's 127 mm, and his stand-off
+// gunnery card holds her out there. The two helicopter-deck classes declare the stock helicopter.
+// Surrender: every class strikes under the Combine rule (`Combine`, the campaign's strike_cells_lost) except the aces, which never strike (`surrender: Never`, L537). Variants are the batch-2 hulls the generator swaps in for
+// co-op and the use-variants doctrine cards (L834).
+[
+    // ---- Tier 1 -------------------------------------------------------------------------------------------------
+    (id: "class.cargo_liner", name: "class.cargo_liner.name", blueprint: "combine/act4/cargo_liner.bp.ron", role: Freighter, tier: T1, act: Act4,
+        behaviour: "merchant"),
+    (id: "class.replenisher", name: "class.replenisher.name", blueprint: "combine/act4/replenisher.bp.ron", role: Tanker, tier: T1, act: Act4,
+        behaviour: "merchant"),
+    (id: "class.yacht", name: "class.yacht.name", blueprint: "combine/act4/yacht.bp.ron", role: Civilian, tier: T1, act: Act4,
+        behaviour: "merchant"),
+    // ---- Tier 2 -------------------------------------------------------------------------------------------------
+    (id: "class.surety", name: "class.surety.name", blueprint: "combine/act4/surety.bp.ron", role: Corvette, tier: T2, act: Act4,
+        behaviour: "escort", variants: ["class.surety_b"]),
+    (id: "class.option", name: "class.option.name", blueprint: "combine/act4/option.bp.ron", role: Corvette, tier: T2, act: Act4,
+        behaviour: "striker"),
+    // ---- Tier 3 -------------------------------------------------------------------------------------------------
+    (id: "class.surety_b", name: "class.surety_b.name", blueprint: "combine/act4/surety_b.bp.ron", role: Corvette, tier: T3, act: Act4,
+        behaviour: "escort"),
+    (id: "class.debenture", name: "class.debenture.name", blueprint: "combine/act4/debenture.bp.ron", role: Frigate, tier: T3, act: Act4,
+        behaviour: "combatant", variants: ["class.debenture_b"]),
+    (id: "class.yield", name: "class.yield.name", blueprint: "combine/act4/yield.bp.ron", role: Frigate, tier: T3, act: Act4,
+        behaviour: "striker"),
+    // ---- Tier 4 -------------------------------------------------------------------------------------------------
+    (id: "class.debenture_b", name: "class.debenture_b.name", blueprint: "combine/act4/debenture_b.bp.ron", role: Frigate, tier: T4, act: Act4,
+        behaviour: "combatant"),
+    (id: "class.escrow", name: "class.escrow.name", blueprint: "combine/act4/escrow.bp.ron", role: Destroyer, tier: T4, act: Act4,
+        behaviour: "escort", air_wing: [("helicopter.utility", 1)]),
+    (id: "class.margin", name: "class.margin.name", blueprint: "combine/act4/margin.bp.ron", role: Destroyer, tier: T4, act: Act4,
+        behaviour: "escort"),
+    // ---- Tier 5 -------------------------------------------------------------------------------------------------
+    (id: "class.consol", name: "class.consol.name", blueprint: "combine/act4/consol.bp.ron", role: Destroyer, tier: T5, act: Act4,
+        behaviour: "combatant"),
+    // The Roads' heavy cruiser: four twin 155 mm turrets and an 80 mm belt on 128 m.
+    (id: "class.principal", name: "class.principal.name", blueprint: "combine/act4/principal.bp.ron", role: Capital, tier: T5, act: Act4,
+        behaviour: "combatant", capital: true),
+    // The Chairman's ship: the Combine's 150 m flagship, five twin 155 mm turrets, two long-range radars and 32
+    // surface-to-air cells.
+    (id: "class.ace_charter", name: "class.ace_charter.name", blueprint: "combine/act4/ace_charter.bp.ron", role: Capital, tier: T5, act: Act4,
+        behaviour: "combatant", engagement_range_m: Some(17000.0), air_wing: [("helicopter.utility", 1)], capital: true, surrender: Never),
+]

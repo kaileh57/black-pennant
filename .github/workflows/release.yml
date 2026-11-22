@@ -1,0 +1,183 @@
+# Release builds. DESIGN.md "Distribution and signing" (L1274-1280) and "Automated coverage" (L1284-1294).
+#
+# A tag vX.Y.Z publishes a GitHub release; vX.Y.Z-beta.N (any tag with a hyphen) publishes a pre-release.
+# Each platform runs `cargo xtask release`, which builds the release library, runs the generators, exports
+# with Godot 4.7.2 and, on macOS, ad-hoc signs the bundle inside out and verifies it. The publish job adds
+# SHA256SUMS.txt and a build-provenance attestation per asset.
+#
+# Zero spend: GitHub-hosted standard runners only (free for public repositories), pinned by label. No
+# signing certificates. A manual run (workflow_dispatch) builds and uploads the workflow artifacts only.
+
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  GODOT_VERSION: 4.7.2-stable
+
+jobs:
+  build:
+    name: build (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-arm64
+            os: macos-15
+          - platform: windows-x86_64
+            os: windows-2025
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: version
+        shell: bash
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then v="${GITHUB_REF_NAME#v}"; else v="$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' Cargo.toml)-dev.${GITHUB_RUN_NUMBER}"; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "Building $v"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-release-${{ runner.os }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+
+      # The editor and the export templates come from the official release page. The templates archive is
+      # large, so it is cached by version.
+      - name: Cache Godot export templates
+        id: templates
+        uses: actions/cache@v4
+        with:
+          path: godot-templates
+          key: godot-templates-${{ env.GODOT_VERSION }}
+
+      - name: Download Godot and export templates
+        shell: bash
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}"
+          if [ ! -d godot-templates ]; then
+            curl -fsSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}_export_templates.tpz"
+            unzip -q templates.tpz -d godot-templates-tmp
+            mv godot-templates-tmp/templates godot-templates
+            rm -rf templates.tpz godot-templates-tmp
+          fi
+          tpl_version="${GODOT_VERSION/-/.}"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            curl -fsSL -o godot.zip "$base/Godot_v${GODOT_VERSION}_win64.exe.zip"
+            unzip -q godot.zip -d godot-editor
+            # cargo xtask runs outside bash, so it gets Windows paths.
+            echo "GODOT=$(cygpath -w "$PWD/godot-editor/Godot_v${GODOT_VERSION}_win64_console.exe")" >> "$GITHUB_ENV"
+            dest="$(cygpath -u "$APPDATA")/Godot/export_templates/$tpl_version"
+          else
+            curl -fsSL -o godot.zip "$base/Godot_v${GODOT_VERSION}_macos.universal.zip"
+            unzip -q godot.zip -d godot-editor
+            echo "GODOT=$PWD/godot-editor/Godot.app/Contents/MacOS/Godot" >> "$GITHUB_ENV"
+            dest="$HOME/Library/Application Support/Godot/export_templates/$tpl_version"
+          fi
+          mkdir -p "$dest"
+          cp -R godot-templates/. "$dest/"
+          ls "$dest"
+
+      - name: Release build
+        run: cargo xtask release --version ${{ steps.version.outputs.version }}
+
+      # The archive a player downloads must start: unpack it, then the smoke run prints the version and quits
+      # (DESIGN.md L1278 for macOS: the signed bundle launches headless). User data goes to a scratch home.
+      - name: Smoke test the archive
+        shell: bash
+        run: |
+          mkdir -p unpacked scratch-home
+          zip=$(ls target/bp-release/black-pennant-*.zip)
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            unzip -q "$zip" -d unpacked
+            exe="unpacked/Black Pennant/Black Pennant.console.exe"
+            export APPDATA="$(cygpath -w "$PWD/scratch-home")"
+          else
+            ditto -x -k "$zip" unpacked
+            codesign --verify --deep --strict --verbose=2 "unpacked/Black Pennant.app"
+            exe="unpacked/Black Pennant.app/Contents/MacOS/Black Pennant"
+            export HOME="$PWD/scratch-home"
+          fi
+          "$exe" --headless -- --smoke 2>&1 | tee smoke.log
+          if grep -E "ERROR|SCRIPT ERROR|Parse Error|panicked" smoke.log; then exit 1; fi
+          grep -q "gdclient" smoke.log
+
+      # Clean-cache launch with a window on Metal (DESIGN.md L1264, L1291): a baked-shader export that aborts
+      # at start fails here, which the headless smoke run cannot see. The runner's GPU is paravirtual.
+      - name: Launch the archive with a window
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          rm -rf scratch-home && mkdir scratch-home
+          HOME="$PWD/scratch-home" "unpacked/Black Pennant.app/Contents/MacOS/Black Pennant" --quit-after 600 2>&1 | tee launch.log
+          if grep -E "ERROR|SCRIPT ERROR|Parse Error|panicked" launch.log; then exit 1; fi
+          grep -q "renderer: method=" launch.log
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}
+          path: target/bp-release/black-pennant-*.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  publish:
+    name: publish
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        working-directory: dist
+        run: |
+          sha256sum black-pennant-*.zip > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/black-pennant-*.zip
+            dist/SHA256SUMS.txt
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          pre=""
+          case "$TAG" in *-*) pre="--prerelease" ;; esac
+          cat > notes.md <<'EOF'
+          Free and unsigned. See the README for how to open an unsigned build:
+          on macOS, open the app once, then choose Open Anyway in System Settings > Privacy & Security;
+          on Windows, choose More info, then Run anyway.
+
+          Check a download with `gh attestation verify <file> --repo ${{ github.repository }}`
+          or against SHA256SUMS.txt.
+          EOF
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag $pre \
+            --title "Black Pennant ${TAG#v}" --notes-file notes.md \
+            dist/black-pennant-*.zip dist/SHA256SUMS.txt

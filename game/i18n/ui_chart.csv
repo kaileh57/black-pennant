@@ -1,0 +1,86 @@
+keys,?context,en
+chart.map.name,Accessible name of the theatre chart control,Theatre chart
+chart.map.none_selected,Screen-reader description of the chart with nothing selected,No place selected. Use the arrow keys to move between places.
+chart.map.describe,"Tooltip and screen-reader text of a chart node; {0} place name, {1} kind word, {2} region name","{0}: {1}, {2}"
+chart.map.empty,Chart shown with no theatre data loaded,No theatre chart is loaded.
+chart.map.sextant,"SEXTANT's label on the chart (the tender's name, a glossary code)",SEXTANT
+chart.map.cove_closed,Chart label of a closed cove; {0} cove name,"{0}, closed"
+chart.map.cut_lane,Chart label on a cut supply lane; {0} days until it reopens,"Cut, {0} d"
+chart.map.operations,Chart label for several operations at one place; {0} count,{0} operations
+chart.map.offers_at,"Offer label at a sea area, which has no name label of its own; {0} the offer text (an operation name or chart.map.operations), {1} the sea area's name","{1}, {0}"
+chart.map.forced,Chart label of an operation that cannot be declined; {0} operation name or count,"{0}, cannot be declined"
+chart.map.convoy,Chart label of a known Combine convoy; {0} hull count,"Convoy, {0} hulls"
+chart.map.group,Chart label of a known Combine task group; {0} hull count,"Task group, {0} hulls"
+chart.map.group_ace,"Chart label of a task group led by an ace; {0} hull count, {1} ace name","Task group, {0} hulls, under {1}"
+chart.map.seen_ago,Chart label line for an old sighting; {0} hours since it was seen,Seen {0} ago
+chart.map.region_state,"Region label line on the chart; {0} Alert level 0 to 5, {1} Supply percent","Alert {0}, supply {1}"
+chart.map.region_patrols,"Region label line on the chart; {0} Combine patrols at sea now (base count scaled by Supply)","{0} patrols at sea"
+chart.map.weather,"Region label line on the chart; {0} weather word, {1} sea state number","{0}, sea state {1}"
+chart.map.combine_control,Region label line when the Combine holds full control of the region,Combine control
+chart.map.region_closed,Region label line for a region not open in this act,Closed this act
+chart.legend.cove,Chart legend and kind word: a hidden cove for SEXTANT,Cove
+chart.legend.shipyard,Chart legend and kind word: a Combine shipyard,Shipyard
+chart.legend.depot,Chart legend and kind word: a Combine fuel and munitions depot,Depot
+chart.legend.base,Chart legend and kind word: a Combine forward base,Forward base
+chart.legend.harbour,Chart legend and kind word: a harbour,Harbour
+chart.legend.radar_site,Chart legend and kind word: a Combine radar site,Radar site
+chart.legend.esm_site,Chart legend and kind word: a Combine ESM listening site,ESM site
+chart.legend.sea,Chart legend and kind word: open sea area,Sea area
+chart.legend.group,Chart legend: known Combine task group symbol,Task group
+chart.legend.convoy,Chart legend: known Combine convoy symbol,Convoy
+chart.legend.offer,Chart legend: ring around a place with an operation on offer,Operation on offer
+chart.legend.lane,Chart legend: supply lane line,Lane
+chart.legend.cut,Chart legend: cut supply lane line,Cut lane
+chart.legend.route,Chart legend: SEXTANT's planned or committed route,SEXTANT's route
+chart.legend.closed,Chart legend: hatched region that is closed this act,Closed region
+chart.clock.no_campaign,Clock bar with no campaign loaded,No campaign
+chart.clock.day,"Clock bar line; {0} theatre day number, {1} hour as HH:MM, {2} time of day word","Day {0}, {1}, {2}"
+chart.clock.act,"Clock bar act line; {0} act word such as Act 1, {1} act title",{0}: {1}
+chart.clock.act_retreat,Clock bar act line in a retreat act; {0} the act line,"{0}, in retreat"
+chart.clock.days_left,Clock bar operation clock line; {0} theatre days left,Operation clock: {0} days left
+chart.clock.open_theatre,Clock bar line once Open Theatre has begun,No operation clock: the theatre is open
+chart.clock.no_clock,Clock bar line when the act has no running operation clock,No operation clock
+chart.clock.running,Clock bar state while theatre time advances,Theatre time running
+chart.clock.held,Clock bar state while the time animation is held,Theatre time held
+chart.clock.waiting,Clock bar state when time stands until the next decision,Time stands until the next order
+chart.clock.stopped,Clock bar state after an interrupt; {0} the interrupt sentence,Stopped: {0}
+chart.clock.hunter,Clock bar warning of a hunter-killer group; {0} hours until it reaches SEXTANT,Hunter group arrives in {0}
+chart.clock.hunter_tip,Tooltip of the hunter group warning,At Alert 5 a hunter group sorties against SEXTANT. Move to another cove before it arrives.
+chart.clock.continue,Button: carry on the transit or wait an interrupt stopped,Continue
+chart.clock.continue_tip,Tooltip of Continue,Run theatre time on to finish the transit or wait
+chart.clock.pause,Button: hold the theatre time animation,Hold time
+chart.clock.pause_tip,Tooltip of Hold time; P is the shortcut,Hold the theatre clock where it is (P)
+chart.clock.resume,Button: release the held theatre time animation,Run time
+chart.clock.resume_tip,Tooltip of Run time; P is the shortcut,Let theatre time run on (P)
+chart.clock.speed,"Speed menu entry; {0} theatre hours per second, with unit",{0} per second
+chart.clock.speed_name,Accessible name of the time speed menu,Theatre time speed
+chart.clock.speed_tip,Tooltip of the time speed menu,Theatre hours shown per second while time runs
+chart.side.name,Accessible name of the chart table's order column,Orders
+chart.tab.operations,Tab title: operations on offer,Operations
+chart.tab.cove,Tab title: cove services,Cove
+chart.tab.bulletin,"Tab title: doctrine bulletin, tallies and Intel",Bulletin
+chart.tab.log,Tab title: theatre log,Log
+chart.tab.log_unread,Tab title of the theatre log with unread entries; {0} count,"Log, {0} new"
+chart.place.no_campaign,Place heading when no campaign is loaded,No campaign
+chart.place.no_campaign_body,Place text when no campaign is loaded,Load or start a campaign from the main menu.
+chart.place.sextant_here,Place text when the selected place is SEXTANT's own,"SEXTANT is anchored here. Pick an operation below and open its briefing, or select another cove on the chart to move SEXTANT."
+chart.place.kind,"Place facts; {0} kind word, {1} region name",{0} in {1}.
+chart.place.region,"Place facts about its region; {0} Alert level, {1} Supply percent","Alert {0}, supply {1}."
+chart.place.cove_closed,Place facts for a closed cove,This cove is closed.
+chart.place.offers,Place facts; {0} number of operations on offer here,Operations on offer here: {0}.
+chart.place.contacts,Place facts; {0} number of known Combine contacts here,Known contacts here: {0}.
+chart.place.busy,Tooltip of an order that waits for theatre time to stop,Theatre time is running. Orders open when it stops.
+chart.place.over,Tooltip of an order after the Ironman campaign ended,The campaign is over.
+chart.transit.none,Disabled transit button with no transit possible to the selection,No transit
+chart.transit.order,"Button: move SEXTANT; {0} destination cove, {1} hours with unit","Transit to {0}, {1}"
+chart.transit.propose,"Co-op button: propose moving SEXTANT; {0} destination cove, {1} hours","Propose transit to {0}, {1}"
+chart.transit.tip,Tooltip of the transit button,SEXTANT sails the route shown. Theatre time runs until it arrives or something interrupts.
+chart.transit.tip_cut,Tooltip of a transit that passes a cut lane,"SEXTANT sails the route shown, through a cut lane. Theatre time runs until it arrives."
+chart.transit.pick_tip,Tooltip of the transit button with SEXTANT's own place selected,Select an open cove on the chart
+chart.wait.order,Button: let theatre time pass; {0} hours with unit,Wait {0}
+chart.wait.propose,Co-op button: propose a wait; {0} hours with unit,"Propose wait, {0}"
+chart.wait.tip,Tooltip of the wait button,Hold at the cove while the Combine moves; repairs and refits continue
+chart.wait.hours_name,Accessible name of the wait length menu,Wait length
+chart.wait.hours_tip,Tooltip of the wait length menu,Theatre hours to wait
+chart.place.sextant_bound,Place text when SEXTANT is on passage to the selected cove,SEXTANT is on passage to this cove.
+chart.place.region_closed,Place facts when the place's region is closed this act,The region is closed this act.

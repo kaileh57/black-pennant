@@ -1,0 +1,45 @@
+keys,?context,en
+hud_alerts.strip.access,Screen-reader name of the alert strip at the top of the sortie HUD,Alerts
+hud_alerts.strip.acknowledge,Button that acknowledges the highest-priority oldest alert,Acknowledge
+hud_alerts.strip.acknowledge_tip,Tooltip of the Acknowledge button; {0} the sentence of the alert it will acknowledge,Acknowledges: {0}
+hud_alerts.strip.acknowledge_none,Tooltip of the Acknowledge button when no alert needs acknowledging,No alert needs acknowledging
+hud_alerts.strip.silence,Button that silences alert sounds for 30 seconds,Silence
+hud_alerts.strip.silence_tip,Tooltip and screen-reader name of the Silence button,Mutes alert sounds for 30 s; alerts stay on the strip
+hud_alerts.strip.silenced,Status beside the Silence button while alert sounds are muted; {0} time left such as 24 s,"Sound muted, {0} left"
+hud_alerts.strip.more,"Button under the five alerts on the strip; {0} the number of further alerts, for example +3 more",+{0} more
+hud_alerts.strip.more_tip,Tooltip of the +N more button,Opens the log on its alert entries
+hud_alerts.strip.flood,Line on the alert strip while alert flood mode is on (more than 10 alerts in 10 minutes),"Alert flood: cautions go to the log, warnings combine per system"
+hud_alerts.strip.row_access,Screen-reader text of one alert on the strip; {0} the priority word such as Alarm and {1} the alert sentence,{0}: {1}
+hud_alerts.log.access,Screen-reader name of the log table,Log entries
+hud_alerts.log.kind.all,Log type filter: every type of entry,All types
+hud_alerts.log.kind.name,Screen-reader name of the log type filter,Entry type
+hud_alerts.log.kind.tip,Tooltip of the log type filter,Shows one type of log entry
+hud_alerts.log.kind.track,Log type filter: track created merged split or changed,Tracks
+hud_alerts.log.kind.engagement,Log type filter: weapons firing and holding,Engagements
+hud_alerts.log.kind.damage,Log type filter: damage to the own ship and other hulls,Damage
+hud_alerts.log.kind.officer,Log type filter: officer radio lines and reports,Officers
+hud_alerts.log.kind.control,Log type filter: takeovers releases and control changes,Control
+hud_alerts.log.kind.alert,Log type filter: alerts raised acknowledged and cleared,Alerts
+hud_alerts.log.kind.pacing,Log type filter: pause and time compression,Time
+hud_alerts.log.kind.objective,Log type filter: objectives,Objectives
+hud_alerts.log.kind.network,Log type filter: power fuel and data networks,Networks
+hud_alerts.log.kind.ace,Log type filter: enemy ace radio lines,Aces
+hud_alerts.log.kind.system,Log type filter: session and connection events,System
+hud_alerts.log.unit.all,Log unit filter: entries about any unit,All units
+hud_alerts.log.unit.own,Log unit filter: entries about the own ship,Own ship
+hud_alerts.log.unit.track,Log unit filter: entries about one track; {0} the four-digit track number,Track {0}
+hud_alerts.log.unit.name,Screen-reader name of the log unit filter,Unit
+hud_alerts.log.unit.tip,Tooltip of the log unit filter,Shows entries about the own ship or one track
+hud_alerts.log.unread_only,Check box that shows only unread log entries,Unread only
+hud_alerts.log.mark_read,Button that marks every log entry read,Mark all read
+hud_alerts.log.copy,Tooltip and screen-reader name of the button that copies the whole log,Copy the log as text
+hud_alerts.log.count,Count line of the log; {0} the number of entries,{0} entries
+hud_alerts.log.count_filtered,Count line of the log while filtered; {0} entries shown and {1} entries in all,{0} of {1} entries
+hud_alerts.log.count_unread,Count line of the log with unread entries; {0} the count line and {1} the number unread,"{0}, {1} unread"
+hud_alerts.log.unread,Tooltip of the unread mark on a log row,Unread
+hud_alerts.log.centre_tip,Tooltip of a log row that has a position or track,Centres the plot on this
+hud_alerts.log.row_access,Screen-reader text of one log row; {0} sortie clock and {1} the sentence,"{0}, {1}"
+hud_alerts.log.row_unread_access,Screen-reader text of one unread log row; {0} sortie clock and {1} the sentence,"Unread, {0}, {1}"
+hud_alerts.log.waiting,Log panel before a sortie starts,The log starts with the sortie.
+hud_alerts.log.empty,Log panel in a sortie with nothing logged yet,Nothing logged yet.
+hud_alerts.log.no_match,Log panel when the filters leave no entry,No entries match these filters.

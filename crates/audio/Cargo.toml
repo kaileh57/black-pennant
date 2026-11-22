@@ -1,0 +1,13 @@
+[package]
+name = "audio"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+fundsp.workspace = true
+hound.workspace = true
+libm.workspace = true

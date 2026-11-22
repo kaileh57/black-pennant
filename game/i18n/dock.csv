@@ -1,0 +1,243 @@
+keys,?context,en
+dock.undo.undo,"Edit menu item; {0} is the change, such as move parts",Undo {0}
+dock.undo.redo,Edit menu item; {0} is the change,Redo {0}
+dock.undo.rename,"Undo step name, read after Undo or Redo",rename design
+dock.undo.author,Undo step name,change author
+dock.undo.delete,Undo step name,delete selection
+dock.undo.edit,Undo step name for an unnamed group of changes,edit
+dock.undo.handle,Undo step name: a hull handle moved,change hull shape
+dock.undo.length,Undo step name,change hull length
+dock.undo.station_add,Undo step name: a cross-section station,add station
+dock.undo.station_remove,Undo step name,remove station
+dock.undo.mirror,Undo step name,change mirroring
+dock.undo.plane_add,Undo step name,add deck or bulkhead
+dock.undo.plane_move,Undo step name,move deck or bulkhead
+dock.undo.plane_remove,Undo step name,remove deck or bulkhead
+dock.undo.bake,Undo step name: lofted hull turned into freeform cells,bake hull
+dock.undo.sculpt,Undo step name,sculpt cells
+dock.undo.armour,Undo step name,paint armour
+dock.undo.paint,Undo step name,paint hull
+dock.undo.palette,Undo step name,change paint colour
+dock.undo.marking_add,"Undo step name: stripe, flag or hull number",add marking
+dock.undo.marking_remove,Undo step name,remove marking
+dock.undo.place_part,Undo step name,place part
+dock.undo.place_kit,Undo step name,place kit
+dock.undo.paste,Undo step name,paste
+dock.undo.move,Undo step name,move parts
+dock.undo.remove_part,Undo step name,remove part
+dock.undo.remove_kit,Undo step name,remove kit
+dock.undo.label,Undo step name: the player renamed a part,rename part
+dock.undo.load,"Undo step name: fuel, ammunition or ballast fill",change load
+dock.undo.kit_setting,Undo step name,change kit setting
+dock.undo.kit_migrate,Undo step name: placed kits moved to the newer version,update kit
+dock.undo.route_pin,Undo step name: a conduit route kept through regeneration,pin conduit
+dock.undo.data_link,Undo step name,add data link
+dock.undo.breaker,Undo step name: a breaker splits a network into zones,add breaker
+dock.issue.no_campaign,Dry dock opening problem,"No campaign is loaded, so there is no hull to refit."
+dock.issue.bad_mode,Dry dock opening problem,The dry dock cannot open in that mode.
+dock.issue.part_removed,Load notice; {0} is a part name,{0} is no longer in the game and was taken off the design.
+dock.issue.kind_changed,Load notice: a ship opened in the enemy-class editor or the reverse,"This design was made in the other editor mode, so it opens here as a copy."
+dock.prefab.default_name,Name given to a kit captured without one,New kit
+dock.compartment,Compartment name; {0} is its number,Compartment {0}
+dock.ghost.overlap,Why a part cannot go here,Overlaps a part already placed.
+dock.ghost.outside,Why a part cannot go here,Outside the building space.
+dock.ghost.weather,Why a part cannot go here,Needs open sky above it. Place it on a weather deck.
+dock.ghost.internal,Why a part cannot go here,Must sit inside the hull.
+dock.ghost.underwater,Why a part cannot go here,Needs a face on the hull below the waterline.
+dock.ghost.deck_edge,Why a part cannot go here,Needs a side face on the hull edge above the waterline.
+dock.ghost.limit,"Why a part cannot go here; {0} part name, {1} copies after placing, {2} the ruleset limit",The ruleset allows {2} of {0}; placing this makes {1}.
+dock.ghost.floating,Why a part cannot go here,Not attached to the ship.
+dock.ghost.unknown,Why a part cannot go here,This part is not in the game.
+dock.ghost.no_parts,Why a kit cannot be placed,This kit holds no parts to place.
+dock.ghost.no_room,"Why a part that goes inside the hull cannot go here: nothing below the cursor has room for it",No room for it in the hull below here. Try further amidships.
+dock.io.not_open,Problem: a file action needs the dry dock open,Open the dry dock first.
+dock.io.bad_path,File problem,That name or folder cannot be used for a blueprint.
+dock.io.exists,File problem,A file with that name is already there.
+dock.io.write_failed,File problem: the disk refused the write,The file could not be written. Check the disk has space and the folder is writable.
+dock.io.untitled,File name for a design with no name,Untitled
+dock.io.migrated,"Load notice; {0} the file's format, {1} this game's",This blueprint was made in format {0} and was updated to format {1}. Save it to keep the update.
+dock.undo.preset,Undo step name,change doctrine preset
+dock.undo.slider,Undo step name: an officer tuning slider,change tuning
+dock.undo.doctrine,Undo step name: engagement doctrine row,change doctrine
+dock.undo.rules,Undo step name: the when/then rules table,change rules
+dock.undo.power_priority,Undo step name,change power priority
+dock.undo.mount_limits,Undo step name: training and elevation limits,change mount limits
+dock.undo.emission,Undo step name: emission control settings,change emission control
+dock.undo.repair_order,Undo step name,change repair order
+dock.undo.reset_control,Undo step name: officers back to stock,reset officers
+dock.rule.unreadable,Rule builder problem,This rule is not complete. Fill in every part of it.
+dock.rule.no_rule,Rule builder problem,There is no rule at that position.
+dock.rule.no_sink,"Rule builder problem; {0} what the rule sets, such as fire permission of Gun 2",This design has no {0}.
+dock.rule.bad_value,Rule builder problem; {0} what the rule sets,{0} cannot be set to that value.
+dock.rule.no_part,Rule builder problem,The rule reads a part this design does not have.
+dock.name.plain,A name shown as it is; {0} the name,{0}
+dock.autoset.dropped,Why a value is set by hand this release; {0} the test case that failed,"Its proof failed on {0}, so set it by hand this release. Suggest gives a starting value."
+dock.rule.operand.const,Rule builder picker: a fixed number,Number
+dock.rule.operand.own_speed_kn,Rule builder picker,Own speed
+dock.rule.operand.own_heel_deg,Rule builder picker,Own heel
+dock.rule.operand.fuel_fraction,Rule builder picker,Fuel
+dock.rule.operand.power_margin,Rule builder picker: spare generation,Power margin
+dock.rule.operand.hull_health,Rule builder picker,Hull health
+dock.rule.operand.nearest_contact_range_m,Rule builder picker,Range to nearest contact
+dock.rule.operand.contact_count,Rule builder picker,Number of contacts
+dock.rule.operand.inbound_weapons,Rule builder picker: missiles and torpedoes heading for us,Inbound weapons
+dock.rule.operand.part_health,Rule builder picker,Health of a part
+dock.rule.operand.ammo_fraction,Rule builder picker,Ammunition of a mount
+dock.rule.operand.sortie_time_s,Rule builder picker,Time since the sortie began
+dock.undo.graph,Undo step name: a control graph edit,edit graph
+dock.undo.graph_replace,Undo step name: an officer stage replaced by a player subgraph,fork stage
+dock.undo.graph_restore,Undo step name: back to the stock officer stage,restore stage
+dock.undo.script,Undo step name: a Luau script,edit script
+dock.graph.title_part,"Graph node title; {0} node name, {1} the part or compartment it is bound to",{0}: {1}
+dock.graph.title_rule,"Graph node title; {0} rule number, {1} node name",Rule {0}: {1}
+dock.graph.param.part,Graph node setting: which part the node reads or drives,Part
+dock.graph.param.compartment,Graph node setting,Compartment
+dock.graph.param.value,Graph node setting: the constant's value,Value
+dock.graph.lost_input,"Graph problem; {0} node, {1} input name","{0} lost its {1} input, so its officer drives that output."
+dock.graph.lost_part,Graph problem; {0} node,"{0} reads a part that is no longer fitted, so its officer drives that output."
+dock.graph.type_mismatch,"Graph problem; {0} node, {1} input name",{0} cannot take that kind of value on its {1} input.
+dock.graph.not_allowed_node,Graph problem; {0} node,{0} cannot be used here.
+dock.graph.cycle,Graph problem; {0} node,"{0} is part of a loop, so it was left out. Use a latch, timer or filter's memory instead of wiring a loop."
+dock.graph.rule_sink,Graph problem; {0} rule number,Rule {0} sets something this design does not have.
+dock.graph.script_off,Graph problem; {0} script name,"{0} is switched off, so its officer stage drives its outputs."
+dock.graph.layer,Graph problem; {0} node,"{0} is not allowed by this lobby's rules, so stock control is used."
+dock.script.error,"Script problem; {0} the Luau compiler's message, untranslated",The script does not compile: {0}
+dock.script.bad_port,"Script problem; {0} line number, {1} the word that is not a port type","Line {0}: {1} is not a port type. Use bool, scalar, angle, vec3, text, stance, emcon, track, track_list, detection_list, part_state or orders."
+dock.script.untitled,Name of a new script,New script
+dock.undo.fix,Undo step name: a Ship's Note Fix accepted,apply fix
+dock.undo.suggest,Undo step name: a Suggest button accepted,apply suggestion
+dock.undo.refit,Undo step name: the Quartermaster's refit accepted,apply refit
+dock.fix.move_part,Fix button; {0} part name,Move {0}
+dock.fix.add_part,Fix button; {0} part name,Add {0}
+dock.fix.remove_part,Fix button; {0} part name,Remove {0}
+dock.fix.add_kit,Fix button; {0} kit name,Add {0}
+dock.fix.remove_kit,Fix button; {0} kit name,Remove {0}
+dock.fix.swap_kit,Fix button; {0} the new kit's name,Change to {0}
+dock.fix.set_load,"Fix button; {0} part name, {1} the fill",Fill {0} to {1}
+dock.fix.hull,Fix button,Reshape the hull
+dock.fix.bulkhead,Fix button,Add a bulkhead
+dock.fix.armour,Fix button; {0} number of cells,Armour {0} cells
+dock.fix.slider,"Fix button; {0} slider name, {1} its new value",Set {0} to {1}
+dock.fix.burst,Fix button; {0} range,Start radiating at {0}
+dock.fix.limits,Fix button; {0} part name,Set limits of {0}
+dock.fix.unpin_node,Fix button,Return the node to automatic
+dock.fix.unpin_route,Fix button,Return the conduit to automatic routing
+dock.fix.several,Fix button; {0} number of changes,Make {0} changes
+dock.suggest.waiting,Suggest button note while the design is being measured,Measuring the design.
+dock.suggest.matches,Suggest button note,The design already matches this suggestion.
+dock.tag.draft,"Briefing constraint as a sentence; {0} depth in metres with one decimal, such as 2.5",Draft {0} m or less
+dock.tag.rcs,Briefing constraint as a sentence; {0} area in square metres,Radar cross-section {0} square metres or less
+dock.tag.range,Briefing constraint as a sentence; {0} distance,Range {0} or more
+dock.tag.passengers,Briefing constraint as a sentence; {0} count,Room for {0} passengers
+dock.tag.requires,"Briefing constraint as a sentence; {0} a fitting, such as crane",Carries a {0}
+dock.tag.speed,Briefing constraint as a sentence; {0} speed,Top speed {0} or more
+dock.issue.cannot_afford,"Validation problem in the campaign; {0} refit cost, {1} Salvage on hand",The refit costs {0} and you have {1}.
+dock.launch.launch,Launch button,Launch
+dock.launch.lock_in,Launch button in a lobby: the design is fixed for the match,Lock in
+dock.launch.blocked,Launch button while the design is illegal; {0} number of problems,Fix {0} problems to launch
+dock.launch.not_open,Launch button while the dock is closed,Launch
+dock.metric.turning_circle_m,Compare view metric,Turning circle
+dock.metric.time_to_90pct_speed_s,Compare view metric,Time to 90% speed
+dock.metric.top_speed_kn,Compare view metric,Top speed
+dock.metric.heel_recovery_s,Compare view metric,Heel recovery
+dock.metric.peak_heel_deg,Compare view metric,Peak heel
+dock.metric.fight_score,Compare view metric: one against three score,Fight score
+dock.metric.fight_wins,Compare view metric,Fights won
+dock.metric.fight_mean_hull_fraction_left,Compare view metric,Hull left after the fight
+dock.metric.fight_rounds_per_kill,Compare view metric,Rounds per kill
+dock.metric.fight_first_salvo_hit_rate,Compare view metric,First salvo hit rate
+dock.metric.complexity_points,Compare view metric,Complexity
+dock.node.abs,Node library description,Removes the sign of a number.
+dock.node.add,Node library description,Adds two numbers.
+dock.node.alpha_beta,Node library description,Smooths a noisy value and estimates how fast it changes.
+dock.node.and,Node library description,True when both inputs are true.
+dock.node.ballistic_solver,Node library description,"Works out where a gun must aim to hit its target, for each gun mount."
+dock.node.bearing_to,Node library description,Bearing from own ship to a point.
+dock.node.clamp,Node library description,Keeps a number between a minimum and a maximum.
+dock.node.compare_eq,Node library description,True when the two numbers are equal.
+dock.node.compare_ge,Node library description,True when the first number is at least the second.
+dock.node.compare_gt,Node library description,True when the first number is greater than the second.
+dock.node.compare_le,Node library description,True when the first number is at most the second.
+dock.node.compare_lt,Node library description,True when the first number is less than the second.
+dock.node.compare_ne,Node library description,True when the two numbers differ.
+dock.node.constant,Node library description,A fixed value you set.
+dock.node.counter,Node library description,"Counts up and down, and resets on demand."
+dock.node.damage_control_planner,Node library description,Runs pumps and doors and sends repair teams down the repair list.
+dock.node.detections,Node library description,"Raw detections from one sensor, with their error."
+dock.node.div,Node library description,Divides the first number by the second.
+dock.node.door,Node library description,Opens or closes one watertight door.
+dock.node.emission_controller,Node library description,"Decides which emitters radiate, from the emission setting and the threats."
+dock.node.emission_state,Node library description,Turns one emitter on or off.
+dock.node.evasion,Node library description,Weaves the ship when weapons are inbound.
+dock.node.flood_valve,Node library description,Opens or closes the flood valve of one compartment.
+dock.node.helm_autopilot,Node library description,Steers along the route at the ordered speed.
+dock.node.helm_heading,Node library description,The heading the helm steers.
+dock.node.helm_speed,Node library description,The speed the helm orders.
+dock.node.latch,Node library description,Remembers true from set until reset.
+dock.node.load_shedder,Node library description,Sheds power from priority 5 upward when generation runs short.
+dock.node.low_pass,Node library description,Smooths a value that jumps about.
+dock.node.max,Node library description,The larger of two numbers.
+dock.node.min,Node library description,The smaller of two numbers.
+dock.node.missile_launch,Node library description,Launches from one launcher.
+dock.node.missile_target,Node library description,The track one launcher's missiles go for.
+dock.node.mount_aim_point,Node library description,Where one gun mount aims.
+dock.node.mount_assignment,Node library description,Gives each mount a target from the threat ranking.
+dock.node.mount_fire_permission,Node library description,"Whether one gun mount may fire, and at which track."
+dock.node.mul,Node library description,Multiplies two numbers.
+dock.node.neg,Node library description,Flips the sign of a number.
+dock.node.not,Node library description,True when the input is false.
+dock.node.or,Node library description,True when either input is true.
+dock.node.own_ship,Node library description,"Own position, speed, heading, heel, power, fuel and damage."
+dock.node.part_state,Node library description,"Health, power and ammunition of one part."
+dock.node.pid,Node library description,Drives a value toward a setpoint.
+dock.node.pn_guidance,Node library description,Decides launch and target for one launcher and sets the navigation constant.
+dock.node.power_priority,Node library description,"The power priority of one consumer, 1 shed last to 5 shed first."
+dock.node.pump,Node library description,"Runs one pump, and picks the compartment it drains."
+dock.node.range_to,Node library description,Range from own ship to a point.
+dock.node.script,Node library description,Luau code with typed inputs and outputs.
+dock.node.select,Node library description,"Passes the then input while the condition holds, else the else input."
+dock.node.ship_emcon,Node library description,The ship's emission setting.
+dock.node.ship_preset,Node library description,The ship's doctrine preset.
+dock.node.station_keeping,Node library description,Holds the ship on a station or in formation.
+dock.node.sub,Node library description,Subtracts the second number from the first.
+dock.node.theatre_orders,Node library description,The orders the ship is sailing under.
+dock.node.threat_ranking,Node library description,Ranks tracks by threat.
+dock.node.timer,Node library description,"Counts seconds while running, and says when time is up."
+dock.node.track_fusion,Node library description,Fuses detections into tracks.
+dock.node.track_id_override,Node library description,Sets the identification of one track by hand.
+dock.node.track_list,Node library description,"Tracks with their uncertainty, identification and stance, filtered."
+dock.node.track_stance_override,Node library description,Sets the stance of one track by hand.
+dock.node.vec_add,Node library description,Adds two vectors.
+dock.node.vec_cross,Node library description,Cross product of two vectors.
+dock.node.vec_dot,Node library description,Dot product of two vectors.
+dock.node.vec_length,Node library description,Length of a vector.
+dock.node.vec_make,Node library description,Builds a vector from three numbers.
+dock.node.vec_normalize,Node library description,A vector of length 1 in the same direction.
+dock.node.vec_scale,Node library description,Multiplies a vector by a number.
+dock.node.vec_split,Node library description,Splits a vector into three numbers.
+dock.node.vec_sub,Node library description,Subtracts the second vector from the first.
+dock.splash.shell_changed,Shown on returning to the dry dock from a splash,The hull shape changed. The splash closed so the hull can be rebuilt.
+dock.splash.refused_edit,"Shown on returning to the dry dock from a splash; Ship's Notes is a proper noun, the dry-dock notes panel",The basin could not take that change. The splash closed; check the Ship's Notes.
+dock.splash.save_failed,Why Splash or Launch did not start,The design could not be saved. Check the disk and try again.
+dock.splash.cannot_float,Why Splash did not start,This design cannot float. Add buoyant hull or remove weight.
+dock.splash.busy,Why Splash did not start,Splash is not available while a sortie or multiplayer session is running.
+dock.overlay.waterline,Overlay legend row,Waterline at rest
+dock.overlay.design_waterline,Overlay legend row,Design waterline
+dock.overlay.cg,Overlay legend row,Centre of gravity
+dock.overlay.cb,Overlay legend row,Centre of buoyancy
+dock.overlay.arc,Overlay legend row,Firing arc
+dock.overlay.arc_blocked,Overlay legend row,Blocked by own structure
+dock.overlay.blind,Overlay legend row,Sensor blind sector
+dock.overlay.power,Overlay legend row and X-ray route label,Power
+dock.overlay.fuel,Overlay legend row and X-ray route label,Fuel
+dock.overlay.data,Overlay legend row and X-ray route label,Data
+dock.overlay.doubled,"X-ray badge on a route laid twice, and its legend row",Doubled
+dock.overlay.heat_low,Vulnerability heatmap legend row,Less vulnerable
+dock.overlay.heat_high,Vulnerability heatmap legend row,More vulnerable
+dock.overlay.planes,Overlay legend row,Decks and bulkheads
+dock.overlay.rcs,Signature overlay legend row,Radar cross-section by aspect
+dock.overlay.visual,Signature overlay legend row,Visual area by aspect
+dock.overlay.ghost,Ghost legend row,Placement
+dock.overlay.ghost_invalid,Ghost legend row,Cannot go here
+dock.overlay.ghost_preview,Ghost legend row for a Fix or Suggest preview,Added by the change
+dock.overlay.ghost_removed,Ghost legend row for a Fix or Suggest preview,Removed by the change

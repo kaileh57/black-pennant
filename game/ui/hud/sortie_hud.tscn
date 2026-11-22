@@ -1,0 +1,364 @@
+[gd_scene load_steps=20 format=3]
+
+[ext_resource type="Script" path="res://ui/hud/sortie_hud.gd" id="1"]
+[ext_resource type="PackedScene" path="res://ui/hud/track_list.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://ui/hud/track_card.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://ui/hud/bridge_overlay.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://ui/hud/reticle.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://ui/hud/plot_table.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://ui/hud/alert_strip.tscn" id="7"]
+[ext_resource type="PackedScene" path="res://ui/hud/pacing_bar.tscn" id="8"]
+[ext_resource type="PackedScene" path="res://ui/hud/objectives.tscn" id="9"]
+[ext_resource type="PackedScene" path="res://ui/hud/officer_lines.tscn" id="10"]
+[ext_resource type="PackedScene" path="res://ui/hud/helm_cluster.tscn" id="11"]
+[ext_resource type="PackedScene" path="res://ui/hud/weapons_panel.tscn" id="12"]
+[ext_resource type="PackedScene" path="res://ui/hud/bridge_board.tscn" id="13"]
+[ext_resource type="PackedScene" path="res://ui/hud/actions_bar.tscn" id="14"]
+[ext_resource type="PackedScene" path="res://ui/hud/log_panel.tscn" id="15"]
+[ext_resource type="PackedScene" path="res://ui/hud/damage_control.tscn" id="16"]
+[ext_resource type="PackedScene" path="res://ui/hud/networks_panel.tscn" id="17"]
+[ext_resource type="PackedScene" path="res://ui/hud/control_panel.tscn" id="18"]
+[ext_resource type="PackedScene" path="res://ui/hud/why_popup.tscn" id="19"]
+[ext_resource type="PackedScene" path="res://ui/hud/kill_cam.tscn" id="20"]
+
+[node name="SortieHud" type="CanvasLayer"]
+script = ExtResource("1")
+
+[node name="Frame" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="View" type="Control" parent="Frame"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BridgeOverlay" parent="Frame/View" instance=ExtResource("4")]
+layout_mode = 1
+
+[node name="Reticle" parent="Frame/View" instance=ExtResource("5")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PlotTable" parent="Frame/View" instance=ExtResource("6")]
+visible = false
+layout_mode = 1
+
+[node name="Docks" type="HBoxContainer" parent="Frame"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LeftDock" type="ScrollContainer" parent="Frame/Docks"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+mouse_filter = 2
+follow_focus = true
+horizontal_scroll_mode = 0
+
+[node name="Column" type="VBoxContainer" parent="Frame/Docks/LeftDock"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="TrackList" parent="Frame/Docks/LeftDock/Column" instance=ExtResource("2")]
+layout_mode = 2
+
+[node name="CardRule" type="HSeparator" parent="Frame/Docks/LeftDock/Column"]
+visible = false
+layout_mode = 2
+
+[node name="TrackCard" parent="Frame/Docks/LeftDock/Column" instance=ExtResource("3")]
+visible = false
+layout_mode = 2
+
+[node name="Fill" type="Control" parent="Frame/Docks/LeftDock/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="WeaponsPanel" parent="Frame/Docks/LeftDock/Column" instance=ExtResource("12")]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="Centre" type="Control" parent="Frame/Docks"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="Frame/Docks/Centre"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Column" type="VBoxContainer" parent="Frame/Docks/Centre/Margin"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Top" type="HBoxContainer" parent="Frame/Docks/Centre/Margin/Column"]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="Middle" type="VBoxContainer" parent="Frame/Docks/Centre/Margin/Column/Top"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="AlertStrip" parent="Frame/Docks/Centre/Margin/Column/Top/Middle" instance=ExtResource("7")]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="RoleStrip" type="HFlowContainer" parent="Frame/Docks/Centre/Margin/Column/Top/Middle"]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="Status" type="PanelContainer" parent="Frame/Docks/Centre/Margin/Column/Top/Middle"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="Frame/Docks/Centre/Margin/Column/Top/Middle/Status"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Column" type="VBoxContainer" parent="Frame/Docks/Centre/Margin/Column/Top/Middle/Status/Margin"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Frame/Docks/Centre/Margin/Column/Top/Middle/Status/Margin/Column"]
+layout_mode = 2
+theme_type_variation = &"PanelTitle"
+horizontal_alignment = 1
+
+[node name="Body" type="Label" parent="Frame/Docks/Centre/Margin/Column/Top/Middle/Status/Margin/Column"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_type_variation = &"Body"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Progress" type="ProgressBar" parent="Frame/Docks/Centre/Margin/Column/Top/Middle/Status/Margin/Column"]
+visible = false
+custom_minimum_size = Vector2(280, 24)
+layout_mode = 2
+max_value = 1.0
+show_percentage = false
+
+[node name="Middle" type="HBoxContainer" parent="Frame/Docks/Centre/Margin/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="Station" type="Control" parent="Frame/Docks/Centre/Margin/Column/Middle"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Backing" type="Panel" parent="Frame/Docks/Centre/Margin/Column/Middle/Station"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="Frame/Docks/Centre/Margin/Column/Middle/Station"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Stack" type="VBoxContainer" parent="Frame/Docks/Centre/Margin/Column/Middle/Station/Margin"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Header" type="HBoxContainer" parent="Frame/Docks/Centre/Margin/Column/Middle/Station/Margin/Stack"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Frame/Docks/Centre/Margin/Column/Middle/Station/Margin/Stack/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"PanelTitle"
+
+[node name="Close" type="Button" parent="Frame/Docks/Centre/Margin/Column/Middle/Station/Margin/Stack/Header"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+
+[node name="Body" type="ScrollContainer" parent="Frame/Docks/Centre/Margin/Column/Middle/Station/Margin/Stack"]
+layout_mode = 2
+size_flags_vertical = 3
+follow_focus = true
+
+[node name="Panels" type="VBoxContainer" parent="Frame/Docks/Centre/Margin/Column/Middle/Station/Margin/Stack/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Log" parent="Frame/Docks/Centre/Margin/Column/Middle/Station/Margin/Stack/Body/Panels" instance=ExtResource("15")]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Damage" parent="Frame/Docks/Centre/Margin/Column/Middle/Station/Margin/Stack/Body/Panels" instance=ExtResource("16")]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Networks" parent="Frame/Docks/Centre/Margin/Column/Middle/Station/Margin/Stack/Body/Panels" instance=ExtResource("17")]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Control" parent="Frame/Docks/Centre/Margin/Column/Middle/Station/Margin/Stack/Body/Panels" instance=ExtResource("18")]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Bottom" type="VBoxContainer" parent="Frame/Docks/Centre/Margin/Column" groups=["toast_clear"]]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="OfficerLines" parent="Frame/Docks/Centre/Margin/Column/Bottom" instance=ExtResource("10")]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="Row" type="HBoxContainer" parent="Frame/Docks/Centre/Margin/Column/Bottom"]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="HelmCluster" parent="Frame/Docks/Centre/Margin/Column/Bottom/Row" instance=ExtResource("11")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 8
+
+[node name="RightDock" type="ScrollContainer" parent="Frame/Docks"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+mouse_filter = 2
+follow_focus = true
+horizontal_scroll_mode = 0
+
+[node name="Column" type="VBoxContainer" parent="Frame/Docks/RightDock"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="PacingBar" parent="Frame/Docks/RightDock/Column" instance=ExtResource("8")]
+layout_mode = 2
+
+[node name="BoardRule" type="HSeparator" parent="Frame/Docks/RightDock/Column"]
+layout_mode = 2
+
+[node name="BridgeBoard" parent="Frame/Docks/RightDock/Column" instance=ExtResource("13")]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="ActionsRule" type="HSeparator" parent="Frame/Docks/RightDock/Column"]
+visible = false
+layout_mode = 2
+
+[node name="ActionsScroll" type="ScrollContainer" parent="Frame/Docks/RightDock/Column"]
+layout_mode = 2
+vertical_scroll_mode = 0
+
+[node name="ActionsBar" parent="Frame/Docks/RightDock/Column/ActionsScroll" instance=ExtResource("14")]
+layout_mode = 2
+
+[node name="Fill" type="Control" parent="Frame/Docks/RightDock/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="Objectives" parent="Frame/Docks/RightDock/Column" instance=ExtResource("9")]
+layout_mode = 2
+
+[node name="StationsRule" type="HSeparator" parent="Frame/Docks/RightDock/Column"]
+layout_mode = 2
+
+[node name="Stations" type="MarginContainer" parent="Frame/Docks/RightDock/Column"]
+layout_mode = 2
+
+[node name="Grid" type="GridContainer" parent="Frame/Docks/RightDock/Column/Stations"]
+layout_mode = 2
+columns = 4
+
+[node name="Log" type="Button" parent="Frame/Docks/RightDock/Column/Stations/Grid"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "hud_shell.station.log"
+
+[node name="Damage" type="Button" parent="Frame/Docks/RightDock/Column/Stations/Grid"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "hud_shell.station.damage"
+
+[node name="Networks" type="Button" parent="Frame/Docks/RightDock/Column/Stations/Grid"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "hud_shell.station.networks"
+
+[node name="Control" type="Button" parent="Frame/Docks/RightDock/Column/Stations/Grid"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "hud_shell.station.control"
+
+[node name="Overlays" type="Control" parent="Frame"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="KillCam" parent="Frame/Overlays" instance=ExtResource("20")]
+layout_mode = 1
+
+[node name="WhyPopup" parent="Frame/Overlays" instance=ExtResource("19")]
+layout_mode = 0
+mouse_filter = 2
+
+[node name="FocusSink" type="Control" parent="."]
+visible = false
+focus_mode = 0
+mouse_filter = 2

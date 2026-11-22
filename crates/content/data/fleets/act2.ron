@@ -1,0 +1,81 @@
+// Vec<FleetTemplate>: the Combine's Act 2 groups (DESIGN.md L747, L94-102, L749, L866-875). Unit `data-act2`.
+// Licensed CC BY 4.0.
+//
+// Commitment arithmetic uses each slot's minimum count of its lightest class (tonnages in enemy_classes/act1.ron
+// and act2.ron). Act 2 commits 5 hulls and 1,600 t per player. Every task group and the hunter-killer meets that
+// on its worst draw, because the operation generator draws its reinforcement waves from the latest act's task
+// groups and hunter-killers; so does the convoy escort, which alone commits a convoy raid or prize capture.
+// Convoys, prizes, moored hulls and the defector are not combat hulls and never count. Act 1 hulls stay in
+// service and fill some slots.
+//
+// Strike aircraft (weapons.ron `aircraft.strike`, L866-875) sail in air-patrol groups with no hulls: the generator
+// keeps a group that carries bodies, and the air AI orbits it over the objective. The generic two-aircraft patrol
+// carries the shortest air-patrol id, so it is the one the generator adds at Alert 3 and for the air-patrol
+// complication; the four-aircraft raid is named by authored operations. An operation never carries more than six
+// enemy aircraft (the minimum-swarm budget, L1447).
+//
+// The generator's Alert 3 escort and decoy convoy are "the first fleet of a kind by sorted id" across every act up
+// to the current one, so in Act 2 they stay fleet.act1.escort and fleet.act1.decoy; this file therefore carries
+// no generic escort or decoy that nothing would draw.
+[
+    // ---- Shipping -----------------------------------------------------------------------------------------------
+    (id: "fleet.act2.convoy", kind: Convoy, act: Act2, formation: Column,
+        slots: [(classes: ["class.freighter", "class.oiler", "class.coaster", "class.tanker"], min: 3, max: 4)]),
+    // The Amble fuel run: oilers only.
+    (id: "fleet.act2.convoy.oilers", kind: Convoy, act: Act2, formation: Column,
+        slots: [(classes: ["class.oiler"], min: 3, max: 4)]),
+    (id: "fleet.act2.convoy.prize", kind: Convoy, act: Act2, formation: Column,
+        slots: [(classes: ["class.freighter", "class.oiler"], min: 1, max: 2)]),
+    (id: "fleet.act2.convoy.moored", kind: Convoy, act: Act2, formation: Column,
+        slots: [(classes: ["class.oiler", "class.freighter", "class.supply_tender"], min: 1, max: 1)]),
+    // The defector: an aviso whose crew brings out the air-raid codes.
+    (id: "fleet.act2.convoy.defector", kind: Convoy, act: Act2, formation: Column,
+        slots: [(classes: ["class.aviso"], min: 1, max: 1)]),
+    // ---- Escorts ------------------------------------------------------------------------------------------------
+    // Convoy escort: worst draw 639 + 348 + 3 x 283 = 1,836 t in 5 hulls.
+    (id: "fleet.act2.escort.convoy", kind: Escort, act: Act2, formation: Screen,
+        slots: [(classes: ["class.bond"], min: 1, max: 1), (classes: ["class.premium"], min: 1, max: 1),
+            (classes: ["class.warrant", "class.warrant_b", "class.indenture"], min: 3, max: 3)]),
+    // ---- Patrols and garrisons ----------------------------------------------------------------------------------
+    // 216 + 93 = 309 t in 2 hulls at least.
+    (id: "fleet.act2.patrol", kind: Patrol, act: Act2, formation: LineAbreast,
+        slots: [(classes: ["class.warrant", "class.aviso"], min: 1, max: 2), (classes: ["class.gunboat_b", "class.fac", "class.missile_boat"], min: 1, max: 2)]),
+    // 639 + 2 x 283 = 1,205 t in 3 hulls at least.
+    (id: "fleet.act2.patrol.heavy", kind: Patrol, act: Act2, formation: Wedge,
+        slots: [(classes: ["class.bond"], min: 1, max: 1), (classes: ["class.warrant", "class.indenture"], min: 2, max: 3)]),
+    // 2 x 252 + 93 = 597 t in 3 hulls at least.
+    (id: "fleet.act2.garrison", kind: Garrison, act: Act2, formation: Box,
+        slots: [(classes: ["class.warrant", "class.patrol_corvette"], min: 2, max: 3), (classes: ["class.gunboat_b", "class.fac"], min: 1, max: 2),
+            (classes: ["class.aviso", "class.minesweeper"], min: 0, max: 1)]),
+    // ---- Aircraft -----------------------------------------------------------------------------------------------
+    (id: "fleet.act2.air", kind: AirPatrol, act: Act2, slots: [], bodies: [("aircraft.strike", 2)]),
+    (id: "fleet.act2.air.strike", kind: AirPatrol, act: Act2, slots: [], bodies: [("aircraft.strike", 4)]),
+    // ---- Aces ---------------------------------------------------------------------------------------------------
+    // Ace flagships sail alone in their own group, so a duel's objective is the ace's ship and nothing else.
+    (id: "fleet.act2.ace.indemnity", kind: Patrol, act: Act2, formation: Column,
+        slots: [(classes: ["class.ace_indemnity"], min: 1, max: 1)]),
+    (id: "fleet.act2.ace.commission", kind: Patrol, act: Act2, formation: Column,
+        slots: [(classes: ["class.ace_commission"], min: 1, max: 1)]),
+    // ---- Task groups (5 hulls, at least 1,600 t on the worst draw) ------------------------------------------------
+    // 639 + 2 x 283 + 348 + 252 = 1,805 t.
+    (id: "fleet.act2.tg.gun", kind: TaskGroup, act: Act2, formation: Wedge,
+        slots: [(classes: ["class.bond"], min: 1, max: 1), (classes: ["class.warrant", "class.warrant_b"], min: 2, max: 2),
+            (classes: ["class.indenture", "class.premium"], min: 1, max: 1), (classes: ["class.patrol_corvette", "class.escort_corvette"], min: 1, max: 1)]),
+    // 2 x 368 + 639 + 2 x 321 = 2,017 t.
+    (id: "fleet.act2.tg.strike", kind: TaskGroup, act: Act2, formation: LineAbreast,
+        slots: [(classes: ["class.indenture"], min: 2, max: 2), (classes: ["class.bond"], min: 1, max: 1),
+            (classes: ["class.missile_corvette", "class.premium"], min: 2, max: 2)]),
+    // 2 x 348 + 639 + 2 x 216 = 1,767 t.
+    (id: "fleet.act2.tg.screen", kind: TaskGroup, act: Act2, formation: Screen,
+        slots: [(classes: ["class.premium"], min: 2, max: 2), (classes: ["class.bond"], min: 1, max: 1),
+            (classes: ["class.warrant", "class.aviso"], min: 2, max: 2)]),
+    // 797 + 639 + 348 + 2 x 283 = 2,350 t.
+    (id: "fleet.act2.tg.heavy", kind: TaskGroup, act: Act2, formation: Column,
+        slots: [(classes: ["class.mortgage"], min: 1, max: 1), (classes: ["class.bond", "class.bond_b"], min: 1, max: 1),
+            (classes: ["class.indenture", "class.premium"], min: 1, max: 1), (classes: ["class.warrant", "class.warrant_b"], min: 2, max: 2)]),
+    // Hunter-killer: 2 x 797 + 2 x 639 + 348 = 3,220 t. The Alert 5 hunter group itself is drawn from hull records
+    // of the top tier (theatre alert); this template sails in standalone operations and as the heaviest wave.
+    (id: "fleet.act2.hunter", kind: HunterKiller, act: Act2, formation: Wedge,
+        slots: [(classes: ["class.mortgage"], min: 2, max: 2), (classes: ["class.bond", "class.bond_b"], min: 2, max: 2),
+            (classes: ["class.premium"], min: 1, max: 1)]),
+]

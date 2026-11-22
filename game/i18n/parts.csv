@@ -1,0 +1,170 @@
+keys,?context,en
+part.gun.20mm.single.name,Part name in the editor tray,20 mm gun
+part.gun.20mm.single.desc,Part tooltip; first sentence 12 words or fewer,"Light 20 mm mount, 450 rounds a minute, 600 ready rounds. Cheap and light, but its rounds scatter beyond 1 km."
+part.gun.30mm.single.name,Part name in the editor tray,30 mm gun
+part.gun.30mm.single.desc,Part tooltip; first sentence 12 words or fewer,"Stabilised 30 mm mount, 200 rounds a minute, 400 ready rounds. Tighter groups than the 20 mm and twice its endurance."
+part.gun.40mm.single.name,Part name in the editor tray,40 mm gun
+part.gun.40mm.single.desc,Part tooltip; first sentence 12 words or fewer,"Turreted 40 mm gun, 300 rounds a minute, 300 ready rounds. Accurate to 3 km, with the elevation to engage air targets."
+part.gun.57mm.single.name,Part name in the editor tray,57 mm gun
+part.gun.57mm.single.desc,Part tooltip; first sentence 12 words or fewer,"Medium gun, 180 rounds a minute from 120 ready rounds. Fires fast and wide, fed from a 57 mm magazine through a hoist."
+part.gun.76mm.single.name,Part name in the editor tray,76 mm gun
+part.gun.76mm.single.desc,Part tooltip; first sentence 12 words or fewer,"Medium gun, 100 rounds a minute, accurate to 8 km. Fed from a 76 mm magazine through a hoist."
+part.gun.100mm.single.name,Part name in the editor tray,100 mm gun
+part.gun.100mm.single.desc,Part tooltip; first sentence 12 words or fewer,"Large gun, 60 rounds a minute, defeats 80 mm armour up close. Light enough for a 400 t hull."
+part.gun.127mm.single.name,Part name in the editor tray,127 mm gun
+part.gun.127mm.single.desc,Part tooltip; first sentence 12 words or fewer,"Large gun, 40 rounds a minute, the tightest groups to 12 km. Fed from a 127 mm magazine through a hoist."
+part.magazine.57mm.name,Part name in the editor tray,57 mm magazine
+part.magazine.57mm.desc,Part tooltip; first sentence 12 words or fewer,"Holds 300 rounds (1,830 kg) for a 57 mm gun. Watertight; a fire beside it sets it off unless it is flooded."
+part.magazine.76mm.name,Part name in the editor tray,76 mm magazine
+part.magazine.76mm.desc,Part tooltip; first sentence 12 words or fewer,"Holds 144 rounds (1,800 kg) for a 76 mm gun. Watertight; a fire beside it sets it off unless it is flooded."
+part.magazine.100mm.name,Part name in the editor tray,100 mm magazine
+part.magazine.100mm.desc,Part tooltip; first sentence 12 words or fewer,"Holds 200 rounds (4,640 kg) for a 100 mm gun. Watertight; a fire beside it sets it off unless it is flooded."
+part.magazine.127mm.name,Part name in the editor tray,127 mm magazine
+part.magazine.127mm.desc,Part tooltip; first sentence 12 words or fewer,"Holds 300 rounds (13,500 kg) for a 127 mm gun. Watertight; a fire beside it sets it off unless it is flooded."
+part.hoist.ammunition.name,Part name in the editor tray,Ammunition hoist
+part.hoist.ammunition.desc,Part tooltip; first sentence 12 words or fewer,Feeds a gun from its magazine at 200 rounds a minute. Place it between the magazine and the mount.
+part.launcher.ashm.light.name,Part name in the editor tray,Light anti-ship missiles
+part.launcher.ashm.light.desc,Part tooltip; first sentence 12 words or fewer,"Twin canisters of light anti-ship missiles, 30 km range. Active radar seekers that chaff and towed decoys can draw off."
+part.launcher.ashm.heavy.name,Part name in the editor tray,Heavy anti-ship missiles
+part.launcher.ashm.heavy.desc,Part tooltip; first sentence 12 words or fewer,"Four canisters of heavy anti-ship missiles, 70 km range. Infrared seekers home on engine heat and emit nothing."
+part.launcher.sam.name,Part name in the editor tray,SAM launcher
+part.launcher.sam.desc,Part tooltip; first sentence 12 words or fewer,"Eight vertical cells of surface-to-air missiles, 25 km range. Mount it below deck with the hatches flush."
+part.launcher.pd.name,Part name in the editor tray,Point-defence missiles
+part.launcher.pd.desc,Part tooltip; first sentence 12 words or fewer,"Trainable launcher of eight point-defence missiles, 10 km range. Fires at inbound missiles under a fire-control lock."
+part.tube.torpedo.light.name,Part name in the editor tray,Light torpedo tubes
+part.tube.torpedo.light.desc,Part tooltip; first sentence 12 words or fewer,"Trainable triple tubes for 324 mm torpedoes, 8 km at 40 kn. Mount them at the deck edge."
+part.tube.torpedo.heavy.name,Part name in the editor tray,Heavy torpedo tubes
+part.tube.torpedo.heavy.desc,Part tooltip; first sentence 12 words or fewer,"Twin tubes for wire-guided 533 mm torpedoes, 15 km at 45 kn. One hit amidships sinks a small craft."
+part.gun.ciws.20mm.name,Part name in the editor tray,Point-defence gun
+part.gun.ciws.20mm.desc,Part tooltip; first sentence 12 words or fewer,"Six-barrel 20 mm gun, 4,500 rounds a minute at inbound missiles. Needs a fire-control radar for its lock."
+part.decoy.chaff.name,Part name in the editor tray,Chaff launcher
+part.decoy.chaff.desc,Part tooltip; first sentence 12 words or fewer,"Fires 2-round salvos of radar chaff, 12 rounds in all. Each cloud draws radar seekers off for up to 60 s."
+part.decoy.flare.name,Part name in the editor tray,Flare launcher
+part.decoy.flare.desc,Part tooltip; first sentence 12 words or fewer,"Fires 2-round salvos of infrared flares, 24 rounds in all. Each flare draws infrared seekers off for 5 s."
+part.decoy.smoke.name,Part name in the editor tray,Smoke launcher
+part.decoy.smoke.desc,Part tooltip; first sentence 12 words or fewer,"Lays a smoke screen 120 m across, 4 rounds in all. Smoke blocks sight and infrared but not radar."
+part.decoy.towed.name,Part name in the editor tray,Towed decoy
+part.decoy.towed.desc,Part tooltip; first sentence 12 words or fewer,Streams a decoy 200 m astern against torpedoes and radar seekers. Mount it at the stern.
+part.bay.drone.rotor.name,Part name in the editor tray,Rotor drone bay
+part.bay.drone.rotor.desc,Part tooltip; first sentence 12 words or fewer,"Two camera drones, 25 minutes aloft and 10 km of reach. Recharges a returned drone in 2 minutes."
+part.bay.drone.fixed.name,Part name in the editor tray,Fixed-wing drone catapult
+part.bay.drone.fixed.desc,Part tooltip; first sentence 12 words or fewer,"Two fixed-wing drones with camera and ESM, 90 minutes aloft. A second bearing fixes the range of a passive contact."
+part.deck.heli.name,Part name in the editor tray,Helicopter deck
+part.deck.heli.desc,Part tooltip; first sentence 12 words or fewer,"Landing pad for the stock helicopter, flown by an officer. Search radar, camera and two light torpedoes, 2 hours aloft."
+part.radar.nav.name,Part name in the editor tray,Navigation radar
+part.radar.nav.desc,Part tooltip; first sentence 12 words or fewer,"Rotating surface radar, 20 km against a 100 m² target. ESM hears it out to 40 km."
+part.radar.lpi.name,Part name in the editor tray,Low-intercept radar
+part.radar.lpi.desc,Part tooltip; first sentence 12 words or fewer,"Quiet rotating radar, 12 km against a 100 m² target. ESM hears it only out to 24 km."
+part.radar.search.name,Part name in the editor tray,Search radar
+part.radar.search.desc,Part tooltip; first sentence 12 words or fewer,"Rotating air and surface radar, 40 km against a 100 m² target. Heavy and power-hungry, so fit it high on a big hull."
+part.radar.fire_control.name,Part name in the editor tray,Fire-control radar
+part.radar.fire_control.desc,Part tooltip; first sentence 12 words or fewer,"Tracking radar, 25 km against a 100 m² target. Its lock lets guns and point defence fire on the best track."
+part.sensor.esm.name,Part name in the editor tray,ESM receiver
+part.sensor.esm.desc,Part tooltip; first sentence 12 words or fewer,"Hears every radar within the horizon and gives its bearing. Passive, so it never gives you away."
+part.sensor.eo.name,Part name in the editor tray,Day and night camera
+part.sensor.eo.desc,Part tooltip; first sentence 12 words or fewer,Stabilised camera turret that doubles visual range. Gives the guns a passive track when the radars are off.
+part.sonar.passive.name,Part name in the editor tray,Passive sonar
+part.sonar.passive.desc,Part tooltip; first sentence 12 words or fewer,"Hull sonar that hears engines and torpedoes, 8 km at reference noise. Hears nothing above 25 kn."
+part.sonar.active.name,Part name in the editor tray,Active sonar
+part.sonar.active.desc,Part tooltip; first sentence 12 words or fewer,"Pinging hull sonar for mines and hulls, 4 km against 100 m². Every passive sonar nearby hears the ping."
+part.engine.diesel.small.name,Part name in the editor tray,Small diesel
+part.engine.diesel.small.desc,Part tooltip; first sentence 12 words or fewer,"1,000 kW diesel, 0.07 L/s at full power. Light and frugal."
+part.engine.diesel.large.name,Part name in the editor tray,Large diesel
+part.engine.diesel.large.desc,Part tooltip; first sentence 12 words or fewer,"3,000 kW diesel, 0.2 L/s at full power. The main engine for craft up to 400 t."
+part.engine.turbine.name,Part name in the editor tray,Gas turbine
+part.engine.turbine.desc,Part tooltip; first sentence 12 words or fewer,"20,000 kW gas turbine, 1.5 L/s at full power. Light for its power, but slow to spool up and thirsty."
+part.motor.electric.name,Part name in the editor tray,Electric motor
+part.motor.electric.desc,Part tooltip; first sentence 12 words or fewer,"800 kW drive powered by the generators and batteries. Quiet, and it burns no fuel itself."
+part.prop.small.name,Part name in the editor tray,Small propeller
+part.prop.small.desc,Part tooltip; first sentence 12 words or fewer,"Takes up to 3,500 kW of shaft power. Fit it below the waterline ahead of a rudder."
+part.prop.large.name,Part name in the editor tray,Large propeller
+part.prop.large.desc,Part tooltip; first sentence 12 words or fewer,"Takes up to 15,000 kW and stays quiet to 24 kn. For hulls of 400 t and up."
+part.waterjet.name,Part name in the editor tray,Waterjet
+part.waterjet.desc,Part tooltip; first sentence 12 words or fewer,"Takes up to 3,000 kW and steers 30° without a rudder. Adds no draft, so it suits shallow water."
+part.rudder.small.name,Part name in the editor tray,Small rudder
+part.rudder.small.desc,Part tooltip; first sentence 12 words or fewer,"0.8 m² rudder, 35° each way. Place it behind a propeller."
+part.rudder.large.name,Part name in the editor tray,Large rudder
+part.rudder.large.desc,Part tooltip; first sentence 12 words or fewer,"7 m² rudder, 35° each way, for large hulls."
+part.gen.diesel.small.name,Part name in the editor tray,Small generator
+part.gen.diesel.small.desc,Part tooltip; first sentence 12 words or fewer,"150 kW diesel generator, 0.012 L/s at full load."
+part.gen.diesel.large.name,Part name in the editor tray,Large generator
+part.gen.diesel.large.desc,Part tooltip; first sentence 12 words or fewer,"800 kW diesel generator, 0.058 L/s at full load."
+part.battery.name,Part name in the editor tray,Battery
+part.battery.desc,Part tooltip; first sentence 12 words or fewer,250 kWh at up to 500 kW. Carries the load when generators are lost or shut down.
+part.tank.fuel.small.name,Part name in the editor tray,Small fuel tank
+part.tank.fuel.small.desc,Part tooltip; first sentence 12 words or fewer,"2,000 L of fuel in a watertight tank. A hit nearby can start a fire."
+part.tank.fuel.large.name,Part name in the editor tray,Large fuel tank
+part.tank.fuel.large.desc,Part tooltip; first sentence 12 words or fewer,"12,000 L of fuel in a watertight tank. A hit nearby can start a fire."
+part.console.bridge.name,Part name in the editor tray,Bridge console
+part.console.bridge.desc,Part tooltip; first sentence 12 words or fewer,"Commands the ship's systems. If it is lost, every part falls back to local control."
+part.director.fire_control.name,Part name in the editor tray,Fire-control director
+part.director.fire_control.desc,Part tooltip; first sentence 12 words or fewer,Lets the guns in its kit use a fire-control radar's lock.
+part.berths.crew.name,Part name in the editor tray,Crew berths
+part.berths.crew.desc,Part tooltip; first sentence 12 words or fewer,"Four berths. Every 4 berths crew one damage-control team, up to 6 teams."
+part.pump.small.name,Part name in the editor tray,Small pump
+part.pump.small.desc,Part tooltip; first sentence 12 words or fewer,Pumps 0.05 m³/s out of its own or an adjacent compartment.
+part.pump.large.name,Part name in the editor tray,Large pump
+part.pump.large.desc,Part tooltip; first sentence 12 words or fewer,Pumps 0.15 m³/s out of its own or an adjacent compartment.
+part.door.watertight.name,Part name in the editor tray,Watertight door
+part.door.watertight.desc,Part tooltip; first sentence 12 words or fewer,Joins two compartments through a bulkhead. Closed in action unless you open it.
+part.ballast.tank.name,Part name in the editor tray,Ballast tank
+part.ballast.tank.desc,Part tooltip; first sentence 12 words or fewer,"Holds up to 4,000 kg of water to trim the hull. Set low, it also lowers the centre of gravity."
+part.mast.pole.name,Part name in the editor tray,Pole mast
+part.mast.pole.desc,Part tooltip; first sentence 12 words or fewer,8 m pole that lifts an antenna for a longer horizon.
+part.mast.lattice.name,Part name in the editor tray,Lattice mast
+part.mast.lattice.desc,Part tooltip; first sentence 12 words or fewer,12 m lattice mast with room for a large radar.
+part.mast.enclosed.name,Part name in the editor tray,Enclosed mast
+part.mast.enclosed.desc,Part tooltip; first sentence 12 words or fewer,8 m composite mast with a fifth of steel's radar return. For hulls that must stay unseen.
+part.funnel.name,Part name in the editor tray,Funnel
+part.funnel.desc,Part tooltip; first sentence 12 words or fewer,Leads engine exhaust clear of the deck.
+part.rail.mine.name,Part name in the editor tray,Mine rail
+part.rail.mine.desc,Part tooltip; first sentence 12 words or fewer,"Lays 8 influence mines off the stern, one every 50 m. Draw the line on the plot table."
+part.davit.rhib.name,Part name in the editor tray,RHIB davit
+part.davit.rhib.desc,Part tooltip; first sentence 12 words or fewer,"Launches and recovers a RHIB for insertion, extraction and rescue."
+part.davit.boarding.name,Part name in the editor tray,Boarding kit
+part.davit.boarding.desc,Part tooltip; first sentence 12 words or fewer,RHIB davit with berths for a boarding team of 6. Captures a disabled ship within 200 m.
+part.net.recovery.name,Part name in the editor tray,Recovery net
+part.net.recovery.desc,Part tooltip; first sentence 12 words or fewer,Hauls survivors aboard at the ship's side.
+part.berths.passenger.name,Part name in the editor tray,Passenger berths
+part.berths.passenger.desc,Part tooltip; first sentence 12 words or fewer,"Six berths for passengers. If the compartment floods or burns, they are lost."
+part.mast.camera.name,Part name in the editor tray,Camera mast
+part.mast.camera.desc,Part tooltip; first sentence 12 words or fewer,"Trainable camera, 10° field of view and 6 km range. Used for photo reconnaissance."
+part.crane.name,Part name in the editor tray,Crane
+part.crane.desc,Part tooltip; first sentence 12 words or fewer,"Lifts cargo and boats over the side, 6 m reach."
+part.jammer.name,Part name in the editor tray,Jammer
+part.jammer.desc,Part tooltip; first sentence 12 words or fewer,"Hides the ship from a 40 km radar until 10 km. It radiates, so ESM can hear it."
+munition.missile.ashm.light.name,Weapon or small-body name on track cards and the plot,Light anti-ship missile
+munition.missile.ashm.heavy.name,Weapon or small-body name on track cards and the plot,Heavy anti-ship missile
+munition.missile.sam.name,Weapon or small-body name on track cards and the plot,Surface-to-air missile
+munition.missile.pd.name,Weapon or small-body name on track cards and the plot,Point-defence missile
+munition.torpedo.light.name,Weapon or small-body name on track cards and the plot,Light torpedo
+munition.torpedo.heavy.name,Weapon or small-body name on track cards and the plot,Heavy torpedo
+munition.mine.influence.name,Weapon or small-body name on track cards and the plot,Influence mine
+munition.charge.depth.name,Weapon or small-body name on track cards and the plot,Depth charge
+munition.drone.rotor.name,Weapon or small-body name on track cards and the plot,Rotor drone
+munition.drone.fixed.name,Weapon or small-body name on track cards and the plot,Fixed-wing drone
+munition.aircraft.strike.name,Weapon or small-body name on track cards and the plot,Strike aircraft
+munition.helicopter.utility.name,Weapon or small-body name on track cards and the plot,Helicopter
+munition.boat.rhib.name,Weapon or small-body name on track cards and the plot,RHIB
+part.gun.130mm.single.name,Part name in the editor tray,130 mm gun
+part.gun.130mm.single.desc,Part tooltip; first sentence 12 words or fewer,"Heavy gun, 25 rounds a minute, defeats 80 mm armour at any range out to 18 km. A 30 t mount."
+part.gun.155mm.single.name,Part name in the editor tray,155 mm gun
+part.gun.155mm.single.desc,Part tooltip; first sentence 12 words or fewer,"Heavy gun, 10 rounds a minute, the tightest groups to 18 km. A 46 t mount."
+part.gun.155mm.twin.name,Part name in the editor tray,Twin 155 mm turret
+part.gun.155mm.twin.desc,Part tooltip; first sentence 12 words or fewer,"Two heavy guns in one turret, 16 rounds a minute to 18 km. A 78 t mount for a 900 t hull."
+part.magazine.130mm.name,Part name in the editor tray,130 mm magazine
+part.magazine.130mm.desc,Part tooltip; first sentence 12 words or fewer,"Holds 240 rounds (12,000 kg) for a 130 mm gun. Watertight; a fire beside it sets it off unless it is flooded."
+part.magazine.155mm.name,Part name in the editor tray,155 mm magazine
+part.magazine.155mm.desc,Part tooltip; first sentence 12 words or fewer,"Holds 160 rounds (11,200 kg) for 155 mm guns. Watertight; a fire beside it sets it off unless it is flooded."
+part.rack.depth_charge.name,Part name in the editor tray,Depth-charge rack
+part.rack.depth_charge.desc,Part tooltip; first sentence 12 words or fewer,"Rolls 10 depth charges off the stern, two patterns of five. Each sinks at 3 m/s to its set depth."
+part.gun.130mm.twin.name,Part name in the editor tray,Twin 130 mm turret
+part.gun.130mm.twin.desc,Part tooltip; first sentence 12 words or fewer,"Two 130 mm guns in one turret, 40 rounds a minute. Reaches 18 km; a 52 t mount for a 1,800 t hull."
+part.launcher.sam.large.name,Part name in the editor tray,Large surface-to-air launcher
+part.launcher.sam.large.desc,Part tooltip; first sentence 12 words or fewer,"Sixteen-cell vertical launcher for surface-to-air missiles, set flush with the deck. Twice the cells of the standard launcher."
+part.radar.search.long.name,Part name in the editor tray,Long-range search radar
+part.radar.search.long.desc,Part tooltip; first sentence 12 words or fewer,"Search radar reaching 60 km against a 100 m² target. Its large antenna turns at 15 rpm, so contacts refresh more slowly."
+part.engine.turbine.large.name,Part name in the editor tray,Large gas turbine
+part.engine.turbine.large.desc,Part tooltip; first sentence 12 words or fewer,"30,000 kW gas turbine for 1,800 t hulls. Needs two large propellers or nine small ones to take its power."
+part.gen.turbine.name,Part name in the editor tray,Gas-turbine generator
+part.gen.turbine.desc,Part tooltip; first sentence 12 words or fewer,"2,000 kW of electrical power in 8 t. Burns more fuel per kilowatt than the diesel sets."

@@ -1,0 +1,63 @@
+keys,?context,en
+campaign_menu.slots.title,Campaign saves screen title,Campaigns
+campaign_menu.slots.start,Button that opens campaign setup,Start a campaign
+campaign_menu.back_to_menu,Button that returns to the main menu,Back to the menu
+campaign_menu.slots.error,Shown when the campaign saves could not be read,The campaign saves could not be read. You can still start a campaign.
+campaign_menu.slots.empty,Shown when there is no campaign save,No campaign saves yet.
+campaign_menu.slots.start_first,Large button shown when there is no campaign save,Start your first campaign
+campaign_menu.slots.unnamed,Name shown for a save with an empty name,Unnamed campaign
+campaign_menu.slots.suspend_name,Name of the suspend save row; {0} the campaign name,"{0}, suspended sortie"
+campaign_menu.slots.players,Co-op save row sentence; {0} the comma-separated player names,Played by {0}.
+campaign_menu.slots.unreadable,Save row line when this build cannot read the save and gave no reason,This build cannot read this save.
+campaign_menu.slots.suspend_note,Line on the suspend save row,Quitting mid-sortie wrote this save. Resuming it deletes it.
+campaign_menu.slots.resume,Button on the suspend save row,Resume sortie
+campaign_menu.slots.load,Button that loads a campaign save,Load campaign
+campaign_menu.slots.discard,Button that deletes the suspend save,Discard suspended sortie
+campaign_menu.slots.delete,Button that deletes a campaign save,Delete campaign
+campaign_menu.delete.title,Dialog title before deleting a save; {0} the campaign name,Delete {0}?
+campaign_menu.discard.title,Dialog title before deleting the suspend save; {0} the campaign name,Discard the suspended sortie of {0}?
+campaign_menu.discard.body,Dialog body before deleting the suspend save,The campaign keeps its last full save. The sortie in progress is lost.
+campaign_menu.delete.body,Dialog body before deleting a campaign save,The save is deleted from this computer and cannot be recovered.
+campaign_menu.delete.body_ironman,Dialog body before deleting an Ironman save,This Ironman campaign has one save. Deleting it ends the campaign for good.
+campaign_menu.discard.confirm,Dialog button that deletes the suspend save,Discard the sortie
+campaign_menu.delete.confirm,Dialog button that deletes the campaign save,Delete campaign
+campaign_menu.delete.keep,Dialog button that keeps the save,Keep it
+campaign_menu.delete.failed_title,Dialog title when a save could not be deleted,The save was not deleted
+campaign_menu.delete.failed_body,Dialog body when a save could not be deleted,The file could not be removed. Check that no other program has it open.
+campaign_menu.new.title,Campaign setup screen title,Start a campaign
+campaign_menu.back,Button that leaves campaign setup without starting,Back
+campaign_menu.new.start,Button that starts the campaign with the chosen setup,Start the campaign
+campaign_menu.new.name,Campaign setup section heading and field name,Campaign name
+campaign_menu.new.default_name,Default campaign name; {0} a number,Campaign {0}
+campaign_menu.new.difficulty,Campaign setup section heading,Difficulty
+campaign_menu.new.custom,Shown beside the presets when the sliders match none of them,Custom difficulty
+campaign_menu.new.difficulty.help,Line under the difficulty presets,Damage is the same physical model at every difficulty.
+campaign_menu.new.sliders,Section title over the six difficulty sliders under the presets,Difficulty in detail
+campaign_menu.slider.ai_accuracy,Difficulty slider name,AI aim error
+campaign_menu.slider.ai_accuracy.help,Line under the AI aim error slider,1.0x matches your own stock officers; higher misses more.
+campaign_menu.slider.ai_reaction_s,Difficulty slider name,AI reaction time
+campaign_menu.slider.ai_reaction_s.help,Line under the AI reaction time slider,Time from detection to the enemy's first response; lower is harder.
+campaign_menu.slider.adaptation_cadence,Difficulty slider name,Adaptation pace
+campaign_menu.slider.adaptation_cadence.help,Line under the adaptation pace slider,How fast the enemy's doctrine cards learn your methods.
+campaign_menu.slider.hull_count,Difficulty slider name,Enemy hull count
+campaign_menu.slider.hull_count.help,Line under the hull count slider,Persistent enemy ships across the theatre.
+campaign_menu.slider.economy,Difficulty slider name,Salvage income
+campaign_menu.slider.economy.help,Line under the salvage income slider,Multiplies the Salvage every operation pays.
+campaign_menu.slider.clock_days,Difficulty slider name,Operation clock
+campaign_menu.slider.clock_days.help,Line under the operation clock slider,Days each act's operation clock allows.
+campaign_menu.slider.locks,Line under a slider that cannot change after the start,Locks when the campaign starts: it sizes the theatre.
+campaign_menu.value.times,Slider value as a multiplier; {0} a number,{0}x
+campaign_menu.value.hulls,Slider value; {0} a number of ships,{0} hulls
+campaign_menu.value.days,Slider value; {0} a number of days,{0} days
+campaign_menu.new.rules,Campaign setup section heading,Rules
+campaign_menu.new.ironman,Toggle name for the Ironman rule,Ironman
+campaign_menu.new.ironman.help,Line under the Ironman toggle,"Ironman keeps one rolling save, and a lost hull cannot be rebuilt. All six sliders lock at the start, and the campaign ends when no hull remains."
+campaign_menu.new.starter,Campaign setup section heading for the first hull,First hull
+campaign_menu.new.starter.unread,Shown when the starter hulls could not be read,The starter hulls could not be read. The campaign starts with the 22 m fast attack craft.
+campaign_menu.new.starter.facts,"Starter tile line; {0} length, {1} displacement, {2} build cost","{0}, {1}, {2}"
+campaign_menu.new.seed,Campaign setup section heading and field name,Seed
+campaign_menu.new.seed.placeholder,Placeholder of the empty seed field,Random
+campaign_menu.new.seed.help,Line under the seed field,Leave it blank for a random theatre. The same seed builds the same theatre.
+campaign_menu.new.name_needed,Shown when the campaign name is empty,Give the campaign a name.
+campaign_menu.new.loading,Loading cover while the campaign is built,Building the theatre
+campaign_menu.new.failed,Shown when the campaign could not start and gave no reason,The campaign could not start.

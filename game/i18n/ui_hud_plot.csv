@@ -1,0 +1,37 @@
+keys,?context,en
+hud_plot.access.plot,Screen-reader name of the plot table panel,Plot table
+hud_plot.access.tools,Screen-reader name of the plot table tool column,Plot tools
+hud_plot.tool.orders,Plot tool: clicks designate and set course,Orders
+hud_plot.tool.orders_tooltip,Tooltip of the orders tool,Click a track to designate it; right-click the sea to set course
+hud_plot.tool.measure,Plot tool: bearing and range between two points,Measure
+hud_plot.tool.measure_tooltip,Tooltip of the measure tool,Click two points for the bearing and range between them
+hud_plot.tool.mine_line,Plot tool: draw the line to lay mines along,Draw mine line
+hud_plot.tool.mine_line_tooltip,Tooltip of the mine line tool,Drop one mine every 50 m along the line at 6 kn or more
+hud_plot.zoom_in,Accessible name of the closer-scale button,Closer scale
+hud_plot.zoom_out,Accessible name of the farther-scale button,Wider scale
+hud_plot.zoom_in_tooltip,Tooltip of the closer-scale button,Less area in more detail
+hud_plot.zoom_out_tooltip,Tooltip of the farther-scale button,More area in less detail
+hud_plot.scale.across,Plot scale readout; {0} the distance the plot shows from edge to edge,{0} across
+hud_plot.scale.tooltip,"Tooltip of the scale readout; {0} the step number, {1} the number of steps",Scale step {0} of {1}
+hud_plot.follow,Button that centres the plot on the own ship and follows it,Centre on own ship
+hud_plot.follow_tooltip,Tooltip of the centre button,Keeps the own ship centred until you pan
+hud_plot.layers,Button that shows the plot layer toggles,Layers
+hud_plot.layers_title,Title of the plot layer panel,Layers
+hud_plot.legend,Button that shows or hides the plot legend,Legend
+hud_plot.legend_title,Title of the plot legend,Legend
+hud_plot.legend_empty,Plot legend with nothing drawn yet,Nothing drawn yet
+hud_plot.layer.tracks,Plot layer toggle,Tracks
+hud_plot.layer.uncertainty,Plot layer toggle: track uncertainty shapes,Uncertainty
+hud_plot.layer.envelopes,Plot layer toggle: weapon range rings,Weapon ranges
+hud_plot.layer.emitters,Plot layer toggle: enemy emitters radiating,Emitters
+hud_plot.layer.route,Plot layer toggle: planned route,Route
+hud_plot.layer.rings,Plot layer toggle: range rings around the own ship,Range rings
+hud_plot.layer.graticule,Plot layer toggle: distance grid,Grid
+hud_plot.layer.history,Plot layer toggle: where tracks have been,Track history
+hud_plot.layer.land,Plot layer toggle: coast and shallows,Land
+hud_plot.layer.objectives,Plot layer toggle: objective markers,Objectives
+hud_plot.layer.mines,Plot layer toggle: laid mines,Mines
+hud_plot.layer.allies,Plot layer toggle: allied ships,Allies
+hud_plot.layer.labels,Plot layer toggle: track labels,Labels
+hud_plot.hover.line,"Hover list line of a track whose label is hidden; {0} its accessible name, {1} range","{0}, {1}"
+hud_plot.hover.more,Last line of the hover list; {0} how many more hidden labels,and {0} more

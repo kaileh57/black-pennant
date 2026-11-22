@@ -1,0 +1,149 @@
+// WeaponTables (DESIGN.md L555-604, L516-527). Unit `data-weapons-materials` owns this file; gate fallbacks
+// rewrite rows here by script commit (L620).
+//
+// Bands: the spec's penetration table (L565-570) as inputs. `ref_muzzle_mps` is the spec's reference shell for
+// the band, and `drag_k` is `sim_core::projectiles::fit_drag_k` of the row (`cargo xtask fit-drag` keeps it
+// within 5% of the fit): the shell leaves at `ref_muzzle_mps` and lands at the cap range with the far-range
+// penetration as its fit target.
+//
+// Munitions: the spec's starting values (L586-597) for speed, range, fuse, B and r; the rest is design data.
+// Torpedo speeds are 40 kn = 20.6 m/s and 45 kn = 23.2 m/s. Missile kinematic ranges are the table's figures;
+// engagement uses 80% of them (L584). `cost` is the Salvage price of one round bought to cover a shortfall:
+// a full reload of a fitted hull lands near 5% of its build cost (L820). Later-act rows carry their phase.
+(
+    bands: [
+        (band: Auto, p_1km_mm: 20.0, p_cap_mm: 8.0, cap_range_m: 3000.0, fuse_delay_cells: 1, path_k: 2, he_b: 4, he_r_cells: 1, ref_muzzle_mps: 1050.0, drag_k: 3.263095e-4),
+        (band: Medium, p_1km_mm: 45.0, p_cap_mm: 25.0, cap_range_m: 8000.0, fuse_delay_cells: 2, path_k: 3, he_b: 6, he_r_cells: 2, ref_muzzle_mps: 925.0, drag_k: 6.021760e-5),
+        (band: Large, p_1km_mm: 90.0, p_cap_mm: 55.0, cap_range_m: 12000.0, fuse_delay_cells: 4, path_k: 4, he_b: 8, he_r_cells: 3, ref_muzzle_mps: 850.0, drag_k: 3.235526e-5),
+        (band: Heavy, p_1km_mm: 150.0, p_cap_mm: 100.0, cap_range_m: 18000.0, fuse_delay_cells: 6, path_k: 4, he_b: 8, he_r_cells: 5, ref_muzzle_mps: 880.0, drag_k: 1.736585e-5),
+    ],
+    munitions: [
+        // Light anti-ship missile, 410 kg class (L588). Active radar seeker at the spec's 12 km reference: chaff
+        // and towed decoys seduce it, ESM hears it once it switches on, and it finds a hull that has stopped. It
+        // is the Act 1 missile, so the chaff and towed-decoy gates (L616-617) run against it.
+        (
+            id: "missile.ashm.light", name: "munition.missile.ashm.light.name", kind: AntiShipMissile, phase: Slice, domain: Weapon,
+            speed_mps: 270.0, range_m: 30000.0, max_accel: 100.0, cruise_alt_m: 5.0,
+            fuse: Penetrate(armour_mm: 40.0, delay_cells: 2), he_b: 8, he_r_cells: 4,
+            seeker: ActiveRadar, seeker_r_ref_m: 12000.0, seeker_fov_half_deg: 30.0, pn_n: 3.0,
+            radius_m: 0.5, hp: 1, rcs_m2: 0.1, mass_kg: 410.0, cost: 8, model: "body.missile", icon: "part_missile",
+        ),
+        // Heavy anti-ship missile, 700 kg class (L589). Imaging infrared seeker: it sees a hull by its propulsion
+        // power (range = seeker_r_ref x sqrt(MW), L524), so flares seduce it, it emits nothing for ESM to hear,
+        // and a hull lying stopped is hard for it to find. A 150 t craft at 4 MW shows at 12 km.
+        (
+            id: "missile.ashm.heavy", name: "munition.missile.ashm.heavy.name", kind: AntiShipMissile, phase: R010, domain: Weapon,
+            speed_mps: 290.0, range_m: 70000.0, max_accel: 120.0, cruise_alt_m: 5.0,
+            fuse: Penetrate(armour_mm: 40.0, delay_cells: 4), he_b: 8, he_r_cells: 6,
+            seeker: Infrared, seeker_r_ref_m: 6000.0, seeker_fov_half_deg: 30.0, pn_n: 3.0,
+            radius_m: 0.5, hp: 1, rcs_m2: 0.1, mass_kg: 700.0, cost: 20, model: "body.missile", icon: "part_missile",
+        ),
+        // Surface-to-air missile (L590): 8 m proximity fuse against air targets, autocannon-band values against
+        // hulls. 280 kg, 40 g manoeuvre.
+        (
+            id: "missile.sam", name: "munition.missile.sam.name", kind: Sam, phase: R010, domain: Weapon,
+            speed_mps: 600.0, range_m: 25000.0, max_accel: 400.0, cruise_alt_m: 0.0,
+            fuse: Proximity(radius_m: 8.0), he_b: 4, he_r_cells: 1,
+            seeker: ActiveRadar, seeker_r_ref_m: 12000.0, seeker_fov_half_deg: 30.0, pn_n: 4.0,
+            radius_m: 0.5, hp: 1, rcs_m2: 0.1, mass_kg: 280.0, cost: 6, model: "body.missile", icon: "part_missile",
+        ),
+        // Point-defence missile (L591): 5 m proximity fuse, 75 kg, 50 g manoeuvre.
+        (
+            id: "missile.pd", name: "munition.missile.pd.name", kind: PdMissile, phase: R010, domain: Weapon,
+            speed_mps: 700.0, range_m: 10000.0, max_accel: 500.0, cruise_alt_m: 0.0,
+            fuse: Proximity(radius_m: 5.0), he_b: 4, he_r_cells: 1,
+            seeker: ActiveRadar, seeker_r_ref_m: 12000.0, seeker_fov_half_deg: 30.0, pn_n: 4.0,
+            radius_m: 0.5, hp: 1, rcs_m2: 0.05, mass_kg: 75.0, cost: 3, model: "body.missile", icon: "part_missile",
+        ),
+        // Light torpedo, 324 mm, 300 kg (L592). Straight run to the predicted position, then an active acoustic
+        // seeker: 1.5 km against 100 m^2 of submerged area, about 1.1 km against a 150 t craft.
+        (
+            id: "torpedo.light", name: "munition.torpedo.light.name", kind: Torpedo, phase: R010, domain: Weapon,
+            speed_mps: 20.6, range_m: 8000.0, max_accel: 8.0, cruise_alt_m: -8.0,
+            fuse: Contact, he_b: 8, he_r_cells: 4,
+            seeker: ActiveAcoustic, seeker_r_ref_m: 1500.0, seeker_fov_half_deg: 30.0, pn_n: 3.0,
+            radius_m: 0.2, hp: 1, rcs_m2: 0.0, noise: 1.0, mass_kg: 300.0, cost: 6, model: "body.torpedo", icon: "part_underwater",
+        ),
+        // Heavy torpedo, 533 mm, 1,500 kg (L593). Wire-guided run-out at 1 Hz, then a 2.5 km acoustic seeker.
+        (
+            id: "torpedo.heavy", name: "munition.torpedo.heavy.name", kind: Torpedo, phase: R010, domain: Weapon,
+            speed_mps: 23.2, range_m: 15000.0, max_accel: 6.0, cruise_alt_m: -10.0,
+            fuse: Contact, he_b: 8, he_r_cells: 7,
+            seeker: ActiveAcoustic, seeker_r_ref_m: 2500.0, seeker_fov_half_deg: 30.0, pn_n: 3.0, wire_guided: true,
+            radius_m: 0.3, hp: 1, rcs_m2: 0.0, noise: 1.0, mass_kg: 1500.0, cost: 15, model: "body.torpedo", icon: "part_underwater",
+        ),
+        // Moored influence mine laid by mine rails (L594, L796). The 0.56 m sphere gives about 1 m^2 of
+        // submerged area, which active sonar finds at about 1.3 km (L454). Silent.
+        (
+            id: "mine.influence", name: "munition.mine.influence.name", kind: Mine, phase: R010, domain: Weapon,
+            speed_mps: 0.0, range_m: 0.0, max_accel: 0.0, cruise_alt_m: 0.0,
+            fuse: Influence(radius_m: 10.0), he_b: 8, he_r_cells: 6,
+            seeker: None,
+            radius_m: 0.56, hp: 1, rcs_m2: 0.0, mass_kg: 500.0, cost: 2, model: "body.mine", icon: "part_underwater",
+        ),
+        // Depth charge, Act 3 with the AI submarines (L551, L595): sinks at 3 m/s to its set depth; the negative
+        // cruise altitude is the default set depth of 50 m (10 to 150 m).
+        (
+            id: "charge.depth", name: "munition.charge.depth.name", kind: DepthCharge, phase: Act3, domain: Weapon,
+            speed_mps: 3.0, range_m: 0.0, max_accel: 0.0, cruise_alt_m: -50.0,
+            fuse: Depth(sink_mps: 3.0), he_b: 8, he_r_cells: 6,
+            seeker: None,
+            radius_m: 0.3, hp: 1, rcs_m2: 0.0, mass_kg: 180.0, cost: 1, model: "body.depth_charge", icon: "part_underwater",
+        ),
+        // Small rotor drone (L549, L597): 1 m sphere, 2 hit points, 0.5 m^2. Short legs and a gimballed day and
+        // night camera; launched and recharged from a deck bay.
+        (
+            id: "drone.rotor", name: "munition.drone.rotor.name", kind: Drone, phase: R010, domain: Air,
+            speed_mps: 20.0, range_m: 10000.0, max_accel: 8.0, cruise_alt_m: 150.0,
+            fuse: None, he_b: 0, he_r_cells: 0,
+            seeker: None,
+            radius_m: 1.0, hp: 2, rcs_m2: 0.5, mass_kg: 20.0, cost: 4,
+            sensors: [(kind: Camera, r_ref_m: 10000.0, rate_hz: 2.0, fov_half_deg: 180.0)],
+            endurance_s: 1500.0, model: "body.drone_rotor", icon: "part_offboard",
+        ),
+        // Catapult-launched fixed-wing drone: longer legs, higher, and an ESM receiver, so a lone ship gets a
+        // second bearing to fix a passive contact's range (L553).
+        (
+            id: "drone.fixed", name: "munition.drone.fixed.name", kind: Drone, phase: R010, domain: Air,
+            speed_mps: 30.0, range_m: 40000.0, max_accel: 10.0, cruise_alt_m: 400.0,
+            fuse: None, he_b: 0, he_r_cells: 0,
+            seeker: None,
+            radius_m: 1.0, hp: 2, rcs_m2: 0.5, mass_kg: 25.0, cost: 10,
+            sensors: [(kind: Camera, r_ref_m: 10000.0, rate_hz: 2.0, fov_half_deg: 180.0), (kind: Esm, r_ref_m: 0.0, rate_hz: 2.0, fov_half_deg: 180.0)],
+            endurance_s: 5400.0, model: "body.drone", icon: "part_offboard",
+        ),
+        // Combine strike aircraft, Act 2 (L866-875, L597): 5 m sphere, 6 hit points, 5 m^2. A nose radar and two
+        // light anti-ship missiles; ingress low.
+        (
+            id: "aircraft.strike", name: "munition.aircraft.strike.name", kind: Aircraft, phase: Act2, domain: Air,
+            speed_mps: 220.0, range_m: 400000.0, max_accel: 60.0, cruise_alt_m: 150.0,
+            fuse: None, he_b: 0, he_r_cells: 0,
+            seeker: None,
+            radius_m: 5.0, hp: 6, rcs_m2: 5.0, mass_kg: 12000.0, cost: 150,
+            sensors: [(kind: SearchRadar, r_ref_m: 70000.0, rate_hz: 5.0, fov_half_deg: 60.0, emitter: "radar.air.strike")],
+            payload: [("missile.ashm.light", 2)],
+            endurance_s: 5400.0, model: "body.aircraft", icon: "part_offboard",
+        ),
+        // The stock helicopter an officer flies from the Act 2 helicopter deck (L551): search radar, camera and
+        // two light torpedoes.
+        (
+            id: "helicopter.utility", name: "munition.helicopter.utility.name", kind: Helicopter, phase: Act2, domain: Air,
+            speed_mps: 65.0, range_m: 150000.0, max_accel: 10.0, cruise_alt_m: 150.0,
+            fuse: None, he_b: 0, he_r_cells: 0,
+            seeker: None,
+            radius_m: 4.0, hp: 5, rcs_m2: 3.0, mass_kg: 5000.0, cost: 120,
+            sensors: [(kind: SearchRadar, r_ref_m: 30000.0, rate_hz: 5.0, fov_half_deg: 180.0, emitter: "radar.heli.x"), (kind: Camera, r_ref_m: 10000.0, rate_hz: 2.0, fov_half_deg: 180.0)],
+            payload: [("torpedo.light", 2)],
+            endurance_s: 7200.0, model: "body.helicopter", icon: "part_offboard",
+        ),
+        // RHIB for insertion, extraction, boarding and recovery (L786-797): 30 kn and an hour of fuel.
+        (
+            id: "boat.rhib", name: "munition.boat.rhib.name", kind: Rhib, phase: R010, domain: Surface,
+            speed_mps: 15.0, range_m: 0.0, max_accel: 3.0, cruise_alt_m: 0.0,
+            fuse: None, he_b: 0, he_r_cells: 0,
+            seeker: None,
+            radius_m: 3.0, hp: 2, rcs_m2: 1.0, noise: 0.1, mass_kg: 1800.0, cost: 10,
+            endurance_s: 3600.0, model: "body.rhib", icon: "part_special_ops",
+        ),
+    ],
+)

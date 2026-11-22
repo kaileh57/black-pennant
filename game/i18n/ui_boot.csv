@@ -1,0 +1,25 @@
+keys,?context,en
+boot.consent.title,First-run question about crash reports; the only question on the screen,Send crash reports?
+boot.consent.intro,"First-run consent screen. Names the processor, region and retention (DESIGN.md L1330-1334)","If the game crashes, it can send a report so the fault can be found and fixed. Reports go to Sentry in its EU region and are kept for 30 days. Nothing is sent unless you choose Send."
+boot.consent.contents,Heading of the list of what a crash report holds,A report holds:
+boot.consent.change,Where the player can change the choice later,You can change this at any time in Settings under Privacy.
+boot.consent.send,Consent button that turns crash reports on; same weight as Don't send,Send
+boot.consent.dont_send,Consent button that keeps crash reports off; same weight as Send,Don't send
+boot.consent.item.stack_trace,Crash report contents list item,Stack trace
+boot.consent.item.minidump,Crash report contents list item,Minidump of the crashed process
+boot.consent.item.os,Crash report contents list item,Operating system and version
+boot.consent.item.gpu,Crash report contents list item,GPU model and vendor
+boot.consent.item.driver,Crash report contents list item,GPU driver version
+boot.consent.item.renderer,Crash report contents list item,Rendering method and driver
+boot.consent.item.fallbacks,Crash report contents list item: renderer fallbacks taken at start-up,Renderer fallback history
+boot.consent.item.tier,Crash report contents list item,Graphics quality tier
+boot.consent.item.build,Crash report contents list item,Build id
+boot.consent.item.role,Crash report contents list item: whether this game hosted or joined,Host or client role
+boot.consent.item.pipelines,Crash report contents list item: shader pipelines compiled after loading,Pipeline compilations after load
+boot.consent.item.install_id,Crash report contents list item: random id created when reporting starts,A random installation id
+boot.safe_mode.notice,"Persistent notice in safe mode (Compatibility renderer, DESIGN.md L1270)",Safe mode: the GPU driver lacks Direct3D 12 and Vulkan support. Update the driver. This mode is unsupported.
+boot.quality.loading,First-launch graphics check: the test scene is loading,Loading the graphics check
+boot.quality.measuring,"First-launch graphics check: measuring frame times to choose graphics settings, about 20 seconds",Measuring this machine to choose graphics settings
+boot.warmup.status,Precompile screen while every material and effect is drawn once,Preparing shaders
+boot.join.failed_title,Dialog title when the --join code on the command line does not parse,Join code not recognised
+boot.join.failed_body,Dialog body when the --join code does not parse,Check the code and join again from Multiplayer.

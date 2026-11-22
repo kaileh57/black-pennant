@@ -1,0 +1,106 @@
+# Fuzzing of the L4 Luau host (DESIGN.md L377-390, L2125-2142). Free GitHub-hosted Linux x64 runner only.
+# - Pull requests that touch the Luau host or the mlua pin: each target for 120 s.
+# - Nightly: each target in its own 5.5-hour job, -fork=4 -max_total_time=19800 (22 CPU-hours per target).
+# - Weekly (Sunday's nightly): `cargo fuzz cmin` minimises the cached corpus after the run.
+# A crash fails the job and uploads the input; it then becomes a regression test in
+# `script::luau::tests::fuzz_regressions_pass_every_oracle`, which runs on every platform.
+name: fuzz
+
+on:
+  pull_request:
+    paths:
+      - 'crates/sim-systems/src/script/**'
+      - 'crates/sim-systems/Cargo.toml'
+      - 'fuzz/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/fuzz.yml'
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: fuzz-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_FUZZ_VERSION: 0.13.1
+  MLUA_PIN: 0.12.2
+
+jobs:
+  fuzz:
+    name: fuzz (${{ matrix.target }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [host_api, script_source]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pinned nightly
+        run: |
+          NIGHTLY=$(sed -n 's/^channel = "\(.*\)"/\1/p' fuzz/rust-toolchain.toml)
+          rustup toolchain install "$NIGHTLY" --profile minimal --component llvm-tools-preview
+          echo "NIGHTLY=$NIGHTLY" >> "$GITHUB_ENV"
+      - name: cargo-fuzz
+        run: cargo +"$NIGHTLY" install cargo-fuzz --version "$CARGO_FUZZ_VERSION" --locked
+      - name: Clang matching rustc's LLVM, sanitizer flags for the vendored Luau
+        run: |
+          LLVM=$(rustc +"$NIGHTLY" -vV | sed -n 's/^LLVM version: \([0-9]*\).*/\1/p')
+          if ! command -v "clang-$LLVM" >/dev/null; then
+            wget -q https://apt.llvm.org/llvm.sh && sudo bash llvm.sh "$LLVM"
+          fi
+          {
+            echo "CC=clang-$LLVM"
+            echo "CXX=clang++-$LLVM"
+            echo "CFLAGS=-fsanitize=address,fuzzer-no-link"
+            echo "CXXFLAGS=-fsanitize=address,fuzzer-no-link"
+            echo "LLVM_MAJOR=$LLVM"
+          } >> "$GITHUB_ENV"
+      - name: Corpus cache
+        uses: actions/cache@v4
+        with:
+          path: fuzz/corpus/${{ matrix.target }}
+          key: fuzz-${{ matrix.target }}-mlua-${{ env.MLUA_PIN }}-${{ github.run_id }}
+          restore-keys: fuzz-${{ matrix.target }}-mlua-${{ env.MLUA_PIN }}-
+      - name: Seed corpus (Luau conformance scripts, MIT)
+        if: matrix.target == 'script_source'
+        run: |
+          mkdir -p fuzz/corpus/script_source
+          if [ -z "$(ls -A fuzz/corpus/script_source)" ]; then
+            git clone --depth 1 https://github.com/luau-lang/luau /tmp/luau
+            cp /tmp/luau/tests/conformance/*.luau fuzz/corpus/script_source/ 2>/dev/null || true
+            cp /tmp/luau/tests/conformance/*.lua fuzz/corpus/script_source/ 2>/dev/null || true
+          fi
+      - name: Build
+        run: cargo +"$NIGHTLY" fuzz build ${{ matrix.target }}
+      - name: Luau objects are instrumented
+        run: |
+          libs=$(find fuzz/target -name 'libluau*.a' | sort -u)
+          [ -n "$libs" ] || { echo "no Luau static libraries found"; exit 1; }
+          for l in $libs; do
+            nm "$l" 2>/dev/null | grep -q '__asan' || { echo "$l lacks __asan symbols"; exit 1; }
+            nm "$l" 2>/dev/null | grep -q '__sanitizer_cov' || { echo "$l lacks __sanitizer_cov symbols"; exit 1; }
+          done
+      - name: Run
+        run: |
+          mkdir -p fuzz/corpus/${{ matrix.target }}
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            ARGS="-max_total_time=120"
+          else
+            ARGS="-fork=4 -max_total_time=19800"
+          fi
+          cargo +"$NIGHTLY" fuzz run ${{ matrix.target }} fuzz/corpus/${{ matrix.target }} -- -dict=fuzz/host_api.dict $ARGS
+      - name: Minimise the corpus (weekly)
+        if: github.event_name == 'schedule' && success()
+        run: |
+          if [ "$(date -u +%u)" = "7" ]; then cargo +"$NIGHTLY" fuzz cmin ${{ matrix.target }} fuzz/corpus/${{ matrix.target }}; fi
+      - name: Upload crash inputs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-artifacts-${{ matrix.target }}-${{ github.run_id }}
+          path: fuzz/artifacts/${{ matrix.target }}
+          if-no-files-found: ignore

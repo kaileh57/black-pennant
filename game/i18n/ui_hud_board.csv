@@ -1,0 +1,46 @@
+keys,?context,en
+hud_board.title,Title of the Bridge Board docked at the right of the sortie HUD,Bridge board
+hud_board.access,Screen-reader name of the Bridge Board,Bridge board: officers' tasks and control
+hud_board.waiting,Bridge Board before the own ship first reports in,The officers report once the ship is under way.
+hud_board.state.officer,Control state of an officer's role while the officer drives it,Officer
+hud_board.state.player,Control state of an officer's role while the player holds it,Player
+hud_board.next,Bridge Board line with an officer's next action; {0} the action,Next: {0}
+hud_board.role.officer,Screen-reader name of a takeover button while the officer drives the role; {0} the role such as Helm or Weapons group 1,{0}: officer
+hud_board.role.player,Screen-reader name of a takeover button while the player holds the role; {0} the role,{0}: player
+hud_board.role.take_helm,Button that takes the helm by hand,Take helm
+hud_board.role.release_helm,Button that hands the helm back to the officer,Release helm
+hud_board.role.take_sensors,Button that takes the sensors by hand,Take sensors
+hud_board.role.release_sensors,Button that hands the sensors back to the officer,Release sensors
+hud_board.role.group,"Toggle that takes a weapons group by hand or hands it back; {0} the group number, its state shows as the A chip or hand glyph",Group {0}
+hud_board.role.take,Button that takes another role by hand; {0} the role,Take {0}
+hud_board.role.release,Button that hands another role back; {0} the role,Release {0}
+hud_board.role.take_tip,Tooltip of a takeover button; {0} the role,Takes {0} by hand; press again to hand it back
+hud_board.role.release_tip,Tooltip of a takeover button while the player holds the role; {0} the role,Hands {0} back to the officer
+hud_board.overrides.count,Button showing how many values the player changed from the design; {0} the count,{0} overridden
+hud_board.overrides.tip,Tooltip of the overrides button,Lists each value against its default with revert
+hud_board.overrides.access,Screen-reader name of the overrides button; {0} the officer billet and {1} the count,"{0}, {1} values overridden"
+hud_board.overrides.open,Screen-reader state of the overrides button while its list is open,List open
+hud_board.overrides.closed,Screen-reader state of the overrides button while its list is closed,List closed
+hud_board.diff.none,Override list when nothing differs from the design,Every value matches the design.
+hud_board.diff.values,One overridden value against its default; {0} the design value and {1} the current value,"Design {0}, now {1}"
+hud_board.diff.revert,Button that puts one value back to the design,Revert
+hud_board.diff.revert_tip,Tooltip of the revert button; {0} the design value,Back to {0}
+hud_board.diff.revert_access,Screen-reader name of a revert button; {0} the value's name and {1} the design value,"Revert {0} to {1}"
+hud_board.diff.revert_all,Button that puts every value of one officer back to the design,Revert all
+hud_board.diff.revert_all_tip,Tooltip of the revert-all button,Puts every value of this officer back to the design
+hud_board.emcon.state,Sensors group line naming the emission control state; {0} Silent Burst or Active,Emission control: {0}
+hud_board.emcon.cycle,Shortcut hint label for the key that steps through emission control states,Next state
+hud_board.emitters.none,Sensors group line when no own emitter radiates,No emitters radiating
+hud_board.emitters.radiating,Sensors group line listing the own emitters radiating now; {0} the part names,Radiating: {0}
+hud_board.emitters.part,Name of an emitter the HUD cannot name otherwise; {0} its part number,Part {0}
+hud_board.esm_warning,Bridge Board warning computed from player knowledge (L511),Enemy ESM has probably detected you
+hud_board.lines.access,Screen-reader name of the officer and ace radio lines box,Radio
+hud_board.lines.row_access,Screen-reader text of one radio line; {0} the speaker and {1} the line,"{0}: {1}"
+hud_board.why.access,Screen-reader name of the Why? popup; {0} the part's name,Why: {0}
+hud_board.why.back,Tooltip and screen-reader name of the Why? popup's back button,Back to the previous part
+hud_board.why.close,Tooltip and screen-reader name of the Why? popup's close button,Close
+hud_board.why.none,Why? popup when the part has nothing to explain,Working normally; nothing holds this part.
+hud_board.why.part_tip,Tooltip of a Why? link that names another part; {0} that part,Asks why of {0}
+hud_board.why.node_tip,Tooltip of a Why? link that names a graph node,Opens the node or control layer responsible
+hud_board.why.unknown_part,Why? popup title when the part is not known,Part
+hud_board.why.part_number,Why? popup title for a part with no name; {0} its number,Part {0}

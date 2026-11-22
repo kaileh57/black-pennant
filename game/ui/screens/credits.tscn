@@ -1,0 +1,122 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/screens/credits.gd" id="1"]
+
+[node name="Credits" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Backing" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Column" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="Margin/Column"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Margin/Column/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"ScreenTitle"
+text = "credits.title"
+autowrap_mode = 3
+
+[node name="Close" type="Button" parent="Margin/Column/Header"]
+custom_minimum_size = Vector2(200, 48)
+layout_mode = 2
+size_flags_vertical = 4
+text = "credits.close"
+
+[node name="Rule" type="HSeparator" parent="Margin/Column"]
+layout_mode = 2
+
+[node name="Body" type="HBoxContainer" parent="Margin/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="AboutScroll" type="ScrollContainer" parent="Margin/Column/Body"]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="About" type="VBoxContainer" parent="Margin/Column/Body/AboutScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MadeBy" type="Label" parent="Margin/Column/Body/AboutScroll/About"]
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+theme_type_variation = &"Body"
+text = "credits.made_by"
+autowrap_mode = 3
+
+[node name="Disclosure" type="Label" parent="Margin/Column/Body/AboutScroll/About"]
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+theme_type_variation = &"Body"
+text = "credits.disclosure"
+autowrap_mode = 3
+
+[node name="Assets" type="Label" parent="Margin/Column/Body/AboutScroll/About"]
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+theme_type_variation = &"Body"
+text = "credits.assets"
+autowrap_mode = 3
+
+[node name="Blueprints" type="Label" parent="Margin/Column/Body/AboutScroll/About"]
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+theme_type_variation = &"Body"
+text = "credits.blueprints"
+autowrap_mode = 3
+
+[node name="Build" type="Label" parent="Margin/Column/Body/AboutScroll/About"]
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+theme_type_variation = &"Dense"
+autowrap_mode = 3
+
+[node name="Divider" type="VSeparator" parent="Margin/Column/Body"]
+layout_mode = 2
+
+[node name="Licences" type="VBoxContainer" parent="Margin/Column/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LicencesTitle" type="Label" parent="Margin/Column/Body/Licences"]
+layout_mode = 2
+theme_type_variation = &"PanelTitle"
+text = "credits.licences"
+autowrap_mode = 3
+
+[node name="List" type="ItemList" parent="Margin/Column/Body/Licences"]
+custom_minimum_size = Vector2(0, 240)
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.6
+
+[node name="Text" type="RichTextLabel" parent="Margin/Column/Body/Licences"]
+layout_mode = 2
+size_flags_vertical = 3
+focus_mode = 2
+selection_enabled = true

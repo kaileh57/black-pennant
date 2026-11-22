@@ -1,0 +1,31 @@
+[package]
+name = "server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[[bin]]
+name = "black-pennant-server"
+path = "src/main.rs"
+
+[features]
+default = []
+steam = ["net/steam"]
+# L4 Luau scripts (DESIGN.md L355-390): builds sim-systems with its mlua-backed ScriptHost.
+luau = ["sim-systems/luau"]
+
+[dependencies]
+content.workspace = true
+sim-core.workspace = true
+sim-systems.workspace = true
+net.workspace = true
+rayon.workspace = true
+ron.workspace = true
+serde.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+# Thread CPU clock for `reference-battle --cpu-clock` (clock_gettime).
+libc = "0.2"

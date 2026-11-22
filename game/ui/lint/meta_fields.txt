@@ -1,0 +1,12 @@
+# Data fields a Meta line may bind to (L1578). One field per line: <scene path>#<node path> = <source>.
+# Scene paths are res:// or game/ relative; node paths are Godot's get_node_path without "./", e.g.
+#   res://ui/hud/track_card.tscn#Header/HullNumber = track.hull_number
+# The source names the sim or content value the line shows (track or hull number, date-time group,
+# "Mission 3 of 7"). A Meta label (theme_type_variation Meta) with no row here fails ui.eyebrow, and so does
+# a row whose scene node is gone or is not a Meta label. Read by cargo xtask lint and
+# res://test/lint/lint_rules.gd.
+ui/widgets/meta_line.tscn#. = template only: each scene that instances MetaLine binds its own node here
+res://ui/screens/briefing.tscn#Margin/Column/Header/Dtg = briefing.dtg: date-time group of the commit hour (BriefingDict.dtg)
+res://ui/screens/after_action.tscn#Margin/Column/Header/Outcome = after_action.outcome: the sortie outcome word (AfterActionDict.outcome)
+res://ui/screens/sortie_end.tscn#Scroll/Center/Panel/Margin/Column/Header/Meta = sortie_end.meta: game mode and sortie duration (SessionDict.kind, SummaryDict.duration_s)
+res://ui/tutorial/tutorial_overlay.tscn#Card/Margin/Column/Footer/Progress = tutorial.step: step number and step count of the running tutorial, "Step 3 of 11" (TutorialStepDict.index, count)

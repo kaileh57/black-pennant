@@ -1,0 +1,26 @@
+keys,?context,en
+splash.side.ship,Splash basin side name of the player's ship,Your ship
+splash.side.targets,Splash basin side name of the drones or patrol boat,Targets
+splash.tip.train_limit,"Splash report tip; {0} is the mount",{0} could not train onto the target: move it or clear its arc
+splash.tip.elevation_limit,"Splash report tip; {0} is the mount",{0} could not raise or lower its barrels far enough: move it or widen its limits
+splash.tip.masked,"Splash report tip; {0} is the mount",Own structure blocked the line of fire of {0}: move the mount or the structure
+splash.tip.out_of_range,"Splash report tip; {0} is the mount",Targets stayed beyond the range of {0}: close the range or fit a longer-ranged weapon
+splash.tip.power,"Splash report tip; {0} is the mount",{0} lost power in the fight: add generation or raise its power priority
+splash.tip.ammunition,"Splash report tip; {0} is the mount",{0} ran short of ready ammunition: add a magazine or a faster hoist
+splash.tip.slewing,"Splash report tip; {0} is the mount",{0} spent the fight slewing: fit a faster mount or keep the target on one side
+splash.tip.damaged,"Splash report tip; {0} is the mount",{0} was knocked out: armour it or spread the weapons apart
+splash.tip.emcon,Splash report tip,EMCON kept the fire-control radar silent: set EMCON to burst or active for this fight
+splash.tip.no_solution,"Splash report tip; {0} is the mount",{0} found no firing solution: check its range and add a fire-control radar
+splash.tip.identification,Splash report tip,Officers waited for a better track before firing: designate the target or relax the doctrine
+splash.tip.gauge.float,Splash report tip from the Float gauge,Stability is marginal: lower the weight carried high or widen the beam
+splash.tip.gauge.speed,Splash report tip from the Speed gauge,Top speed is low for this hull: add propulsion power or shed weight
+splash.tip.gauge.power,Splash report tip from the Power gauge,Power runs short in combat: add generation or a battery
+splash.tip.gauge.punch,Splash report tip from the Punch gauge,Weight of fire is light: add a weapon or a larger calibre
+splash.tip.gauge.sight,Splash report tip from the Sight gauge,Radar coverage has blind sectors: raise the radar or move it clear of the masts
+splash.tip.gauge.resilience,Splash report tip from the Resilience gauge,One or two flooded compartments put her under: add bulkheads
+splash.tip.gauge.endurance,Splash report tip from the Endurance gauge,Range at cruise is short: add fuel or a more economical engine
+splash.tip.gauge.complexity,Splash report tip from the Complexity gauge,Complexity is high: simplify the graph or remove parts
+splash.tip.no_shots,Splash report tip,No weapon fired: check that a weapon can reach and see the targets
+splash.tip.low_hit_rate,"Splash report tip; {0} is the share of shots that hit",Only {0} of shots hit: close the range or add a fire-control radar
+splash.tip.heavy_damage,"Splash report tip; {0} is the share of cells lost",The ship lost {0} of her cells: add armour where the hits landed
+splash.tip.none,Splash report tip when nothing stood out,Nothing stood out: try rougher water or the patrol boat

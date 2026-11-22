@@ -1,0 +1,27 @@
+// Stock kit (DESIGN.md L140). Unit `data-kits-act1`. Licensed CC BY 4.0.
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.decoys",
+    version: 1,
+    hash: "",
+    name: "Chaff and flares",
+    name_key: "kit.decoys.name",
+    description_key: "kit.decoys.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "decoy.chaff", offset: (x: 0, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+        (part: "decoy.flare", offset: (x: 0, y: 0, z: 2), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "deck", offset: (x: 1, y: 0, z: 1), face: YNeg),
+    ],
+    settings: [],
+    graph: (),
+    officer: None,
+    tags: [],
+    tray_order: 22,
+)

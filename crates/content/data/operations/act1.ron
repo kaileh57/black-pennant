@@ -1,0 +1,361 @@
+// Vec<OperationDef>: Act 1 operations (DESIGN.md L778-807, L85-102). Unit `data-operations-act1`. Licensed CC BY 4.0.
+//
+// The eleven templates, four story operations, two ace duels, the capstone and the tutorial sortie. Every
+// operation commits at least 5 hostile combat hulls and 600 t on its force's worst draw (minimum count of the
+// lightest class per slot; convoys, prizes, moored hulls and defectors do not count), so the generator never
+// needs a reinforcement wave in Act 1. Two exceptions: hunter-group survival, whose threat is the theatre's hunter
+// group records (standalone, the generator's waves make up the multiples), and the tutorial sortie's single
+// patrol boat, a first lesson rather than a campaign operation. The numbers per operation are in the comments.
+//
+// Templates name map markers from the shared vocabulary every theatre node map carries (spawn, enemy, enemy_2,
+// objective, lane, exit, convoy_entry, convoy_exit, survivors, berth, landing, depot, radar), so they play on
+// any node the generator places them at. Story operations, duels and the capstone use their node's map.
+//
+// Tiers: Blind Crane Head opens tier 2 and Kessel toll tier 3 (acts.ron). Templates and story operations that
+// need a tier 2 part (RHIB davit, passenger berths, mine rail, camera mast) wait for the first; those that need
+// the tier 3 boarding kit wait for the second. Every story unlock has a theatre-condition path and a progress
+// path, so the act can never stall on Supply or Alert alone.
+//
+// Constraint tag limits (draft, cross-section) are first values for the Fit Check gates to calibrate: the
+// cross-section scale is not fixed until sim-core's projected areas exist. Approach distances are the authored
+// values the sortie-length fallback scales within 50% to 150% (L85-90).
+[
+    // =========================================================================================================
+    // Templates
+    // =========================================================================================================
+    // Commitment: convoy escort 2 x 252 + 3 x 54 = 666 t, 5 hulls.
+    (
+        id: "op.act1.convoy_raid", kind: Template(ConvoyRaid), act: Act1,
+        name: "op.act1.convoy_raid.name", briefing: "op.act1.convoy_raid.briefing",
+        objective: DestroyGroup(tag: "convoy", fraction: 0.6),
+        tags: [MinSpeed(kn: 26.0), Range(min_km: 200.0)],
+        ghosts: [(kind: NoRadarEmissions, reward: Intel(1)), (kind: UnderTime(seconds: 1500), reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act1.convoy", marker: "convoy_entry", tag: "convoy"),
+            (fleet: "fleet.act1.escort.convoy", marker: "convoy_entry", tag: "escort"),
+        ],
+        complications: [None, DecoyConvoy, WeatherTurns(to: Rain, at_s: 900), Reinforcements(fleet: "fleet.act1.patrol", at_s: 1200), CivilianTraffic],
+        approach_m: 14000.0,
+        declared_hostile: ["class.patrol_corvette", "class.escort_corvette"],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment: garrison 2 x 24 + 90 = 138 t (3 hulls) + gun task group 649 t (5) = 787 t, 8 hulls.
+    (
+        id: "op.act1.depot_strike", kind: Template(DepotStrike), act: Act1,
+        name: "op.act1.depot_strike.name", briefing: "op.act1.depot_strike.briefing",
+        objective: DestroySite(marker: "depot"),
+        tags: [Range(min_km: 250.0), DraftLimit(max_m: 3.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoHullDamage, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act1.garrison", marker: "depot", tag: "garrison"),
+            (fleet: "fleet.act1.tg.gun", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: FogBank, at_s: 600), Minefield, Reinforcements(fleet: "fleet.act1.patrol.heavy", at_s: 900)],
+        approach_m: 12000.0,
+    ),
+    // Commitment: garrison 138 t (3) + screen task group 767 t (5) = 905 t, 8 hulls.
+    (
+        id: "op.act1.radar_decapitation", kind: Template(RadarDecapitation), act: Act1,
+        name: "op.act1.radar_decapitation.name", briefing: "op.act1.radar_decapitation.briefing",
+        objective: DestroySite(marker: "radar"),
+        tags: [RcsLimit(max_m2: 80.0), Range(min_km: 200.0)],
+        ghosts: [(kind: NoRadarEmissions, reward: Intel(1)), (kind: NeverDetected, reward: Intel(2))],
+        force: [
+            (fleet: "fleet.act1.garrison", marker: "radar", tag: "garrison"),
+            (fleet: "fleet.act1.tg.screen", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: Haze, at_s: 600), CivilianTraffic, Reinforcements(fleet: "fleet.act1.patrol", at_s: 900)],
+        approach_m: 12000.0,
+        actions: [InsertOrExtract],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment: patrol 2 x 24 + 54 = 102 t (3) + gun task group 649 t (5) = 751 t, 8 hulls.
+    (
+        id: "op.act1.agent_extraction", kind: Template(AgentExtraction), act: Act1,
+        name: "op.act1.agent_extraction.name", briefing: "op.act1.agent_extraction.briefing",
+        unlock: Completed(["op.act1.story.blind_crane"]),
+        objective: Extract(marker: "landing", passengers: 2),
+        tags: [Passengers(count: 2, allowed_losses: 0), Requires(RhibDavit), RcsLimit(max_m2: 120.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act1.patrol", marker: "enemy_2", tag: "patrol"),
+            (fleet: "fleet.act1.tg.gun", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: FogBank, at_s: 300), CivilianTraffic],
+        approach_m: 11000.0,
+        actions: [InsertOrExtract, CarryPassengers],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment: heavy patrol 252 + 2 x 54 = 360 t (3) + strike task group 671 t (5) = 1,031 t, 8 hulls.
+    (
+        id: "op.act1.minelaying", kind: Template(Minelaying), act: Act1,
+        name: "op.act1.minelaying.name", briefing: "op.act1.minelaying.briefing",
+        unlock: Completed(["op.act1.story.blind_crane"]),
+        objective: LayMines(marker: "lane", count: 6),
+        tags: [Requires(MineRail), Range(min_km: 150.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act1.patrol.heavy", marker: "lane", tag: "patrol"),
+            (fleet: "fleet.act1.tg.strike", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: Rain, at_s: 600), DecoyConvoy],
+        approach_m: 12000.0,
+        actions: [LayMines],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment: convoy escort 666 t, 5 hulls (the prize hulls do not count).
+    (
+        id: "op.act1.prize_capture", kind: Template(PrizeCapture), act: Act1,
+        name: "op.act1.prize_capture.name", briefing: "op.act1.prize_capture.briefing",
+        unlock: Completed(["op.act1.story.kessel_toll"]),
+        objective: Capture(tag: "prize"),
+        tags: [Requires(BoardingKit), Range(min_km: 150.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(1)), (kind: UnderTime(seconds: 1800), reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act1.convoy.prize", marker: "convoy_entry", tag: "prize"),
+            (fleet: "fleet.act1.escort.convoy", marker: "convoy_entry", tag: "escort"),
+        ],
+        complications: [None, DecoyConvoy, WeatherTurns(to: Overcast, at_s: 600)],
+        approach_m: 12000.0,
+        actions: [BoardAndCapture],
+        declared_hostile: ["class.patrol_corvette", "class.escort_corvette"],
+    ),
+    // Commitment: gun task group 649 t (5) + patrol 102 t (3) = 751 t, 8 hulls (the defector does not count).
+    (
+        id: "op.act1.defector_escort", kind: Template(DefectorEscort), act: Act1,
+        name: "op.act1.defector_escort.name", briefing: "op.act1.defector_escort.briefing",
+        unlock: Completed(["op.act1.story.blind_crane"]),
+        objective: Escort(tag: "defector", exit: "exit"),
+        tags: [Passengers(count: 3, allowed_losses: 1), MinSpeed(kn: 24.0), Range(min_km: 200.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(1)), (kind: NeverDetected, reward: Intel(2))],
+        force: [
+            (fleet: "fleet.act1.convoy.defector", marker: "objective", tag: "defector", stance: Neutral),
+            (fleet: "fleet.act1.tg.gun", marker: "enemy", tag: "pursuit"),
+            (fleet: "fleet.act1.patrol", marker: "enemy_2", tag: "patrol"),
+        ],
+        complications: [None, WeatherTurns(to: Rain, at_s: 600), Reinforcements(fleet: "fleet.act1.patrol", at_s: 900)],
+        approach_m: 10000.0,
+        actions: [CarryPassengers],
+    ),
+    // Commitment: gun task group 649 t (5) + patrol 102 t (3) = 751 t, 8 hulls.
+    (
+        id: "op.act1.feint", kind: Template(Feint), act: Act1,
+        name: "op.act1.feint.name", briefing: "op.act1.feint.briefing",
+        objective: Feint(hold_s: 300),
+        tags: [MinSpeed(kn: 28.0), Range(min_km: 200.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(1)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act1.tg.gun", marker: "enemy", tag: "task_group"),
+            (fleet: "fleet.act1.patrol", marker: "enemy_2", tag: "patrol"),
+        ],
+        complications: [None, WeatherTurns(to: Haze, at_s: 300), Reinforcements(fleet: "fleet.act1.patrol.heavy", at_s: 600)],
+        approach_m: 10000.0,
+    ),
+    // Commitment: garrison 138 t (3) + screen task group 767 t (5) = 905 t, 8 hulls.
+    (
+        id: "op.act1.photo_reconnaissance", kind: Template(PhotoReconnaissance), act: Act1,
+        name: "op.act1.photo_reconnaissance.name", briefing: "op.act1.photo_reconnaissance.briefing",
+        unlock: Completed(["op.act1.story.blind_crane"]),
+        objective: Photograph(tag: "target", count: 3),
+        tags: [Requires(CameraMast), RcsLimit(max_m2: 100.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoRadarEmissions, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act1.garrison", marker: "objective", tag: "target"),
+            (fleet: "fleet.act1.tg.screen", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: Haze, at_s: 600), CivilianTraffic],
+        approach_m: 13000.0,
+        actions: [Photograph],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment in the campaign: the hunter group's five top-tier hulls plus this screen. Standalone (no theatre
+    // state) the screen alone is 102 t, and the generator's reinforcement waves make up the multiples.
+    (
+        id: "op.act1.hunter_survival", kind: Template(HunterGroupSurvival), act: Act1,
+        name: "op.act1.hunter_survival.name", briefing: "op.act1.hunter_survival.briefing",
+        objective: Survive(seconds: 900, exit: "exit"),
+        tags: [MinSpeed(kn: 28.0), Range(min_km: 200.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(1)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act1.patrol", marker: "enemy_2", tag: "screen"),
+        ],
+        complications: [None, WeatherTurns(to: Rain, at_s: 600), WeatherTurns(to: FogBank, at_s: 300)],
+        approach_m: 8000.0,
+    ),
+    // Commitment: garrison 138 t (3) + gun task group 649 t (5) = 787 t, 8 hulls (the moored prize does not count).
+    (
+        id: "op.act1.cutting_out", kind: Template(CuttingOut), act: Act1,
+        name: "op.act1.cutting_out.name", briefing: "op.act1.cutting_out.briefing",
+        unlock: Completed(["op.act1.story.kessel_toll"]),
+        objective: CutOut(tag: "prize", exit: "exit"),
+        tags: [DraftLimit(max_m: 2.5), Requires(BoardingKit)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act1.convoy.moored", marker: "berth", tag: "prize"),
+            (fleet: "fleet.act1.garrison", marker: "berth", tag: "harbour"),
+            (fleet: "fleet.act1.tg.gun", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: FogBank, at_s: 300), Reinforcements(fleet: "fleet.act1.patrol", at_s: 900)],
+        approach_m: 10000.0,
+        actions: [BoardAndCapture],
+        recommended_emcon: Some(Silent),
+    ),
+
+    // =========================================================================================================
+    // Story operations
+    // =========================================================================================================
+    // 1. Blind Crane Head: the radar that watches the western approaches. Opens tier 2.
+    // Commitment: garrison 138 t (3) + gun task group 649 t (5) = 787 t, 8 hulls.
+    (
+        id: "op.act1.story.blind_crane", kind: Story, act: Act1,
+        name: "op.act1.story.blind_crane.name", briefing: "op.act1.story.blind_crane.briefing",
+        node: Some("radar.crane"),
+        objective: DestroySite(marker: "radar"),
+        tags: [Range(min_km: 150.0), DraftLimit(max_m: 3.0)],
+        ghosts: [(kind: NoRadarEmissions, reward: Intel(1)), (kind: NeverDetected, reward: Intel(2)), (kind: NoHullDamage, reward: Blueprint("decoy.chaff"))],
+        force: [
+            (fleet: "fleet.act1.garrison", marker: "radar", tag: "garrison"),
+            (fleet: "fleet.act1.tg.gun", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None],
+        approach_m: 11000.0,
+        recommended_emcon: Some(Silent),
+    ),
+    // 2. Kessel toll: the convoy run through the region's chokepoint. The Auditor arrives. Opens tier 3.
+    // Commitment: convoy escort 666 t (5) + the Auditor's Arrears 122 t when she arrives = 788 t, 6 hulls.
+    (
+        id: "op.act1.story.kessel_toll", kind: Story, act: Act1,
+        name: "op.act1.story.kessel_toll.name", briefing: "op.act1.story.kessel_toll.briefing",
+        unlock: Any([Completed(["op.act1.story.blind_crane"]), SupplyBelow(region: "region.gannet", value: 70.0)]),
+        node: Some("sea.kessel"),
+        objective: DestroyGroup(tag: "convoy", fraction: 0.75),
+        tags: [MinSpeed(kn: 26.0), Range(min_km: 200.0)],
+        ghosts: [(kind: UnderTime(seconds: 1500), reward: Intel(1)), (kind: NoHullDamage, reward: Intel(1)), (kind: NoRadarEmissions, reward: Blueprint("radar.lpi"))],
+        force: [
+            (fleet: "fleet.act1.convoy", marker: "convoy_entry", tag: "convoy"),
+            (fleet: "fleet.act1.escort.convoy", marker: "convoy_entry", tag: "escort"),
+        ],
+        complications: [AceArrives("ace.auditor")],
+        approach_m: 14000.0,
+        declared_hostile: ["class.patrol_corvette", "class.escort_corvette", "class.ace_arrears"],
+        recommended_emcon: Some(Silent),
+    ),
+    // 3. Quiet hand: bring out the Mareby harbour pilot who charts the Combine's swept channels.
+    // Needs tier 2 (RHIB, passenger berths): Blind Crane Head first, then Kessel toll or Alert 2 in the region.
+    // Commitment: garrison 138 t (3) + screen task group 767 t (5) = 905 t, 8 hulls.
+    (
+        id: "op.act1.story.quiet_hand", kind: Story, act: Act1,
+        name: "op.act1.story.quiet_hand.name", briefing: "op.act1.story.quiet_hand.briefing",
+        unlock: All([Completed(["op.act1.story.blind_crane"]), Any([Completed(["op.act1.story.kessel_toll"]), AlertAtLeast(region: "region.gannet", value: 2)])]),
+        node: Some("harbour.mareby"),
+        objective: Extract(marker: "landing", passengers: 3),
+        tags: [Passengers(count: 3, allowed_losses: 0), Requires(RhibDavit), RcsLimit(max_m2: 80.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1)), (kind: NoRadarEmissions, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act1.garrison", marker: "berth", tag: "harbour"),
+            (fleet: "fleet.act1.tg.screen", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: FogBank, at_s: 300)],
+        approach_m: 11000.0,
+        actions: [InsertOrExtract, CarryPassengers],
+        recommended_emcon: Some(Silent),
+    ),
+    // 4. The Bursar's berth: cut the Combine's supply tender out of Port Ollan. The Bailiff arrives.
+    // Needs tier 3 (boarding kit): Kessel toll first, then Quiet hand or Supply under 40.
+    // Commitment: garrison 138 t (3) + heavy task group 1,044 t (5) = 1,182 t, 8 hulls, plus the Bailiff.
+    (
+        id: "op.act1.story.bursars_berth", kind: Story, act: Act1,
+        name: "op.act1.story.bursars_berth.name", briefing: "op.act1.story.bursars_berth.briefing",
+        unlock: All([Completed(["op.act1.story.kessel_toll"]), Any([Completed(["op.act1.story.quiet_hand"]), SupplyBelow(region: "region.gannet", value: 40.0)])]),
+        node: Some("base.ollan"),
+        objective: CutOut(tag: "prize", exit: "exit"),
+        tags: [DraftLimit(max_m: 2.5), Requires(BoardingKit), Range(min_km: 150.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1)), (kind: NoHullDamage, reward: Blueprint("radar.fire_control"))],
+        force: [
+            (fleet: "fleet.act1.convoy.moored", marker: "berth", tag: "prize"),
+            (fleet: "fleet.act1.garrison", marker: "berth", tag: "harbour"),
+            (fleet: "fleet.act1.tg.heavy", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [AceArrives("ace.bailiff")],
+        approach_m: 10000.0,
+        actions: [BoardAndCapture],
+        declared_hostile: ["class.frigate", "class.ace_covenant"],
+        recommended_emcon: Some(Silent),
+    ),
+
+    // =========================================================================================================
+    // Ace duels: the ace's flagship sails alone in its own group (tag "ace"); its consorts sail apart.
+    // =========================================================================================================
+    // Commitment: Arrears 122 t (1) + strike task group 671 t (5) = 793 t, 6 hulls.
+    (
+        id: "op.act1.duel.auditor", kind: AceDuel("ace.auditor"), act: Act1,
+        name: "op.act1.duel.auditor.name", briefing: "op.act1.duel.auditor.briefing",
+        unlock: Completed(["op.act1.story.kessel_toll"]),
+        objective: DestroyGroup(tag: "ace", fraction: 1.0),
+        tags: [MinSpeed(kn: 30.0), Range(min_km: 200.0)],
+        ghosts: [(kind: CaptureTheAce, reward: Blueprint("launcher.ashm.light")), (kind: NoHullDamage, reward: Intel(2))],
+        force: [
+            (fleet: "fleet.act1.ace.arrears", marker: "enemy", tag: "ace"),
+            (fleet: "fleet.act1.tg.strike", marker: "enemy_2", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: Overcast, at_s: 600)],
+        approach_m: 13000.0,
+        declared_hostile: ["class.ace_arrears"],
+    ),
+    // Commitment: Covenant 756 t (1) + screen task group 767 t (5) = 1,523 t, 6 hulls.
+    (
+        id: "op.act1.duel.bailiff", kind: AceDuel("ace.bailiff"), act: Act1,
+        name: "op.act1.duel.bailiff.name", briefing: "op.act1.duel.bailiff.briefing",
+        unlock: Completed(["op.act1.story.bursars_berth"]),
+        objective: DestroyGroup(tag: "ace", fraction: 1.0),
+        tags: [Range(min_km: 200.0), RcsLimit(max_m2: 120.0)],
+        ghosts: [(kind: CaptureTheAce, reward: Blueprint("gun.ciws.20mm")), (kind: NeverDetected, reward: Intel(2))],
+        force: [
+            (fleet: "fleet.act1.ace.covenant", marker: "enemy", tag: "ace"),
+            (fleet: "fleet.act1.tg.screen", marker: "enemy_2", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: Rain, at_s: 900)],
+        approach_m: 14000.0,
+        declared_hostile: ["class.ace_covenant"],
+    ),
+
+    // =========================================================================================================
+    // Capstone: Breakwater. Open once the four story operations are done (the generator checks the act's list).
+    // =========================================================================================================
+    // Commitment: garrison 138 t (3) + heavy task group 1,044 t (5) + strike task group at 600 s 671 t (5)
+    // = 1,853 t, 13 hulls, plus the Bailiff if still at sea.
+    (
+        id: "op.act1.capstone", kind: Capstone, act: Act1,
+        name: "op.act1.capstone.name", briefing: "op.act1.capstone.briefing",
+        node: Some("base.ollan"),
+        objective: DestroySite(marker: "depot"),
+        tags: [Range(min_km: 250.0), DraftLimit(max_m: 3.0), MinSpeed(kn: 26.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(2)), (kind: UnderTime(seconds: 1800), reward: Intel(2)), (kind: NeverDetected, reward: Intel(3))],
+        force: [
+            (fleet: "fleet.act1.garrison", marker: "depot", tag: "garrison"),
+            (fleet: "fleet.act1.tg.heavy", marker: "objective", tag: "task_group"),
+            (fleet: "fleet.act1.tg.strike", marker: "enemy", tag: "reinforcements", arrives_s: 600),
+        ],
+        complications: [AceArrives("ace.bailiff")],
+        approach_m: 13000.0,
+        declared_hostile: ["class.frigate", "class.missile_corvette"],
+    ),
+
+    // =========================================================================================================
+    // Tutorial sortie: one patrol boat in open water (exempt from tags and ghost conditions).
+    // =========================================================================================================
+    (
+        id: "op.act1.tutorial", kind: Tutorial, act: Act1,
+        name: "op.act1.tutorial.name", briefing: "op.act1.tutorial.briefing",
+        map: Some((size_m: (12000.0, 12000.0), depth_m: 100.0, seed: 2, markers: [
+            (kind: PlayerSpawn, name: "spawn", pos_m: (-3000.0, 0.0), heading_deg: 90.0),
+            (kind: EnemySpawn, name: "enemy", pos_m: (2500.0, 0.0), heading_deg: 270.0),
+            (kind: Objective, name: "objective", pos_m: (0.0, 0.0)),
+        ])),
+        objective: DestroyAll,
+        tags: [],
+        force: [(fleet: "fleet.act1.tutorial", marker: "enemy", tag: "patrol")],
+        approach_m: 4000.0,
+        pushback_days: Some(0.0),
+    ),
+]

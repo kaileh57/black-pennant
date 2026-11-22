@@ -1,0 +1,79 @@
+// Vec<ActDef>: the scope of each act (DESIGN.md L866-875, L801-807, L750). Units `data-theatre-acts` (Act 1),
+// `data-act2` (Act 2), `data-act3` (Act 3) and `data-act4` (Act 4). Licensed CC BY 4.0.
+//
+// Act 1 opens the Gannet Banks with three coves. Tier 1 is open at the start; the first story operation opens
+// tier 2 and the second tier 3 (L805). A retreat start closes Caddow Cove, the one deepest in Combine waters.
+//
+// Act 2 opens Corran Sound under the 400 t cap with the 40 m missile corvette as its starter. Tier 4 opens with the
+// act (L805): the starter already carries tier 4 launchers and search radar, so nothing waits on a story
+// operation. LANTERN moves to the Corran coves, Hesk first (nearest the Gannet Banks); a retreat start closes Gull,
+// the northern cove nearest the Combine's shipyard.
+//
+// Act 3 opens Hollin under the 900 t cap with the 60 m raiding corvette (mine rails and boarding kit) as its
+// starter. The act starts at tier 4, which the starter is built from and which holds the depth-charge rack, so a
+// player can hunt the act's submarines from the first day; tier 5 (heavy guns, the gas turbine) opens with the
+// first story operation, the Saltby lighter, whose cut-out brings the heavy mounts' drawings (L805). LANTERN moves
+// to the Hollin coves, Teal first (the westernmost, nearest Corran); a retreat start closes Rook, the cove under
+// the Hollin shipyard.
+//
+// Act 4 opens the Meridian Roads, the Combine's home waters, under the 1,800 t cap with the 90 m destroyer as its
+// starter. It adds parts to the existing tiers rather than a tier of its own (L807), so every tier is open from its
+// first day and nothing waits on a story operation. LANTERN moves to the Meridian coves, Ember first (the
+// westernmost, nearest Hollin); a retreat start closes Fathom, the cove under Port Castor and the Meridian yards.
+// Winning the final capstone opens Open Theatre in the same save (L873): no clock, every region and cove, the
+// Act 4 templates, the 1,800 t cap. Losing the Act 4 clock restarts Act 4 in retreat (L750).
+[
+    (
+        act: Act1, phase: R010, name: "act.1.name",
+        starters: ["starters/patrol15.bp.ron", "starters/fac22.bp.ron", "starters/insertion26.bp.ron"],
+        start_tier: T1,
+        tier_unlocks: [("op.act1.story.blind_crane", T2), ("op.act1.story.kessel_toll", T3)],
+        regions: ["region.gannet"],
+        story_ops: ["op.act1.story.blind_crane", "op.act1.story.kessel_toll", "op.act1.story.quiet_hand", "op.act1.story.bursars_berth"],
+        ace_duels: ["op.act1.duel.auditor", "op.act1.duel.bailiff"],
+        capstone: "op.act1.capstone",
+        aces: ["ace.auditor", "ace.bailiff"],
+        coves: ["cove.wren", "cove.pell", "cove.caddow"],
+        retreat_closed_cove: Some("cove.caddow"),
+    ),
+    (
+        act: Act2, phase: Act2, name: "act.2.name",
+        starters: ["starters/corvette40.bp.ron"],
+        start_tier: T4,
+        tier_unlocks: [],
+        regions: ["region.corran"],
+        story_ops: ["op.act2.story.ness", "op.act2.story.amble", "op.act2.story.kittering", "op.act2.story.blackwater"],
+        ace_duels: ["op.act2.duel.underwriter", "op.act2.duel.broker"],
+        capstone: "op.act2.capstone",
+        aces: ["ace.underwriter", "ace.broker"],
+        coves: ["cove.hesk", "cove.brine", "cove.gull"],
+        retreat_closed_cove: Some("cove.gull"),
+    ),
+    (
+        act: Act3, phase: Act3, name: "act.3.name",
+        starters: ["starters/corvette60.bp.ron"],
+        start_tier: T4,
+        tier_unlocks: [("op.act3.story.saltby", T5)],
+        regions: ["region.hollin"],
+        story_ops: ["op.act3.story.saltby", "op.act3.story.greywater", "op.act3.story.vell", "op.act3.story.strand"],
+        ace_duels: ["op.act3.duel.actuary", "op.act3.duel.liquidator"],
+        capstone: "op.act3.capstone",
+        aces: ["ace.actuary", "ace.liquidator"],
+        coves: ["cove.teal", "cove.morrow", "cove.rook"],
+        retreat_closed_cove: Some("cove.rook"),
+    ),
+    (
+        act: Act4, phase: Act4, name: "act.4.name",
+        starters: ["starters/destroyer90.bp.ron"],
+        start_tier: T5,
+        tier_unlocks: [],
+        regions: ["region.meridian"],
+        story_ops: ["op.act4.story.orrin", "op.act4.story.halden", "op.act4.story.castor", "op.act4.story.sentinel"],
+        ace_duels: ["op.act4.duel.chairman"],
+        capstone: "op.act4.capstone",
+        aces: ["ace.chairman"],
+        coves: ["cove.ember", "cove.last", "cove.fathom"],
+        retreat_closed_cove: Some("cove.fathom"),
+        opens_open_theatre: true,
+    ),
+]

@@ -1,0 +1,16 @@
+[package]
+name = "xtask"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+content.workspace = true
+sim-core.workspace = true
+sim-systems.workspace = true
+hull-mesh.workspace = true
+audio.workspace = true
+libm.workspace = true

@@ -1,0 +1,30 @@
+// Stock kit (DESIGN.md L140). Unit `data-kits-act1`. Licensed CC BY 4.0.
+// The tutorial radar mast (L140, L256): navigation radar at the masthead, fire-control radar on the mast and its director on deck.
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.radar_mast",
+    version: 1,
+    hash: "",
+    name: "Radar mast",
+    name_key: "kit.radar_mast.name",
+    description_key: "kit.radar_mast.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "mast.pole", offset: (x: 1, y: 0, z: 1), rot: (yaw: 0, tilt: 0)),
+        (part: "radar.nav", offset: (x: 0, y: 16, z: 0), rot: (yaw: 0, tilt: 0)),
+        (part: "radar.fire_control", offset: (x: 0, y: 8, z: 2), rot: (yaw: 0, tilt: 0)),
+        (part: "director.fire_control", offset: (x: 2, y: 0, z: 2), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "deck", offset: (x: 1, y: 0, z: 1), face: YNeg),
+    ],
+    settings: [],
+    graph: (),
+    officer: None,
+    tags: [],
+    tray_order: 2,
+)

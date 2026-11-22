@@ -1,0 +1,97 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://boot/consent.gd" id="1"]
+
+[node name="Consent" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Backing" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+follow_focus = true
+horizontal_scroll_mode = 0
+
+[node name="Center" type="CenterContainer" parent="Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Margin" type="MarginContainer" parent="Scroll/Center"]
+layout_mode = 2
+
+[node name="Column" type="VBoxContainer" parent="Scroll/Center/Margin"]
+custom_minimum_size = Vector2(800, 0)
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Scroll/Center/Margin/Column"]
+layout_mode = 2
+theme_type_variation = &"ScreenTitle"
+text = "boot.consent.title"
+autowrap_mode = 3
+
+[node name="Intro" type="Label" parent="Scroll/Center/Margin/Column"]
+layout_mode = 2
+theme_type_variation = &"Body"
+text = "boot.consent.intro"
+autowrap_mode = 3
+
+[node name="ContentsHeading" type="Label" parent="Scroll/Center/Margin/Column"]
+layout_mode = 2
+theme_type_variation = &"Body"
+text = "boot.consent.contents"
+autowrap_mode = 3
+
+[node name="Contents" type="GridContainer" parent="Scroll/Center/Margin/Column"]
+layout_mode = 2
+columns = 2
+
+[node name="Change" type="Label" parent="Scroll/Center/Margin/Column"]
+layout_mode = 2
+theme_type_variation = &"Body"
+text = "boot.consent.change"
+autowrap_mode = 3
+
+[node name="Buttons" type="HBoxContainer" parent="Scroll/Center/Margin/Column"]
+layout_mode = 2
+
+[node name="Send" type="Button" parent="Scroll/Center/Margin/Column/Buttons"]
+custom_minimum_size = Vector2(240, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_neighbor_left = NodePath("../DontSend")
+focus_neighbor_top = NodePath(".")
+focus_neighbor_right = NodePath("../DontSend")
+focus_neighbor_bottom = NodePath(".")
+focus_next = NodePath("../DontSend")
+focus_previous = NodePath("../DontSend")
+text = "boot.consent.send"
+
+[node name="DontSend" type="Button" parent="Scroll/Center/Margin/Column/Buttons"]
+custom_minimum_size = Vector2(240, 48)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_neighbor_left = NodePath("../Send")
+focus_neighbor_top = NodePath(".")
+focus_neighbor_right = NodePath("../Send")
+focus_neighbor_bottom = NodePath(".")
+focus_next = NodePath("../Send")
+focus_previous = NodePath("../Send")
+text = "boot.consent.dont_send"

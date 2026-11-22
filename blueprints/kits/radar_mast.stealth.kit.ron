@@ -1,0 +1,30 @@
+// Stock kit (DESIGN.md L140). Unit `data-kits-act1`. Licensed CC BY 4.0.
+// Low-signature mast kit for a cross-section limit (L803): an enclosed composite mast with a low-intercept radar, ESM and fire control.
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.radar_mast.stealth",
+    version: 1,
+    hash: "",
+    name: "Enclosed sensor mast",
+    name_key: "kit.radar_mast.stealth.name",
+    description_key: "kit.radar_mast.stealth.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "mast.enclosed", offset: (x: 0, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+        (part: "radar.lpi", offset: (x: 0, y: 16, z: 0), rot: (yaw: 0, tilt: 0)),
+        (part: "sensor.esm", offset: (x: 0, y: 16, z: 2), rot: (yaw: 0, tilt: 0)),
+        (part: "radar.fire_control", offset: (x: 2, y: 16, z: 2), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "deck", offset: (x: 2, y: 0, z: 2), face: YNeg),
+    ],
+    settings: [],
+    graph: (),
+    officer: None,
+    tags: [LowSignature],
+    tray_order: 52,
+)

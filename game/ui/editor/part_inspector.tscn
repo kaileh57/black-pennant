@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/editor/part_inspector.gd" id="1"]
+
+[node name="PartInspector" type="VBoxContainer"]
+script = ExtResource("1")
+
+[node name="Updates" type="VBoxContainer" parent="."]
+visible = false
+layout_mode = 2
+
+[node name="Rule" type="HSeparator" parent="."]
+visible = false
+layout_mode = 2
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+visible = false
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Body" type="VBoxContainer" parent="Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3

@@ -1,0 +1,256 @@
+keys,?context,en
+units.sep.thousands,"Thousands separator between digit groups, as in 2,000",","
+units.sep.decimal,"Decimal separator, as in 12.5",.
+units.unit.none,Value with unit; {0} a number with no unit,{0}
+units.unit.m,Value with unit; {0} metres,{0} m
+units.unit.km,Value with unit; {0} kilometres,{0} km
+units.unit.kn,Value with unit; {0} speed in knots,{0} kn
+units.unit.deg,Value with unit; {0} degrees of angle,{0}°
+units.unit.s,Value with unit; {0} seconds,{0} s
+units.unit.min,Value with unit; {0} minutes,{0} min
+units.unit.h,Value with unit; {0} hours,{0} h
+units.unit.pct,Value with unit; {0} percent,{0}%
+units.unit.kw,Value with unit; {0} kilowatts of power,{0} kW
+units.unit.l,Value with unit; {0} litres of fuel,{0} L
+units.unit.t,Value with unit; {0} tonnes,{0} t
+units.unit.mm,"Value with unit; {0} millimetres, armour or calibre",{0} mm
+units.unit.rounds,"Value with unit; {0} rounds of ammunition, plural",{0} rounds
+units.unit.rounds_one,Value with unit; {0} one round of ammunition,{0} round
+units.unit.salvage,"Value with unit; {0} Salvage, the campaign currency",{0} salvage
+units.unit.intel,Value with unit; {0} intel points,{0} intel
+units.duration.s,Duration under a minute; {0} seconds,{0} s
+units.duration.min,Duration under an hour; {0} minutes,{0} min
+units.duration.h,Duration in whole hours; {0} hours,{0} h
+units.duration.h_min,"Duration; {0} hours, {1} minutes",{0} h {1} min
+units.dtg,"Date-time group code in briefings; {0} day, hour and minutes as DDHHMM, {1} month code",{0}Z {1}
+units.month.1,Three-letter month code inside a date-time group,JAN
+units.month.2,Three-letter month code inside a date-time group,FEB
+units.month.3,Three-letter month code inside a date-time group,MAR
+units.month.4,Three-letter month code inside a date-time group,APR
+units.month.5,Three-letter month code inside a date-time group,MAY
+units.month.6,Three-letter month code inside a date-time group,JUN
+units.month.7,Three-letter month code inside a date-time group,JUL
+units.month.8,Three-letter month code inside a date-time group,AUG
+units.month.9,Three-letter month code inside a date-time group,SEP
+units.month.10,Three-letter month code inside a date-time group,OCT
+units.month.11,Three-letter month code inside a date-time group,NOV
+units.month.12,Three-letter month code inside a date-time group,DEC
+units.part.numbered,A part with no known name; {0} its number in the design,part {0}
+units.part.generated,"Generated part name; {0} category word, {1} order among parts of that category",{0} {1}
+units.compartment.numbered,A compartment of the ship; {0} its number,compartment {0}
+units.word.domain.surface,Track domain word,Surface
+units.word.domain.subsurface,Track domain word,Subsurface
+units.word.domain.air,Track domain word,Air
+units.word.domain.weapon,Track domain word,Weapon
+units.word.emcon.silent,Emission control state word,Silent
+units.word.emcon.burst,Emission control state word,Burst
+units.word.emcon.active,Emission control state word,Active
+units.word.preset.aggressive,Doctrine preset word,Aggressive
+units.word.preset.cautious,Doctrine preset word,Cautious
+units.word.preset.silent_running,Doctrine preset word,Silent running
+units.word.layer.doctrine,Control ladder layer word,Doctrine
+units.word.layer.tune,Control ladder layer word,Tuning
+units.word.layer.rules,Control ladder layer word,Rules
+units.word.layer.graph,Control ladder layer word,Graph
+units.word.layer.script,Control ladder layer word,Script
+units.word.damage.intact,Part damage level word,Intact
+units.word.damage.damaged,Part damage level word,Damaged
+units.word.damage.heavy,Part damage level word,Heavy damage
+units.word.damage.destroyed,Part damage level word,Destroyed
+units.word.priority.caution,Alert priority word,Caution
+units.word.priority.warning,Alert priority word,Warning
+units.word.priority.alarm,Alert priority word,Alarm
+units.word.priority.emergency,Alert priority word,Emergency
+units.word.subsystem.threat,Alert subsystem word,Threat
+units.word.subsystem.flooding,Alert subsystem word,Flooding
+units.word.subsystem.fire,Alert subsystem word,Fire
+units.word.subsystem.stability,Alert subsystem word,Stability
+units.word.subsystem.power,Alert subsystem word,Power
+units.word.subsystem.fuel,Alert subsystem word,Fuel
+units.word.subsystem.propulsion,Alert subsystem word,Propulsion
+units.word.subsystem.steering,Alert subsystem word,Steering
+units.word.subsystem.weapons,Alert subsystem word,Weapons
+units.word.subsystem.sensors,Alert subsystem word,Sensors
+units.word.subsystem.data,Alert subsystem word,Data
+units.word.subsystem.crew,Alert subsystem word,Crew
+units.word.subsystem.navigation,Alert subsystem word,Navigation
+units.word.subsystem.mission,Alert subsystem word,Mission
+units.word.subsystem.system,Alert subsystem word,System
+units.word.mode.campaign,Game mode word,Campaign
+units.word.mode.skirmish,Game mode word,Skirmish
+units.word.mode.sandbox,Game mode word,Sandbox
+units.word.mode.pvp_elimination,Game mode word,Elimination
+units.word.mode.pvp_escort,Game mode word,Escort
+units.word.mode.splash,Game mode word,Splash
+units.word.mode.tutorial,Game mode word,Tutorial
+units.word.mode.trial,Game mode word,Trial
+units.word.weather.clear,Weather word,Clear
+units.word.weather.haze,Weather word,Haze
+units.word.weather.overcast,Weather word,Overcast
+units.word.weather.rain,Weather word,Rain
+units.word.weather.storm,Weather word,Storm
+units.word.weather.fog_bank,Weather word,Fog bank
+units.word.time.night,Time of day word,Night
+units.word.time.dusk,Time of day word,Dusk
+units.word.time.day,Time of day word,Day
+units.word.check.pass,Gauge check result word,Pass
+units.word.check.caution,Gauge check result word,Caution
+units.word.check.fail,Gauge check result word,Fail
+units.word.category.hull,Part category word,Hull
+units.word.category.propulsion,Part category word,Propulsion
+units.word.category.power,Part category word,Power
+units.word.category.fuel,Part category word,Fuel
+units.word.category.control,Part category word,Control
+units.word.category.gun,Part category word,Gun
+units.word.category.missile,Part category word,Missile
+units.word.category.underwater,Part category word,Underwater
+units.word.category.defence,Part category word,Defence
+units.word.category.offboard,Part category word,Offboard
+units.word.category.sensor,Part category word,Sensor
+units.word.category.crew,Part category word,Crew
+units.word.category.damage_control,Part category word,Damage control
+units.word.category.special_ops,Part category word,Special operations
+units.word.mission.convoy_raid,Operation template word,Convoy raid
+units.word.mission.depot_strike,Operation template word,Depot strike
+units.word.mission.radar_decapitation,Operation template word,Radar decapitation
+units.word.mission.agent_extraction,Operation template word,Agent extraction
+units.word.mission.minelaying,Operation template word,Minelaying
+units.word.mission.prize_capture,Operation template word,Prize capture
+units.word.mission.defector_escort,Operation template word,Defector escort
+units.word.mission.feint,Operation template word,Feint
+units.word.mission.photo_reconnaissance,Operation template word,Photo reconnaissance
+units.word.mission.hunter_group_survival,Operation template word,Hunter group survival
+units.word.mission.cutting_out,Operation template word,Cutting out
+units.word.station.board_and_capture,Station action word,Board and capture
+units.word.station.insert_or_extract,Station action word,Insert or extract
+units.word.station.carry_passengers,Station action word,Carry passengers
+units.word.station.recover_survivors,Station action word,Recover survivors
+units.word.station.lay_mines,Station action word,Lay mines
+units.word.station.photograph,Station action word,Photograph
+units.word.repair.magazine_fires,Damage-control repair list entry,Magazine fires
+units.word.repair.breaches_below_waterline,Damage-control repair list entry,Breaches below the waterline
+units.word.repair.other_fires,Damage-control repair list entry,Other fires
+units.word.repair.conduits_to_critical,Damage-control repair list entry,Conduits to critical parts
+units.word.repair.other_conduits,Damage-control repair list entry,Other conduits
+units.word.repair.part_repairs,Damage-control repair list entry,Part repairs
+units.word.weapon.gun,Doctrine weapon class,Gun
+units.word.weapon.anti_ship_missile,Doctrine weapon class,Anti-ship missile
+units.word.weapon.sam,Doctrine weapon class,Surface-to-air missile
+units.word.weapon.point_defence_gun,Doctrine weapon class,Point-defence gun
+units.word.weapon.point_defence_missile,Doctrine weapon class,Point-defence missile
+units.word.weapon.torpedo,Doctrine weapon class,Torpedo
+units.word.weapon.depth_charge,Doctrine weapon class,Depth charge
+units.word.weapon.decoy,Doctrine weapon class,Decoy
+units.word.target.surface,Doctrine target category,Surface
+units.word.target.air,Doctrine target category,Air
+units.word.target.inbound_weapon,Doctrine target category,Inbound weapon
+units.word.target.subsurface,Doctrine target category,Subsurface
+units.word.link.network,Part network link state,On network
+units.word.link.redundant,Part network link state,Redundant path
+units.word.link.buffer,Part network link state,On buffer
+units.word.link.local_control,Part network link state,Local control
+units.word.link.dead,Part network link state,Dead
+units.word.outcome.victory,Sortie outcome word,Victory
+units.word.outcome.defeat,Sortie outcome word,Defeat
+units.word.outcome.withdrawn,Sortie outcome word,Withdrawn
+units.word.outcome.aborted,Sortie outcome word,Aborted
+units.word.outcome.draw,Sortie outcome word,Draw
+units.word.quality.low,Graphics quality tier,Low
+units.word.quality.medium,Graphics quality tier,Medium
+units.word.quality.high,Graphics quality tier,High
+units.word.quality.fallback,Graphics quality tier,Safe mode
+units.word.tier.1,Part tier,Tier 1
+units.word.tier.2,Part tier,Tier 2
+units.word.tier.3,Part tier,Tier 3
+units.word.tier.4,Part tier,Tier 4
+units.word.tier.5,Part tier,Tier 5
+units.word.act.1,Campaign act,Act 1
+units.word.act.2,Campaign act,Act 2
+units.word.act.3,Campaign act,Act 3
+units.word.act.4,Campaign act,Act 4
+units.word.confidence.possible,Briefing threat confidence word,Possible
+units.word.confidence.probable,Briefing threat confidence word,Probable
+units.word.confidence.confirmed,Briefing threat confidence word,Confirmed
+units.word.kill.gunfire,Kill method in the after-action report,Gunfire
+units.word.kill.missile,Kill method in the after-action report,Missile
+units.word.kill.torpedo,Kill method in the after-action report,Torpedo
+units.word.kill.mine,Kill method in the after-action report,Mine
+units.word.kill.depth_charge,Kill method in the after-action report,Depth charge
+units.word.kill.fire,Kill method in the after-action report,Fire
+units.word.kill.capture,Kill method in the after-action report,Capture
+units.word.kill.collision,Kill method in the after-action report,Collision
+units.word.network.power,Damage-control network,Power
+units.word.network.fuel,Damage-control network,Fuel
+units.word.network.data,Damage-control network,Data
+units.error.parse,"Load error; {0} file name, {1} parser detail in English",Could not read {0}: {1}
+units.error.limit,Load error; {0} which size limit the file broke,File too large: {0} over the limit
+units.error.format_too_new,"Load error; {0} file format, {1} newest format this build reads, {2} release needed",Format {0} is newer than this build reads ({1}); needs release {2}
+units.error.damaged_share_string,Load error for a pasted share string,Share string damaged: content does not match its hash
+units.error.not_a_share_string,Load error for pasted text,Not a share string
+units.error.unknown_ref,"Load error; {0} kind of reference, {1} its key",Unknown {0}: {1}
+units.error.migration,"Load error; {0} old format, {1} new format",Could not update format {0} to {1}
+units.error.save_chain,Save load error; the save does not follow the previous one,Save does not follow the previous save
+units.error.invalid,Load error; {0} number of problems found,Design has {0} problems
+units.error.io,Load error reading or writing a file,Could not read or write the file
+units.value.none,Graph or rule value that is not set,Not set
+units.value.true,Graph or rule switch value,On
+units.value.false,Graph or rule switch value,Off
+units.value.vec3,Three-component vector value; {0} {1} {2} the components,"{0}, {1}, {2}"
+units.value.nearest_contact,Rule value: target the nearest matching contact; {0} contact description,nearest {0}
+units.rule.sentence,"A rule as one sentence; {0} condition, {1} what the rule sets, {2} value","When {0}, set {1} to {2}"
+units.rule.compare,"Rule condition; {0} left value, {1} comparison, {2} right value",{0} {1} {2}
+units.rule.and,"Rule condition joining; {0} first clause, {1} second clause",{0} and {1}
+units.rule.or,"Rule condition joining; {0} first clause, {1} second clause",{0} or {1}
+units.rule.not,Rule condition negated; {0} the clause,not ({0})
+units.rule.always,Rule condition with no clauses that always holds,always
+units.rule.never,Rule condition with no clauses that never holds,never
+units.filter.any,Rule contact filter: any contact,contact
+units.filter.with_stance,"Rule contact filter; {0} lowest stance, {1} contact phrase",{0} {1}
+units.filter.with_grade,"Rule contact filter; {0} contact phrase, {1} lowest track grade",{0} at {1} or better
+units.filter.domain.surface,"Rule contact filter by domain, inside a sentence",surface contact
+units.filter.domain.subsurface,"Rule contact filter by domain, inside a sentence",subsurface contact
+units.filter.domain.air,"Rule contact filter by domain, inside a sentence",air contact
+units.filter.domain.weapon,"Rule contact filter by domain, inside a sentence",weapon
+units.cmp.lt,Rule comparison inside a sentence,is below
+units.cmp.le,Rule comparison inside a sentence,is at most
+units.cmp.gt,Rule comparison inside a sentence,is above
+units.cmp.ge,Rule comparison inside a sentence,is at least
+units.cmp.eq,Rule comparison inside a sentence,is
+units.cmp.ne,Rule comparison inside a sentence,is not
+units.operand.own_speed_kn,Rule operand,own speed
+units.operand.own_heel_deg,Rule operand,own heel
+units.operand.fuel_fraction,"Rule operand, fuel left",fuel
+units.operand.power_margin,"Rule operand, spare generating power",power margin
+units.operand.hull_health,Rule operand,hull health
+units.operand.nearest_contact_range_m,Rule operand; {0} contact phrase,range to nearest {0}
+units.operand.contact_count,Rule operand; {0} contact phrase,{0} count
+units.operand.inbound_weapons,"Rule operand, weapons closing on the ship",inbound weapons
+units.operand.part_health,Rule operand; {0} part name,health of {0}
+units.operand.ammo_fraction,Rule operand; {0} part name,ammunition of {0}
+units.operand.sortie_time_s,"Rule operand, time since the sortie started",sortie time
+units.sink.helm_heading,"What a rule sets, inside a sentence",helm heading
+units.sink.helm_speed,"What a rule sets, inside a sentence",helm speed
+units.sink.mount_aim_point,"What a rule sets, inside a sentence; {0} part or compartment name",aim point of {0}
+units.sink.mount_fire_permission,"What a rule sets, inside a sentence; {0} part or compartment name",fire permission of {0}
+units.sink.missile_launch,"What a rule sets, inside a sentence; {0} part or compartment name",launch of {0}
+units.sink.missile_target,"What a rule sets, inside a sentence; {0} part or compartment name",target of {0}
+units.sink.emission_state,"What a rule sets, inside a sentence; {0} part or compartment name",emission of {0}
+units.sink.power_priority,"What a rule sets, inside a sentence; {0} part or compartment name",power priority of {0}
+units.sink.pump,"What a rule sets, inside a sentence; {0} part or compartment name",{0}
+units.sink.door,"What a rule sets, inside a sentence; {0} part or compartment name",{0}
+units.sink.flood_valve,"What a rule sets, inside a sentence; {0} part or compartment name",flood valve of {0}
+units.sink.track_stance_override,"What a rule sets, inside a sentence",track stance
+units.sink.track_id_override,"What a rule sets, inside a sentence",track ID
+units.sink.ship_preset,"What a rule sets, inside a sentence",doctrine preset
+units.sink.ship_emcon,"What a rule sets, inside a sentence",EMCON
+units.marker.player_spawn,Chart marker label,Start
+units.marker.enemy_spawn,Chart marker label,Enemy start
+units.marker.objective,Chart marker label,Objective
+units.marker.shore_landing,Chart marker label,Landing point
+units.marker.survivors,Chart marker label,Survivors
+units.marker.berth,Chart marker label,Berth
+units.marker.convoy_entry,Chart marker label,Convoy entry
+units.marker.convoy_exit,Chart marker label,Convoy exit
+units.marker.exit,Chart marker label,Exit
+units.marker.radar_site,Chart marker label,Radar site
+units.marker.depot_site,Chart marker label,Depot

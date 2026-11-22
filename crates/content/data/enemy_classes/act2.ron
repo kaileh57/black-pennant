@@ -1,0 +1,57 @@
+// Vec<EnemyClassDef>: the Meridian Combine's Act 2 classes (DESIGN.md L756-758, L866-875). Unit `data-act2`.
+// Licensed CC BY 4.0.
+//
+// Every class is a stock blueprint under blueprints/combine/act2/, built by the editor's steps in
+// crates/content/tests/combine/ (the Act 1 builder, with the Act 2 build sheets in classes_act2.rs) and validated
+// in enemy-class mode by crates/content/tests/combine_act2.rs. Full-load tonnages, for fleet and commitment
+// arithmetic:
+//   T1  ferry 224 t, freighter 365 t, oiler 442 t
+//   T2  aviso 216 t, corvette 283 t
+//   T3  corvette batch 2 316 t, air-defence corvette 348 t, missile corvette 368 t
+//   T4  Indemnity 246 t, frigate 639 t, frigate batch 2 788 t
+//   T5  helicopter frigate 797 t, Commission 923 t
+// Act 2 commits 1,600 t per player (4 x the 400 t cap) in five hulls, about 320 t a hull, so its warships run from
+// 280 t corvettes to an 800 t helicopter frigate; every class stays under the 90 m capital line. The Act 1 classes
+// stay in service and fill out Act 2 fleets and the Corran order of battle. Tiers rank the Combine's own ladder:
+// the first T5 combat class in this file (the helicopter frigate) fills the Act 2 Alert 5 hunter group (L749).
+//
+// Behaviour keys as Act 1 (sim-systems `behaviour_from_key`). The aviso is the air-warning picket: it keeps a
+// doctrine range past its guns and shadows, calling strike aircraft onto what its search radar holds. The
+// air-defence corvette escorts (it stays between the threat and its charge). The helicopter frigate declares the
+// stock helicopter its deck carries. Surrender: every class strikes under the Combine rule (`Combine`, the campaign's strike_cells_lost) except the aces, which never strike (`surrender: Never`, L537). Variants are the
+// batch-2 hulls the generator swaps in for co-op and the use-variants doctrine cards (L834).
+[
+    // ---- Tier 1 -------------------------------------------------------------------------------------------------
+    (id: "class.freighter", name: "class.freighter.name", blueprint: "combine/act2/freighter.bp.ron", role: Freighter, tier: T1, act: Act2,
+        behaviour: "merchant"),
+    (id: "class.oiler", name: "class.oiler.name", blueprint: "combine/act2/oiler.bp.ron", role: Tanker, tier: T1, act: Act2,
+        behaviour: "merchant"),
+    (id: "class.ferry", name: "class.ferry.name", blueprint: "combine/act2/ferry.bp.ron", role: Civilian, tier: T1, act: Act2,
+        behaviour: "merchant"),
+    // ---- Tier 2 -------------------------------------------------------------------------------------------------
+    (id: "class.aviso", name: "class.aviso.name", blueprint: "combine/act2/aviso.bp.ron", role: Picket, tier: T2, act: Act2,
+        behaviour: "picket", engagement_range_m: Some(18000.0)),
+    (id: "class.warrant", name: "class.warrant.name", blueprint: "combine/act2/warrant.bp.ron", role: Corvette, tier: T2, act: Act2,
+        behaviour: "combatant", variants: ["class.warrant_b"]),
+    // ---- Tier 3 -------------------------------------------------------------------------------------------------
+    (id: "class.warrant_b", name: "class.warrant_b.name", blueprint: "combine/act2/warrant_b.bp.ron", role: Corvette, tier: T3, act: Act2,
+        behaviour: "combatant"),
+    (id: "class.indenture", name: "class.indenture.name", blueprint: "combine/act2/indenture.bp.ron", role: Corvette, tier: T3, act: Act2,
+        behaviour: "striker"),
+    (id: "class.premium", name: "class.premium.name", blueprint: "combine/act2/premium.bp.ron", role: Corvette, tier: T3, act: Act2,
+        behaviour: "escort"),
+    // ---- Tier 4 -------------------------------------------------------------------------------------------------
+    (id: "class.bond", name: "class.bond.name", blueprint: "combine/act2/bond.bp.ron", role: Frigate, tier: T4, act: Act2,
+        behaviour: "combatant", variants: ["class.bond_b"]),
+    (id: "class.bond_b", name: "class.bond_b.name", blueprint: "combine/act2/bond_b.bp.ron", role: Frigate, tier: T4, act: Act2,
+        behaviour: "combatant"),
+    // The Underwriter's ship: a 60 m composite missile corvette with four diesels and two heavy missile batteries.
+    (id: "class.ace_indemnity", name: "class.ace_indemnity.name", blueprint: "combine/act2/ace_indemnity.bp.ron", role: Corvette, tier: T4, act: Act2,
+        behaviour: "striker", surrender: Never),
+    // ---- Tier 5 -------------------------------------------------------------------------------------------------
+    (id: "class.mortgage", name: "class.mortgage.name", blueprint: "combine/act2/mortgage.bp.ron", role: Destroyer, tier: T5, act: Act2,
+        behaviour: "combatant", air_wing: [("helicopter.utility", 1)]),
+    // The Broker's ship: an armoured gun frigate with 127, 76 and 100 mm mounts under two directors.
+    (id: "class.ace_commission", name: "class.ace_commission.name", blueprint: "combine/act2/ace_commission.bp.ron", role: Frigate, tier: T5, act: Act2,
+        behaviour: "combatant", surrender: Never),
+]

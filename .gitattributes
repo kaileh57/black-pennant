@@ -1,0 +1,2 @@
+# The committed token export is byte-compared by `cargo xtask tokens --check` on every platform.
+game/art/tokens/world_tokens.json text eol=lf

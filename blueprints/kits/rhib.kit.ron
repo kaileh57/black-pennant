@@ -1,0 +1,26 @@
+// Stock kit (DESIGN.md L140). Unit `data-kits-act1`. Licensed CC BY 4.0.
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.rhib",
+    version: 1,
+    hash: "",
+    name: "RHIB davit",
+    name_key: "kit.rhib.name",
+    description_key: "kit.rhib.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "davit.rhib", offset: (x: 0, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "edge", offset: (x: 5, y: 0, z: 2), face: YNeg),
+    ],
+    settings: [],
+    graph: (),
+    officer: None,
+    tags: [RhibDavit],
+    tray_order: 62,
+)

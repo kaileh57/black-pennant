@@ -1,0 +1,46 @@
+keys,?context,en
+hud_ops.accessible_name,Accessible name of the special-operations and offboard panel,Special operations
+hud_ops.title.actions,Panel title; timed station actions such as boarding or minelaying,Station actions
+hud_ops.title.offboard,Panel title; drones and the helicopter,Offboard
+hud_ops.start.board,Button; start boarding the track selected on the plot,Board the selected track
+hud_ops.start.photograph,Button; start photographing the track selected on the plot,Photograph the selected track
+hud_ops.start.landing,Button; start an insertion or extraction at the nearest landing marker,Start at the nearest landing
+hud_ops.start.survivors,Button; start recovering survivors at the nearest site,Recover the nearest survivors
+hud_ops.start.mines,Button; draw the mine line on the plot to start minelaying,Draw the mine line
+hud_ops.start.track,Button; start a station action on the selected track,Start on the selected track
+hud_ops.start.line,Button; draw a line on the plot to start a station action,Draw the line
+hud_ops.start.nearest,Button; start a station action at the nearest site,Start at the nearest site
+hud_ops.action.cancel,Button; stop a station action under way,Cancel
+hud_ops.action.select_track,Why a track action cannot start yet,Select a track on the plot first.
+hud_ops.state.running,Station action line while it runs,Under way.
+hud_ops.state.paused,Station action line while it waits with no reason given,Paused.
+hud_ops.state.paused_why,Station action line while it waits; {0} the reason from the simulation,Paused: {0}.
+hud_ops.state.done,Line after a station action finished,Last attempt done.
+hud_ops.state.aborted,Line after a station action stopped with no reason given,Last attempt aborted.
+hud_ops.state.aborted_why,Line after a station action stopped; {0} the reason from the simulation,Last attempt aborted: {0}.
+hud_ops.prize.title,Row title once a boarding party has taken a ship,Prize taken
+hud_ops.prize.default,Prize line before the player decides,She sails home under her own Helm officer unless you strip her here. Home pays 60% of her build cost at the exit; stripping pays 40% now plus blueprints.
+hud_ops.prize.unknown,Prize line when the bar does not know which ship was taken,She sails home under her own Helm officer.
+hud_ops.prize.sailing,Prize line after choosing to sail her home,Sailing home under her own Helm officer. She pays out when she reaches the exit.
+hud_ops.prize.stripping,Prize line after choosing to strip her,Stripping her for Salvage and blueprints.
+hud_ops.prize.strip_ask,Prize line asking to confirm stripping,Strip her here? She is scuttled and this cannot be undone.
+hud_ops.prize.home,Button; the prize sails home,Sail her home
+hud_ops.prize.strip,Button; strip the prize on the spot,Strip her here
+hud_ops.prize.strip_confirm,Button; confirm stripping the prize,Strip her
+hud_ops.prize.strip_keep,Button; keep the prize instead of stripping,Keep her
+hud_ops.unit.aboard,Drones or helicopters aboard; {0} count,{0} aboard
+hud_ops.unit.airborne,Offboard unit line; {0} endurance left as a duration,"Airborne, {0} endurance left."
+hud_ops.unit.airborne_low,Offboard unit line when endurance runs low; {0} endurance left as a duration,"Airborne, {0} left: recall her now."
+hud_ops.unit.recharging,Offboard unit line; {0} time until ready as a duration,"Recharging, ready in {0}."
+hud_ops.unit.ready,Offboard unit line,Ready to launch.
+hud_ops.unit.empty,Offboard unit line when nothing is aboard,None aboard.
+hud_ops.unit.launch,Button; launch a drone or the helicopter,Launch
+hud_ops.unit.recall,Button; call a drone or the helicopter back aboard,Recall
+hud_ops.unit.shadow,Button; follow the track selected on the plot,Shadow the selected track
+hud_ops.unit.orbit,Button; pick a point on the plot to circle,Orbit a point
+hud_ops.unit.waypoint,Button; pick a point on the plot to fly to,Fly to a point
+hud_ops.pick.line,Hint while drawing the mine line,"Drag the mine line on the plot. A mine drops every 50 m while you hold within 5° of its course at 6 kn or more."
+hud_ops.pick.orbit,Hint while picking an orbit centre; {0} orbit radius with unit,Click the plot to set the orbit centre. She circles it at {0}.
+hud_ops.pick.waypoint,Hint while picking a waypoint,Click the plot where she should fly.
+hud_ops.pick.cancel,Button; stop picking on the plot,Cancel
+hud_ops.refused,Line when an order was refused,Order refused.

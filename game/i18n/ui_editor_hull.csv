@@ -1,0 +1,161 @@
+keys,?context,en
+editor_hull.name,Accessible name of the hull panel,Hull shape
+editor_hull.closed,Hull and paint panel text when no design is open,Open a design to edit its hull.
+editor_hull.mode.shape,Hull panel mode,Shape
+editor_hull.mode.shape_tip,Tooltip,Length and the shell's handles as numbers. Drag the rings in the view for the same.
+editor_hull.mode.planes,Hull panel mode,Decks and bulkheads
+editor_hull.mode.planes_tip,Tooltip,Planes that cut the hull into compartments for flooding and routing.
+editor_hull.mode.sculpt,Hull panel mode,Sculpt
+editor_hull.mode.sculpt_tip,Tooltip,Add superstructure cell by cell. Bake the shell to sculpt the hull itself.
+editor_hull.section.hull,Hull panel heading,Hull
+editor_hull.section.stations,Hull panel heading: cross-section stations,Stations
+editor_hull.field.length,Hull field,Length
+editor_hull.field.bow_rake,Hull field,Bow rake
+editor_hull.field.transom,Hull field: transom rake angle,Transom rake
+editor_hull.field.transom_width,Hull field: transom width as a share of the aft beam,Transom width
+editor_hull.field.beam,Station field,Beam
+editor_hull.field.draft,Station field,Draft
+editor_hull.field.deadrise,Station field,Deadrise
+editor_hull.field.flare,Station field,Flare
+editor_hull.field.sheer,Station field,Sheer
+editor_hull.field.mirrored,Hull toggle,Mirror port to starboard
+editor_hull.tip.length,Tooltip; first line 12 words or fewer,"Overall length. Longer hulls are faster and hold more, but turn wider."
+editor_hull.tip.bow_rake,Tooltip,How far the stem leans forward. More rake throws spray clear.
+editor_hull.tip.transom,Tooltip,Angle of the stern face.
+editor_hull.tip.transom_width,Tooltip,Stern width as a share of the aftmost beam. Wider sterns carry more aft.
+editor_hull.tip.beam,Tooltip,Width at this station. More beam floats higher and stiffens roll.
+editor_hull.tip.draft,Tooltip,Depth below the waterline here. More draft carries more but limits harbours.
+editor_hull.tip.deadrise,Tooltip,"Bottom angle from the keel. More deadrise rides softer, less is faster."
+editor_hull.tip.flare,Tooltip,How far the sides lean out above the waterline.
+editor_hull.tip.sheer,Tooltip,Height of the deck edge above the base line here.
+editor_hull.tip.mirrored,Tooltip,"Sculpting, armour, paint and markings copy to the other side."
+editor_hull.tip.range,"Second tooltip line of a hull field; {0} lowest, {1} highest value the shell allows",Allowed from {0} to {1}.
+editor_hull.tip.deck,Tooltip,Deck height above the keel. Snaps to 0.5 m.
+editor_hull.tip.bulkhead,Tooltip,Bulkhead position from the stern. Snaps to 0.5 m.
+editor_hull.tip.add_plane,Tooltip,Where the new plane goes. Snaps to 0.5 m.
+editor_hull.unit.m,Field suffix: metres,m
+editor_hull.unit.deg,Field suffix: degrees,°
+editor_hull.station.item,"Station picker item; {0} station, {1} station count, {2} position from the stern",Station {0} of {1} at {2}
+editor_hull.station.pick,Accessible name of the station picker,Station
+editor_hull.station.prev,Icon button,Previous station
+editor_hull.station.next,Icon button,Next station
+editor_hull.station.remove,Hull panel button,Remove this station
+editor_hull.station.remove_tip,Tooltip,A hull keeps at least 4 stations.
+editor_hull.station.remove_refused,Tooltip after a refused removal,The shell would not stay valid without it.
+editor_hull.station.add_at,Field: where a new station goes,New station at
+editor_hull.station.add_tip,Tooltip,Distance from the stern. The new station starts between its neighbours.
+editor_hull.station.add,Hull panel button,Add station
+editor_hull.frame,Hull panel button,View from the side
+editor_hull.baked.title,Hull panel heading after a bake,Freeform hull
+editor_hull.baked.body,Hull panel text after a bake,This hull was baked into freeform cells. It has no handles; sculpt it cell by cell.
+editor_hull.baked.go_sculpt,Hull panel button,Sculpt the hull
+editor_hull.section.decks,Hull panel heading,Decks
+editor_hull.section.bulkheads,Hull panel heading,Bulkheads
+editor_hull.planes.deck,Plane row; {0} deck number,Deck {0}
+editor_hull.planes.bulkhead,Plane row; {0} bulkhead number,Bulkhead {0}
+editor_hull.planes.none_decks,Hull panel text,No decks yet.
+editor_hull.planes.none_bulkheads,Hull panel text,No bulkheads yet. Without them one hit floods the whole hull.
+editor_hull.planes.remove,Icon button; {0} the plane,Remove {0}
+editor_hull.planes.add_at,Field: where a new plane goes,New plane at
+editor_hull.planes.add_deck,Hull panel button,Add deck
+editor_hull.planes.add_bulkhead,Hull panel button,Add bulkhead
+editor_hull.planes.add_refused,Tooltip after a refused plane,A plane already sits there or it is outside the hull.
+editor_hull.planes.compartments,Hull panel line; {0} compartment count,The planes cut {0} compartments.
+editor_hull.planes.compartments_pending,Hull panel line while the design builds,Counting compartments.
+editor_hull.section.sculpt,Hull panel heading,Sculpt
+editor_hull.sculpt.body_lofted,Hull panel text,Cells added here become superstructure. Shell cells change through the Shape handles.
+editor_hull.sculpt.body_baked,Hull panel text,Every cell can be added or removed.
+editor_hull.sculpt.add,Sculpt mode,Add cells
+editor_hull.sculpt.remove,Sculpt mode,Remove cells
+editor_hull.sculpt.shape,Sculpt heading,Cell shape
+editor_hull.shape.cube,Cell shape,Cube
+editor_hull.shape.wedge,Cell shape,Wedge
+editor_hull.shape.corner,Cell shape,Corner
+editor_hull.shape.inverse_corner,Cell shape,Inverse corner
+editor_hull.shape.slope,Cell shape,Slope 1:2
+editor_hull.sculpt.orientation,Sculpt field,Orientation
+editor_hull.sculpt.orientation_tip,Tooltip,Which way the shape faces. 24 orientations.
+editor_hull.sculpt.of,Field suffix; {0} orientation count,of {0}
+editor_hull.sculpt.next,Sculpt button,Next orientation
+editor_hull.bake.title,Hull panel heading,Bake
+editor_hull.bake.body,Hull panel text,Baking turns the shell into freeform cells you can sculpt one by one. The shape handles are gone afterwards.
+editor_hull.bake.button,Hull panel button,Bake the hull
+editor_hull.bake.confirm_title,Dialog title,Bake the hull?
+editor_hull.bake.confirm_body,Dialog body,"The shell becomes freeform cells. Its length, stations and handles are gone, and only Undo brings them back."
+editor_hull.bake.keep,Dialog button: the safe choice,Keep the shell
+editor_hull.bake.confirm,Dialog button,Bake the hull
+editor_hull.bake.failed_title,Dialog title,Hull not baked
+editor_hull.bake.failed_body,Dialog body,The shell could not be turned into cells.
+editor_hull.paint.name,Accessible name of the paint panel,Paint
+editor_hull.paint.mode.armour,Paint panel mode,Armour
+editor_hull.paint.mode.armour_tip,Tooltip,Paint armour plate on the outer cells.
+editor_hull.paint.mode.colour,Paint panel mode,Colour
+editor_hull.paint.mode.colour_tip,Tooltip,Paint the hull from the ship palette.
+editor_hull.paint.mode.markings,Paint panel mode,Markings
+editor_hull.paint.mode.markings_tip,Tooltip,"Stripes, flags and hull numbers."
+editor_hull.paint.armour_title,Paint panel heading,Armour plate
+editor_hull.paint.armour_body,Paint panel text,Thicker plate stops more but weighs more. Only outer cells take armour.
+editor_hull.armour.none,Armour choice: strip armour,No armour
+editor_hull.armour.none_tip,Tooltip,Strip the plate from the cells painted.
+editor_hull.armour.5_tip,Tooltip,Light plate against splinters and small arms.
+editor_hull.armour.15_tip,Tooltip,Plate against splinters and light cannon rounds.
+editor_hull.armour.40_tip,Tooltip,Heavy plate against cannon fire and shell splinters.
+editor_hull.armour.80_tip,Tooltip,"The thickest plate, against gun hits. Very heavy."
+editor_hull.paint.brush,Paint field: brush radius in cells,Brush radius in cells
+editor_hull.paint.brush_tip,Tooltip,Radius of the brush in cells. 0 paints one cell.
+editor_hull.paint.cells,Field suffix: cells,cells
+editor_hull.paint.armour_stroke,"Paint panel line; {0} cells, {1} mass change, {2} cost change","Last stroke: {0} cells, {1}, cost {2}."
+editor_hull.paint.colour_stroke,Paint panel line; {0} cells,Last stroke: {0} cells.
+editor_hull.paint.plus,A positive change; {0} the amount,+{0}
+editor_hull.paint.minus,A negative change; {0} the amount,-{0}
+editor_hull.paint.colour_title,Paint panel heading,Ship palette
+editor_hull.paint.colour_body,Paint panel text,"The first nine are the navy swatches and antifouling. The last seven take your own colours, held to naval greys."
+editor_hull.paint.entry,"Paint panel line; {0} entry name, {1} what it is for","{0}, {1}"
+editor_hull.paint.use_hull,What a palette entry is for,hull colour
+editor_hull.paint.use_marking,What a palette entry is for,marking colour
+editor_hull.paint.edit,Paint panel button,Change colour
+editor_hull.paint.pick,Paint panel button,Pick a colour
+editor_hull.swatch.hull_pale,Palette entry name,Pale grey (5-P)
+editor_hull.swatch.hull_light,Palette entry name,Light grey (5-L)
+editor_hull.swatch.hull_haze,Palette entry name,Haze grey (5-H)
+editor_hull.swatch.hull_ocean,Palette entry name,Ocean grey (5-O)
+editor_hull.swatch.hull_sea,Palette entry name,Sea blue (5-S)
+editor_hull.swatch.hull_navy,Palette entry name,Navy blue (5-N)
+editor_hull.swatch.hull_deck,Palette entry name,Deck blue (20-B)
+editor_hull.swatch.hull_black,Palette entry name,Dull black
+editor_hull.swatch.hull_antifouling,Palette entry name: red-brown below the waterline,Antifouling red
+editor_hull.swatch.custom,Palette entry name; {0} custom entry number,Custom colour {0}
+editor_hull.swatch.empty,Palette entry name; {0} custom entry number,Empty custom slot {0}
+editor_hull.picker.new,Colour picker title for an empty slot,New custom colour
+editor_hull.picker.use_hull,Colour picker choice,For the hull
+editor_hull.picker.use_marking,Colour picker choice,For markings
+editor_hull.picker.limits_hull,Colour picker note,Hull colours are held to luminance Y 0.6 and chroma 0.06.
+editor_hull.picker.limits_marking,Colour picker note,Marking colours are held to luminance Y 0.7 and chroma 0.12.
+editor_hull.picker.clamped_hull,Colour picker note after a clamp,"Clamped to the hull limits, Y 0.6 and chroma 0.06. The square shows the colour stored."
+editor_hull.picker.clamped_marking,Colour picker note after a clamp,"Clamped to the marking limits, Y 0.7 and chroma 0.12. The square shows the colour stored."
+editor_hull.picker.within_hull,Colour picker note,Within the hull limits. The square shows the colour stored.
+editor_hull.picker.within_marking,Colour picker note,Within the marking limits. The square shows the colour stored.
+editor_hull.picker.refused,Colour picker note,The palette is full.
+editor_hull.picker.apply,Colour picker button,Use this colour
+editor_hull.picker.cancel,Colour picker button,Cancel
+editor_hull.paint.markings_title,Paint panel heading,New marking
+editor_hull.paint.markings_body,Paint panel text,Choose the kind and colour; then click a hull face to place it.
+editor_hull.marking.stripe,Marking kind,Stripe
+editor_hull.marking.flag,Marking kind,Flag
+editor_hull.marking.hull_number,Marking kind,Hull number
+editor_hull.marking.paint,Marking field,Colour
+editor_hull.marking.size,Marking field,Size
+editor_hull.marking.size_tip,Tooltip,Height of the marking in cells.
+editor_hull.marking.text,Marking field: the painted hull number,Number
+editor_hull.marking.text_placeholder,Placeholder of the hull number field,42
+editor_hull.marking.placed,Paint panel heading,Markings on the hull
+editor_hull.marking.none,Paint panel text,No markings yet.
+editor_hull.marking.row,"Marking row; {0} kind, {1} size in cells, {2} face","{0}, {1} cells, {2}"
+editor_hull.marking.row_text,"Marking row with its text; {0} the row, {1} the number",{0}: {1}
+editor_hull.marking.remove,Icon button; {0} the marking,Remove {0}
+editor_hull.face.aft,Hull face of a marking,aft face
+editor_hull.face.forward,Hull face of a marking,forward face
+editor_hull.face.below,Hull face of a marking,underside
+editor_hull.face.above,Hull face of a marking,top
+editor_hull.face.port,Hull face of a marking,port side
+editor_hull.face.starboard,Hull face of a marking,starboard side

@@ -1,0 +1,27 @@
+// Stock kit (DESIGN.md L140). Unit `data-kits-act1`. Licensed CC BY 4.0.
+// The tutorial engine (L256).
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.engine",
+    version: 1,
+    hash: "",
+    name: "Diesel engine",
+    name_key: "kit.engine.name",
+    description_key: "kit.engine.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "engine.diesel.large", offset: (x: 0, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "floor", offset: (x: 4, y: 0, z: 1), face: YNeg),
+    ],
+    settings: [],
+    graph: (),
+    officer: None,
+    tags: [Propulsion],
+    tray_order: 3,
+)

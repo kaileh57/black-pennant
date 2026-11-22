@@ -1,0 +1,169 @@
+keys,?context,en
+editor_shell.leave,Top bar button: close the dry dock and go back,Leave dry dock
+editor_shell.name.placeholder,Placeholder of the design name field,Design name
+editor_shell.name.field,Accessible name of the design name field,Design name
+editor_shell.save,Top bar button,Save
+editor_shell.save.tip,Tooltip of Save; first line 12 words or fewer,Write the design to its file. Saving also starts the trial battery.
+editor_shell.save.failed_title,Dialog title when the design could not be written,Design not saved
+editor_shell.save.failed_body,Dialog body,The file could not be written. Check that the name has no special characters and try again.
+editor_shell.saved,Global toast after an explicit save,Design saved
+editor_shell.file,Top bar menu of file actions,File
+editor_shell.file.save_as,File menu item,Save as
+editor_shell.file.open,File menu item: opens the blueprint browser,Open design
+editor_shell.file.share,File menu item: share string and file export,Share
+editor_shell.file.import,File menu item: paste a share string someone sent to add their design,Import a share string
+editor_shell.file.new,File menu submenu,New design
+editor_shell.file.new_empty,New design submenu item: a plain lofted shell,Empty 22 m hull
+editor_shell.file.starter,"New design submenu item; {0} starter name, {1} its length",{0} ({1})
+editor_shell.file.default_name,File name used when the design has no name,Design
+editor_shell.save_as.title,Save as popup title,Save as
+editor_shell.save_as.field,Accessible name of the file name field,File name
+editor_shell.save_as.confirm,Save as popup button,Save
+editor_shell.save_as.cancel,Save as popup button,Cancel
+editor_shell.new.failed_title,Dialog title when a new design could not start,No new design
+editor_shell.new.failed_body,Dialog body used when no reason came back,The starter could not be loaded.
+editor_shell.discard.title,Dialog title before unsaved changes are dropped,Unsaved changes
+editor_shell.discard.body,Dialog body,This design has changes that are not saved.
+editor_shell.discard.stay,Dialog button: keep editing,Keep editing
+editor_shell.discard.save,Dialog button,Save and continue
+editor_shell.discard.discard,Dialog button,Continue without saving
+editor_shell.state.unsaved,Top bar save state,Unsaved changes
+editor_shell.state.saved,Top bar save state,Saved
+editor_shell.state.stock,Top bar save state of a stock or new design,Not saved yet
+editor_shell.undo.none,Undo tooltip and message when nothing can be undone,Nothing to undo
+editor_shell.redo.none,Redo tooltip and message when nothing can be redone,Nothing to redo
+editor_shell.splash,Top bar button: test the ship in a basin (Space),Splash
+editor_shell.splash.tip,Tooltip of Splash; first line 12 words or fewer,Save and test the ship in a basin. Space does the same.
+editor_shell.splash.options,Icon button: water and target for the next splash,Splash options
+editor_shell.splash.failed,Status line when a splash could not start and gave no reason,The splash could not start.
+editor_shell.splash.loading,Caption while the splash basin loads,Filling the basin
+editor_shell.splash.tune,Splash toggle: show the build panels over the basin,Tune and edit
+editor_shell.splash.tune_tip,Tooltip of Tune and edit,"Edit kits, tuning and graphs while the basin runs. Apply them from the splash bar."
+editor_shell.launch.with_notes,"Accessible name of Launch; {0} the button text, {1} open note count","{0}, {1} open notes"
+editor_shell.launch.notes_tip,Tooltip of Launch with open notes,Open notes never block Launch. Ship's Notes lists them.
+editor_shell.launch.tip,Tooltip of Launch,Field this design. Only an illegal design is refused.
+editor_shell.launch.failed,Status line when Launch refused and gave no reason,The design could not be fielded.
+editor_shell.refit.failed_title,Dialog title when the campaign refused the refit,Refit not committed
+editor_shell.refit.failed_body,Dialog body,The refit could not be paid for or the design is not legal here. The briefing says why.
+editor_shell.lobby.failed_title,Dialog title when the lobby refused the design,Design refused
+editor_shell.lobby.failed_body,Dialog body used when no reason came back,The lobby's ruleset refused this design.
+editor_shell.tab.parts,Left dock tab,Parts
+editor_shell.tab.hull,Left dock tab,Hull
+editor_shell.tab.paint,Left dock tab,Paint
+editor_shell.tab.officers,Left dock tab: officer settings and rules,Officers
+editor_shell.tab.notes,Right dock tab: Ship's Notes,Notes
+editor_shell.tab.trials,Right dock tab: scorecard of the trial battery,Trials
+editor_shell.tab.fit,Right dock tab: the briefing's Fit Check,Fit check
+editor_shell.dock.build,Accessible name of the left dock,Build panels
+editor_shell.dock.read,Accessible name of the right dock,Design reports
+editor_shell.view.name,Accessible name of the 3D view,Dry dock view
+editor_shell.empty.title,Centre panel title when no design is open,No design open
+editor_shell.empty.body,Centre panel body,Leave the dry dock and open it again from the menu or the briefing.
+editor_shell.loading.title,Centre panel title while the first frame is built,Building the hull
+editor_shell.loading.body,Centre panel body,The design appears as soon as its cells are meshed.
+editor_shell.symmetry.none,Symmetry choice,No symmetry
+editor_shell.symmetry.mirror,Symmetry choice,Mirror
+editor_shell.symmetry.radial,Symmetry choice,Radial
+editor_shell.symmetry.tip,Tooltip of the symmetry choice,Placements copy across the centreline (M) or around the vertical.
+editor_shell.symmetry.radial_count,Radial symmetry copy count field,Radial copies
+editor_shell.symmetry.mirror_on,Status line after M,Mirror symmetry on
+editor_shell.symmetry.mirror_off,Status line after M,Mirror symmetry off
+editor_shell.slice.whole,Deck slice choice,Whole ship
+editor_shell.slice.deck,Deck slice choice; {0} deck number,Deck {0}
+editor_shell.slice.tip,Tooltip of the deck slice,Cut the view at a deck to place parts inside the hull.
+editor_shell.camera,View bar menu of camera framings,Camera
+editor_shell.camera.all,Camera menu item (F frames the selection),Frame whole ship
+editor_shell.camera.selection,Camera menu item,Frame selection
+editor_shell.camera.bow,Camera menu item,From the bow
+editor_shell.camera.stern,Camera menu item,From the stern
+editor_shell.camera.port,Camera menu item,From port
+editor_shell.camera.starboard,Camera menu item,From starboard
+editor_shell.camera.top,Camera menu item,From above
+editor_shell.camera.below,Camera menu item,From below the waterline
+editor_shell.mode.ship,View bar mode button: the 3D view,Ship
+editor_shell.mode.graph,View bar mode button: the control graph,Control graph
+editor_shell.mode.graph_tip,Tooltip of the graph mode,Open the ship control graph. Every automatic value is a node.
+editor_shell.mode.scripts,View bar mode button: Luau script nodes,Scripts
+editor_shell.mode.scripts_tip,Tooltip of the scripts mode,Edit the design's script nodes.
+editor_shell.hint.select,View hint line in the select tool,"Click a part to select it, Shift-click to add. Drag a part to move it; drag elsewhere to box select."
+editor_shell.hint.selected,View hint line with a selection,"Drag to move. R turns, T tilts, Delete removes, F frames, Esc clears the selection."
+editor_shell.hint.place,View hint line while placing,"Click to place, again to place more. R and Shift+R turn, T tilts, Esc stops."
+editor_shell.hint.handles,View hint line in the hull shape tool,"Drag a ring to reshape the hull, with Shift for fine steps. The Hull tab lists each as a field."
+editor_shell.hint.planes,View hint line in the decks tool,Drag a deck up or down or a bulkhead fore and aft. Positions snap to 0.5 m.
+editor_shell.hint.armour,View hint line in the armour tool,Paint armour on the outer cells. The Paint tab sets the thickness and brush.
+editor_shell.hint.paint,View hint line in the colour tool,Paint the hull in the chosen palette colour.
+editor_shell.hint.marking,View hint line in the markings tool,Click a hull face to place the marking.
+editor_shell.hint.sculpt,View hint line in the sculpt tool,Click or drag to add or remove cells in the chosen shape.
+editor_shell.hint.route_first,View hint line in the data link tool,Click the first part of the data link. Esc stops.
+editor_shell.hint.route_second,View hint line in the data link tool,Click the part to link it to. Esc stops.
+editor_shell.place.refused,Status line when a placement was refused and gave no reason,It cannot go there.
+editor_shell.move.blocked,Status line when a moved part would collide,Something is in the way.
+editor_shell.rotate.blocked,Status line when a turned part would collide,There is no room to turn it.
+editor_shell.copy.done,Status line after copy,Copied the selection.
+editor_shell.copy.nothing,Status line when copy had nothing to copy,Select parts to copy.
+editor_shell.paste.nothing,Status line when paste had nothing,Copy parts first.
+editor_shell.delete.nothing,Status line when delete had nothing,Select parts to remove.
+editor_shell.delete.done,Status line after delete; {0} number of parts,Removed {0} parts.
+editor_shell.marking.miss,Status line when a marking click missed the hull,Click on the hull to place a marking.
+editor_shell.marking.refused,Status line when a marking was refused,The marking does not fit there.
+editor_shell.sculpt.refused,Status line when sculpting changed nothing,Nothing to change there. Before a bake only added cells can be removed.
+editor_shell.route.miss,Status line when the data link click missed a part,Click a part.
+editor_shell.route.added,Status line after a data link,Data link added.
+editor_shell.route.refused,Status line when a data link was refused,One of the parts has no data port.
+editor_shell.part.name,"A part's name; {0} the part, its label or generated name",{0}
+editor_shell.menu.why,Context menu item: the chain of causes for a part,Why?
+editor_shell.menu.rotate,Context menu item,Turn 90°
+editor_shell.menu.frame_part,Context menu item,Frame this part
+editor_shell.menu.copy,Context menu item,Copy
+editor_shell.menu.select_kit,Context menu item,Select its kit
+editor_shell.menu.remove_kit,Context menu item,Remove the kit
+editor_shell.menu.remove_part,Context menu item,Remove the part
+editor_shell.menu.remove_deck,Context menu item,Remove this deck
+editor_shell.menu.remove_bulkhead,Context menu item,Remove this bulkhead
+editor_shell.menu.delete_selection,Context menu item,Delete the selection
+editor_shell.menu.capture,Context menu item: save the selection as a kit,Capture as kit
+editor_shell.menu.paste,Context menu item,Paste
+editor_shell.menu.select_all,Context menu item,Select all
+editor_shell.menu.frame_all,Context menu item,Frame whole ship
+editor_shell.menu.stop_placing,Context menu item,Stop placing
+editor_shell.menu.steer,Context menu item in a splash: course order,Steer here
+editor_shell.menu.waypoint,Context menu item in a splash: course order,Add waypoint
+editor_shell.why.title,Why? panel title; {0} the part,Why: {0}
+editor_shell.why.clear,Why? line when nothing names the part,No open notes or problems name this part.
+editor_shell.why.close,Why? panel button,Close
+editor_shell.why.open_node,Tooltip of a Why? link to a graph node,Open the node responsible in the control graph.
+editor_shell.why.open_part,Tooltip of a Why? link to another part,Select and frame that part.
+editor_shell.why.preview_fix,Why? button when a note has a Fix and no label,Preview fix
+editor_shell.why.preview_fix_tip,Tooltip of the fix preview,Show the Fix as a ghost. Ship's Notes accepts it.
+editor_shell.capture.title,Capture as kit popup title,Capture as kit
+editor_shell.capture.placeholder,Placeholder of the kit name field,Kit name
+editor_shell.capture.confirm,Capture popup button,Save kit
+editor_shell.capture.cancel,Capture popup button,Cancel
+editor_shell.capture.failed_title,Dialog title when a kit could not be captured,Kit not saved
+editor_shell.capture.failed_body,Dialog body,These parts cannot form a kit. Select whole parts that touch each other.
+editor_shell.capture.done,Global toast after a kit was saved; {0} kit name,Kit {0} saved
+editor_shell.overlay.name,Accessible name of the overlay bar,Overlays
+editor_shell.overlay.waterline,Overlay toggle,Waterline
+editor_shell.overlay.waterline_tip,Tooltip,Waterline at rest and the design waterline with heel and trim.
+editor_shell.overlay.centres,Overlay toggle,Centres
+editor_shell.overlay.centres_tip,Tooltip,Centre of gravity and centre of buoyancy.
+editor_shell.overlay.arcs,Overlay toggle,Arcs
+editor_shell.overlay.arcs_tip,Tooltip,"Weapon arcs on the water, hatched where own structure blocks them."
+editor_shell.overlay.blind,Overlay toggle,Blind sectors
+editor_shell.overlay.blind_tip,Tooltip,Sectors each sensor cannot see.
+editor_shell.overlay.conduits,Overlay toggle,Conduits
+editor_shell.overlay.conduits_tip,Tooltip,"Power, fuel and data routes between compartments."
+editor_shell.overlay.xray,Overlay toggle,X-ray
+editor_shell.overlay.xray_tip,Tooltip (X),"See through the hull to the three networks, with doubled routes marked. X toggles it."
+editor_shell.overlay.heatmap,Overlay toggle,Heatmap
+editor_shell.overlay.heatmap_tip,Tooltip,Outer cells shaded by how badly a hit there hurts the ship.
+editor_shell.overlay.compartments,Overlay toggle,Compartments
+editor_shell.overlay.compartments_tip,Tooltip,Decks and bulkheads as sheets.
+editor_shell.overlay.signature,Overlay toggle,Signature
+editor_shell.overlay.signature_tip,Tooltip,Radar cross-section and visual size by aspect.
+editor_shell.reports,View bar toggle on narrow screens: show the right dock,Notes and trials
+editor_shell.reports_tip,Tooltip,"Show Ship's Notes, the trial scorecard and Fit Check beside the view."
+editor_shell.overlay.menu,Overlay menu button on narrow screens,Overlays
+editor_shell.overlay.menu_tip,Tooltip,"Waterline, centres, arcs, blind sectors, conduits, X-ray, heatmap, compartments and signature."
+editor_shell.handle.value,"Tag beside a hull handle in the view: {0} the handle's name (Beam, Draft), {1} its value with unit",{0} {1}
+editor_shell.handle.station,"Tag beside a hull handle that shapes one station: {0} the name and value, {1} the station number","{0}, station {1}"

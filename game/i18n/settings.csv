@@ -1,0 +1,259 @@
+keys,?context,en
+settings.access.ui_scale,Settings row label,UI scale
+settings.access.ui_scale.tip,"Settings row tooltip, first line 12 words or fewer","Size of all text and controls, 75% to 200%"
+settings.access.palette,Settings row label,Palette
+settings.access.palette.tip,"Settings row tooltip, first line 12 words or fewer",Colours of the interface
+settings.access.reduce_motion,Settings row label,Reduce motion
+settings.access.reduce_motion.tip,"Settings row tooltip, first line 12 words or fewer",Fades and instant changes replace moving transitions
+settings.access.blink_off,Settings row label,No blinking
+settings.access.blink_off.tip,"Settings row tooltip, first line 12 words or fewer",Alerts hold steady instead of blinking
+settings.access.reduce_transparency,Settings row label,Reduce transparency
+settings.access.reduce_transparency.tip,"Settings row tooltip, first line 12 words or fewer",Panels draw solid behind text
+settings.access.reduce_flashing,Settings row label,Reduce flashing
+settings.access.reduce_flashing.tip,"Settings row tooltip, first line 12 words or fewer",Caps weapon and explosion glare; removes lightning
+settings.access.camera_shake,Settings row label,Camera shake
+settings.access.camera_shake.tip,"Settings row tooltip, first line 12 words or fewer",Strength of camera shake from hits and gunfire
+settings.access.blur,Settings row label,Blur
+settings.access.blur.tip,"Settings row tooltip, first line 12 words or fewer",Strength of depth-of-field blur
+settings.access.camera_roll,Settings row label,Camera roll
+settings.access.camera_roll.tip,"Settings row tooltip, first line 12 words or fewer",How far the bridge camera rolls with the ship
+settings.access.hud_backing_opacity,Settings row label,HUD backing
+settings.access.hud_backing_opacity.tip,"Settings row tooltip, first line 12 words or fewer",Opacity of the panels behind HUD text
+settings.access.officer_line_scale,Settings row label,Officer line size
+settings.access.officer_line_scale.tip,"Settings row tooltip, first line 12 words or fewer","Size of officer and radio lines, up to 200%"
+settings.access.officer_line_opacity,Settings row label,Officer line backing
+settings.access.officer_line_opacity.tip,"Settings row tooltip, first line 12 words or fewer",Opacity behind officer and radio lines
+settings.hud.swap_docks,Settings row label,Swap docked panels
+settings.hud.swap_docks.tip,"Settings row tooltip, first line 12 words or fewer","Track list on the right, Bridge Board on the left"
+settings.hud.show_host_tick,Settings row label,Show the host tick rate
+settings.hud.show_host_tick.tip,"Settings row tooltip, first line 12 words or fewer",Shows the host's simulation rate during a sortie
+settings.hud.show_performance,Settings row label,Show performance figures
+settings.hud.show_performance.tip,"Settings row tooltip, first line 12 words or fewer","Shows frame time, resolution and degrade step"
+settings.input.holds_toggle,Settings row label,Holds toggle
+settings.input.holds_toggle.tip,"Settings row tooltip, first line 12 words or fewer",Every hold key toggles on press instead
+settings.input.compression_hold,Settings row label,Hold to compress time
+settings.input.compression_hold.tip,"Settings row tooltip, first line 12 words or fewer",Faster time lasts while the key is held
+settings.input.mouse_orbit_speed,Settings row label,Mouse orbit speed
+settings.input.mouse_orbit_speed.tip,"Settings row tooltip, first line 12 words or fewer",Camera turn rate when dragging with the mouse
+settings.input.stick_orbit_speed,Settings row label,Stick orbit speed
+settings.input.stick_orbit_speed.tip,"Settings row tooltip, first line 12 words or fewer",Camera turn rate from the right stick
+settings.input.stick_deadzone,Settings row label,Stick dead zone
+settings.input.stick_deadzone.tip,"Settings row tooltip, first line 12 words or fewer",Stick travel ignored around the centre
+settings.input.invert_orbit_y,Settings row label,Invert vertical orbit
+settings.input.invert_orbit_y.tip,"Settings row tooltip, first line 12 words or fewer",Pushing up tilts the camera down
+settings.editor.two_finger_drag,Settings row label,Two-finger drag
+settings.editor.two_finger_drag.tip,"Settings row tooltip, first line 12 words or fewer",What a two-finger trackpad drag does in the dry dock
+settings.editor.invert_orbit,Settings row label,Invert orbit
+settings.editor.invert_orbit.tip,"Settings row tooltip, first line 12 words or fewer",Reverses dry-dock orbit direction
+settings.editor.invert_pan,Settings row label,Invert pan
+settings.editor.invert_pan.tip,"Settings row tooltip, first line 12 words or fewer",Reverses dry-dock pan direction
+settings.editor.invert_zoom,Settings row label,Invert zoom
+settings.editor.invert_zoom.tip,"Settings row tooltip, first line 12 words or fewer",Reverses dry-dock zoom direction
+settings.editor.orbit_speed,Settings row label,Orbit speed
+settings.editor.orbit_speed.tip,"Settings row tooltip, first line 12 words or fewer",Dry-dock orbit rate
+settings.editor.pan_speed,Settings row label,Pan speed
+settings.editor.pan_speed.tip,"Settings row tooltip, first line 12 words or fewer",Dry-dock pan rate
+settings.editor.zoom_speed,Settings row label,Zoom speed
+settings.editor.zoom_speed.tip,"Settings row tooltip, first line 12 words or fewer",Dry-dock zoom rate
+settings.editor.prebuilt_splash,Settings row label,Prepare the splash in advance
+settings.editor.prebuilt_splash.tip,"Settings row tooltip, first line 12 words or fewer",Builds the test basin in the background for a faster splash
+settings.editor.progressive_splash,Settings row label,Progressive splash
+settings.editor.progressive_splash.tip,"Settings row tooltip, first line 12 words or fewer",Splash opens at once and fills in detail while you sail
+settings.editor.split_gauge_strip,Settings row label,Split gauge strip
+settings.editor.split_gauge_strip.tip,"Settings row tooltip, first line 12 words or fewer",Shows the gauge strip in two rows
+settings.graphics.tier,Settings row label,Graphics quality
+settings.graphics.tier.tip,"Settings row tooltip, first line 12 words or fewer",Detail tier; automatic picks one for this computer
+settings.graphics.window_mode,Settings row label,Window
+settings.graphics.window_mode.tip,"Settings row tooltip, first line 12 words or fewer","Windowed, borderless or fullscreen"
+settings.graphics.vsync,Settings row label,V-Sync
+settings.graphics.vsync.tip,"Settings row tooltip, first line 12 words or fewer",Waits for the display to avoid tearing
+settings.graphics.dynamic_resolution,Settings row label,Dynamic resolution
+settings.graphics.dynamic_resolution.tip,"Settings row tooltip, first line 12 words or fewer",Lowers 3D resolution to hold the frame rate
+settings.graphics.msaa,Settings row label,Anti-aliasing
+settings.graphics.msaa.tip,"Settings row tooltip, first line 12 words or fewer",Edge smoothing; higher costs more GPU time
+settings.graphics.shadow_atlas,Settings row label,Shadow detail
+settings.graphics.shadow_atlas.tip,"Settings row tooltip, first line 12 words or fewer",Resolution of the shadow map
+settings.graphics.ssao,Settings row label,Ambient occlusion
+settings.graphics.ssao.tip,"Settings row tooltip, first line 12 words or fewer",Contact shading in corners and under structure
+settings.graphics.pcss,Settings row label,Soft shadows
+settings.graphics.pcss.tip,"Settings row tooltip, first line 12 words or fewer",Shadows soften with distance from their caster
+settings.graphics.lightning,Settings row label,Lightning
+settings.graphics.lightning.tip,"Settings row tooltip, first line 12 words or fewer",Lightning flashes in storms
+settings.graphics.render_behind_plot,Settings row label,3D behind the plot
+settings.graphics.render_behind_plot.tip,"Settings row tooltip, first line 12 words or fewer",Keeps drawing the sea while the plot is open
+settings.audio.master,Settings row label,Master volume
+settings.audio.master.tip,"Settings row tooltip, first line 12 words or fewer",Volume of all sound
+settings.audio.effects,Settings row label,Effects
+settings.audio.effects.tip,"Settings row tooltip, first line 12 words or fewer","Guns, hits, fire and flooding"
+settings.audio.alerts,Settings row label,Alerts
+settings.audio.alerts.tip,"Settings row tooltip, first line 12 words or fewer",Alert tones
+settings.audio.radio,Settings row label,Radio
+settings.audio.radio.tip,"Settings row tooltip, first line 12 words or fewer",Squelch and static of officer lines
+settings.audio.interface,Settings row label,Interface
+settings.audio.interface.tip,"Settings row tooltip, first line 12 words or fewer",Clicks and confirmations
+settings.audio.ambience,Settings row label,Ambience
+settings.audio.ambience.tip,"Settings row tooltip, first line 12 words or fewer","Sea, wind, rain and engines"
+settings.audio.menu_theme,Settings row label,Menu theme
+settings.audio.menu_theme.tip,"Settings row tooltip, first line 12 words or fewer",Volume of the menu theme
+settings.net.port,Settings row label,UDP port
+settings.net.port.tip,"Settings row tooltip, first line 12 words or fewer",UDP port the host listens on
+settings.net.upload_kbps,Settings row label,Upload speed in kbps
+settings.net.upload_kbps.tip,"Settings row tooltip, first line 12 words or fewer",Your connection's upload in kbps; caps hosting traffic
+settings.privacy.crash_reports,Settings row label,Crash reports
+settings.privacy.crash_reports.tip,"Settings row tooltip, first line 12 words or fewer",Send crash reports to the developer
+settings.playtest.timing_log,Settings row label,Playtest timing log
+settings.playtest.timing_log.tip,"Settings row tooltip, first line 12 words or fewer",Writes a local log of time spent in each step
+settings.palette.dusk,Palette option,Dusk
+settings.palette.high_contrast,Palette option,High contrast
+settings.two_finger.orbit,Two-finger drag option,Orbit
+settings.two_finger.pan,Two-finger drag option,Pan
+settings.auto,Option chosen automatically,Automatic
+settings.tier.low,Graphics tier option,Low
+settings.tier.medium,Graphics tier option,Medium
+settings.tier.high,Graphics tier option,High
+settings.window.windowed,Window mode option,Windowed
+settings.window.borderless,Window mode option,Borderless
+settings.window.fullscreen,Window mode option,Fullscreen
+settings.off,Option: feature off,Off
+settings.low,Option: low setting,Low
+settings.medium,Option: medium setting,Medium
+settings.msaa.2x,Anti-aliasing option,MSAA 2x
+settings.msaa.4x,Anti-aliasing option,MSAA 4x
+settings.shadow.2048,Shadow map size option,2048
+settings.shadow.4096,Shadow map size option,4096
+settings.privacy.dont_send,Crash report option,Don't send
+settings.privacy.send,Crash report option,Send
+settings.section.access,Settings section title,Accessibility
+settings.section.hud,Settings section title,HUD
+settings.section.input,Settings section title,Controls
+settings.section.editor,Settings section title,Dry dock
+settings.section.graphics,Settings section title,Graphics
+settings.section.audio,Settings section title,Audio
+settings.section.net,Settings section title,Network
+settings.section.privacy,Settings section title,Privacy
+settings.section.playtest,Settings section title,Playtest
+settings.group.sortie,Group of input bindings,Sortie
+settings.group.editor,Group of input bindings,Dry dock
+settings.group.menus,Group of input bindings,Menus
+settings.action.view_switch,Input action name in the bindings list,Switch view
+settings.action.pause,Input action name in the bindings list,Pause
+settings.action.time_faster,Input action name in the bindings list,Faster time
+settings.action.time_slower,Input action name in the bindings list,Slower time
+settings.action.helm_ahead,Input action name in the bindings list,Helm ahead
+settings.action.helm_astern,Input action name in the bindings list,Helm astern
+settings.action.helm_port,Input action name in the bindings list,Helm to port
+settings.action.helm_starboard,Input action name in the bindings list,Helm to starboard
+settings.action.take_helm,Input action name in the bindings list,Take the helm
+settings.action.take_sensors,Input action name in the bindings list,Take sensors
+settings.action.take_group_1,Input action name in the bindings list,Take weapon group 1
+settings.action.take_group_2,Input action name in the bindings list,Take weapon group 2
+settings.action.take_group_3,Input action name in the bindings list,Take weapon group 3
+settings.action.take_group_4,Input action name in the bindings list,Take weapon group 4
+settings.action.take_group_current,Input action name in the bindings list,Take current weapon group
+settings.action.group_next,Input action name in the bindings list,Next weapon group
+settings.action.group_prev,Input action name in the bindings list,Previous weapon group
+settings.action.fire,Input action name in the bindings list,Fire
+settings.action.designate,Input action name in the bindings list,Designate target
+settings.action.set_course,Input action name in the bindings list,Set course
+settings.action.cancel,Input action name in the bindings list,Cancel
+settings.action.track_next,Input action name in the bindings list,Next track
+settings.action.track_prev,Input action name in the bindings list,Previous track
+settings.action.look_left,Input action name in the bindings list,Look left
+settings.action.look_right,Input action name in the bindings list,Look right
+settings.action.look_up,Input action name in the bindings list,Look up
+settings.action.look_down,Input action name in the bindings list,Look down
+settings.action.camera_orbit,Input action name in the bindings list,Orbit camera
+settings.action.zoom_in,Input action name in the bindings list,Zoom in
+settings.action.zoom_out,Input action name in the bindings list,Zoom out
+settings.action.alert_acknowledge,Input action name in the bindings list,Acknowledge alert
+settings.action.alert_silence,Input action name in the bindings list,Silence alerts
+settings.action.emcon_cycle,Input action name in the bindings list,Change emission control
+settings.action.decoys,Input action name in the bindings list,Launch decoys
+settings.action.log_toggle,Input action name in the bindings list,Show the log
+settings.action.splash_rewind,Input action name in the bindings list,Rewind the splash
+settings.action.splash,Input action name in the bindings list,Splash
+settings.action.editor_rotate,Input action name in the bindings list,Rotate part
+settings.action.editor_rotate_back,Input action name in the bindings list,Rotate part back
+settings.action.editor_tilt,Input action name in the bindings list,Tilt part
+settings.action.editor_cancel,Input action name in the bindings list,Cancel placement
+settings.action.editor_delete,Input action name in the bindings list,Delete
+settings.action.editor_undo,Input action name in the bindings list,Undo
+settings.action.editor_redo,Input action name in the bindings list,Redo
+settings.action.editor_copy,Input action name in the bindings list,Copy
+settings.action.editor_paste,Input action name in the bindings list,Paste
+settings.action.editor_duplicate,Input action name in the bindings list,Duplicate
+settings.action.editor_select_all,Input action name in the bindings list,Select all
+settings.action.editor_save,Input action name in the bindings list,Save design
+settings.action.editor_mirror,Input action name in the bindings list,Mirror placement
+settings.action.editor_xray,Input action name in the bindings list,X-ray view
+settings.action.editor_frame,Input action name in the bindings list,Frame the ship
+settings.action.editor_context,Input action name in the bindings list,Context menu
+settings.action.editor_orbit,Input action name in the bindings list,Orbit dry-dock camera
+settings.action.editor_pan,Input action name in the bindings list,Pan dry-dock camera
+settings.action.menu,Input action name in the bindings list,Menu
+settings.device.keyboard,Input device column,Keyboard and mouse
+settings.device.gamepad,Input device column,Gamepad
+settings.binding.none,Shortcut hint when an action has no binding,Not bound
+settings.rebind.bound,"Rebind result; {0} key or button, {1} action",{0} now does {1}
+settings.rebind.replaced,"Rebind result; {0} key or button, {1} action it now does, {2} action that lost it",{0} now does {1}; {2} is unbound
+settings.rebind.conflict,"Rebind refused; {0} key or button, {1} action already using it",{0} already does {1}
+settings.rebind.no_chords,Rebind refused: the key needed a modifier,"Use one key or button, without Shift, Ctrl, Alt or Cmd"
+settings.rebind.wrong_device,Rebind refused: input from the other device column,Press a key or button of this device
+settings.rebind.no_gamepad,Rebind refused: dry-dock actions take no gamepad,The dry dock uses keyboard and mouse only
+settings.rebind.unknown_action,Rebind refused: the action does not exist,This action cannot be rebound
+settings.mouse.other,Name of an unusual mouse button,Mouse button
+settings.mouse.1,Name of a mouse button in shortcut hints,Left click
+settings.mouse.2,Name of a mouse button in shortcut hints,Right click
+settings.mouse.3,Name of a mouse button in shortcut hints,Middle click
+settings.mouse.4,Name of a mouse button in shortcut hints,Wheel up
+settings.mouse.5,Name of a mouse button in shortcut hints,Wheel down
+settings.mouse.6,Name of a mouse button in shortcut hints,Wheel left
+settings.mouse.7,Name of a mouse button in shortcut hints,Wheel right
+settings.mouse.8,Name of a mouse button in shortcut hints,Mouse back
+settings.mouse.9,Name of a mouse button in shortcut hints,Mouse forward
+settings.pad.button.0,"Gamepad button name in shortcut hints, Xbox layout",A
+settings.pad.button.1,"Gamepad button name in shortcut hints, Xbox layout",B
+settings.pad.button.2,"Gamepad button name in shortcut hints, Xbox layout",X
+settings.pad.button.3,"Gamepad button name in shortcut hints, Xbox layout",Y
+settings.pad.button.4,"Gamepad button name in shortcut hints, Xbox layout",View
+settings.pad.button.5,"Gamepad button name in shortcut hints, Xbox layout",Guide
+settings.pad.button.6,"Gamepad button name in shortcut hints, Xbox layout",Menu
+settings.pad.button.7,"Gamepad button name in shortcut hints, Xbox layout",Left stick press
+settings.pad.button.8,"Gamepad button name in shortcut hints, Xbox layout",Right stick press
+settings.pad.button.9,"Gamepad button name in shortcut hints, Xbox layout",LB
+settings.pad.button.10,"Gamepad button name in shortcut hints, Xbox layout",RB
+settings.pad.button.11,"Gamepad button name in shortcut hints, Xbox layout",D-pad up
+settings.pad.button.12,"Gamepad button name in shortcut hints, Xbox layout",D-pad down
+settings.pad.button.13,"Gamepad button name in shortcut hints, Xbox layout",D-pad left
+settings.pad.button.14,"Gamepad button name in shortcut hints, Xbox layout",D-pad right
+settings.pad.button.15,"Gamepad button name in shortcut hints, Xbox layout",Share
+settings.pad.button.16,"Gamepad button name in shortcut hints, Xbox layout",Paddle 1
+settings.pad.button.17,"Gamepad button name in shortcut hints, Xbox layout",Paddle 2
+settings.pad.button.18,"Gamepad button name in shortcut hints, Xbox layout",Paddle 3
+settings.pad.button.19,"Gamepad button name in shortcut hints, Xbox layout",Paddle 4
+settings.pad.button.20,"Gamepad button name in shortcut hints, Xbox layout",Touchpad
+settings.pad.button.other,Name of an unusual gamepad button,Gamepad button
+settings.pad.axis.0.neg,Gamepad stick or trigger direction in shortcut hints,Left stick left
+settings.pad.axis.0.pos,Gamepad stick or trigger direction in shortcut hints,Left stick right
+settings.pad.axis.1.neg,Gamepad stick or trigger direction in shortcut hints,Left stick up
+settings.pad.axis.1.pos,Gamepad stick or trigger direction in shortcut hints,Left stick down
+settings.pad.axis.2.neg,Gamepad stick or trigger direction in shortcut hints,Right stick left
+settings.pad.axis.2.pos,Gamepad stick or trigger direction in shortcut hints,Right stick right
+settings.pad.axis.3.neg,Gamepad stick or trigger direction in shortcut hints,Right stick up
+settings.pad.axis.3.pos,Gamepad stick or trigger direction in shortcut hints,Right stick down
+settings.pad.axis.4.neg,Gamepad stick or trigger direction in shortcut hints,LT
+settings.pad.axis.4.pos,Gamepad stick or trigger direction in shortcut hints,LT
+settings.pad.axis.5.neg,Gamepad stick or trigger direction in shortcut hints,RT
+settings.pad.axis.5.pos,Gamepad stick or trigger direction in shortcut hints,RT
+settings.pad.axis.other,Name of an unusual gamepad axis,Gamepad axis
+settings.detect.safe_mode,Auto-detect reason: Compatibility renderer,Safe mode: the GPU driver lacks Direct3D 12 and Vulkan support
+settings.detect.apple_pro,Auto-detect reason; {0} Apple chip name,"{0}: Pro, Max or Ultra chip"
+settings.detect.apple_fanless,Auto-detect reason; {0} Apple chip name,{0} in a fanless Mac
+settings.detect.apple_memory,"Auto-detect reason; {0} Apple chip name, {1} memory in GiB","{0} with {1} GiB of memory, under 12 GiB"
+settings.detect.apple_base,Auto-detect reason; {0} Apple chip name,{0} with fan cooling and 12 GiB or more
+settings.detect.integrated,Auto-detect reason; {0} GPU name,"{0} is integrated graphics, below the minimum"
+settings.detect.low_vram,"Auto-detect reason; {0} GPU name, {1} video memory in GiB","{0} has {1} GiB of video memory, under 6 GiB"
+settings.detect.high_adapter,Auto-detect reason; {0} GPU name,{0} meets the High tier
+settings.detect.medium_adapter,Auto-detect reason; {0} GPU name,{0} meets the Medium tier
+settings.detect.dropped,"Auto-detect reason; {0} measured frame time in ms, {1} budget in ms",Test frame time {0} ms over the {1} ms budget; one tier lower
+settings.detect.override,Auto-detect reason when the player chose a tier,Tier chosen in settings

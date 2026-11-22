@@ -1,0 +1,33 @@
+keys,?context,en
+editor_notes.name,Accessible name of the Ship's Notes panel,Ship's notes
+editor_notes.closed,Ship's Notes while no design is open,No design is open.
+editor_notes.checking,Ship's Notes while the first check of the design runs,Checking the design.
+editor_notes.count_rechecking,"Ship's Notes status while the design is checked again; {0} the open note count, such as 5 open notes","{0}, checking again"
+editor_notes.none,Ship's Notes with nothing to report,No open notes. Splash to try her out.
+editor_notes.count_one,Ship's Notes heading line; {0} is 1,{0} open note
+editor_notes.count,Ship's Notes heading line; {0} number of notes,{0} open notes
+editor_notes.show_part,Button on a note: select the part it names,Show part
+editor_notes.show_part.tip,"Tooltip, first line at most 12 words",Selects the part this note names in the view
+editor_notes.fix,Fix button when the fix has no description,Preview fix
+editor_notes.fix.tip,"Tooltip, first line at most 12 words",Shows the change as a ghost; accept it to apply
+editor_notes.fix.flips_tag,Tooltip line on a Fix that makes a briefing tag pass,This fix makes a failing briefing tag pass.
+editor_notes.accept,Button while a fix is previewed,Accept fix
+editor_notes.previewing,Line while a fix is previewed as a ghost; {0} what the fix does,Previewing: {0}
+editor_notes.fix.name,Accessible name of a Fix button; {0} what the fix does,Preview fix: {0}
+editor_notes.accept.tip,"Tooltip, first line at most 12 words",Applies the previewed change as one undo step
+editor_notes.cancel,Button: drop the previewed change,Cancel
+editor_notes.fix_gone,Shown when a fix no longer applies to the changed design,That fix no longer applies. The notes are being checked again.
+editor_notes.suggest.title,Toggle that opens the list of Suggest buttons,Suggest settings
+editor_notes.suggest.tip,"Tooltip, first line at most 12 words",Values the editor proposes but never sets on its own
+editor_notes.suggest.button,Suggest button: preview the suggested value,Suggest
+editor_notes.suggest.button.tip,"Tooltip, first line at most 12 words",Shows the suggested change as a ghost before you accept it
+editor_notes.suggest.accept,Button while a suggestion is previewed,Accept suggestion
+editor_notes.suggest.waiting,Shown in a suggestion row before it is worked out,Measuring the design.
+editor_notes.suggest.ballast,Suggest row: what it sets,Ballast and trim
+editor_notes.suggest.armour,Suggest row: what it sets,Armour layout
+editor_notes.suggest.engine,Suggest row: what it sets,Engine and generator sizing
+editor_notes.suggest.fuel,Suggest row: what it sets,Fuel load
+editor_notes.suggest.sensor,Suggest row: what it sets,Sensor placement
+editor_notes.suggest.bulkhead,Suggest row: what it sets,Bulkhead placement
+editor_notes.suggest.aggression,Suggest row: what it sets (the L1 slider),Aggression
+editor_notes.suggest.emcon,Suggest row: what it sets,EMCON trigger range

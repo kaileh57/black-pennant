@@ -1,0 +1,19 @@
+keys,?context,en
+session.failed,The session could not start or stopped; shown in the failure notice,The sortie could not start.
+session.failed.host_lost,The simulation of this session stopped or its connection closed,The connection to the sortie was lost.
+session.failed.panicked,The simulation stopped on an internal error; a crash report was filed if allowed,The simulation stopped on an internal error.
+session.problem.busy,Setup refused while another session runs,Leave the current sortie first.
+session.problem.no_blueprint,Setup refused: no ship chosen,Choose a ship to take to sea.
+session.problem.design_missing,Setup refused: the chosen design file is gone,That design file is no longer there.
+session.problem.template,Setup refused: unknown mission type,Choose a mission type.
+session.problem.act,Setup refused: unknown act,Choose an act.
+session.problem.weather,Setup refused: unknown weather,Choose the weather.
+session.problem.sea_state,Setup refused: sea state outside 0 to 8,Choose a sea state from 0 to 8.
+session.problem.time_of_day,Setup refused: unknown time of day,Choose a time of day.
+session.problem.no_hull,Setup refused: the mission has no place for the player's ship,This mission has no place for your ship.
+session.problem.config,Setup refused: the sortie could not be built from these choices,This sortie could not be built. Try another mission type or seed.
+session.replay.other_format,"Replay refused; {0} is the file's format number, {1} this build's",This replay was recorded in format {0}. This build plays format {1}.
+session.replay.damaged,Replay refused: the file does not read,This replay file is damaged.
+session.replay.missing,Replay refused: the file cannot be found or read,This replay file cannot be read.
+session.side.hostile_targets,Name of the sandbox side whose ships fight back,Hostile targets
+session.side.targets,Name of the sandbox side whose ships never fire,Targets

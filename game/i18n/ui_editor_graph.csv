@@ -1,0 +1,130 @@
+keys,?context,en
+editor_graph.name,Accessible name of the control graph view,Control graph
+editor_graph.canvas,Accessible name of the graph canvas,Control graph canvas
+editor_graph.officer,Accessible name of the officer picker,Officer shown
+editor_graph.officer_tip,Tooltip,Show one officer's part of the graph or the whole graph.
+editor_graph.all_officers,Officer picker entry,All officers
+editor_graph.add,Button: open the node library,Add node
+editor_graph.add_tip,Tooltip,"Place a source, maths, stage, sink or script node. Right-click the canvas to place it there."
+editor_graph.frame,Button,Show all
+editor_graph.frame_tip,Tooltip,Fit the shown nodes in the view.
+editor_graph.closed,Graph view with no design open,Open a design to see its control graph.
+editor_graph.empty,Graph view while the design has no graph yet,"The graph appears once the design has been checked. It needs a hull with parts."
+editor_graph.empty_officer,Graph view; {0} an officer,{0} has no nodes on this design.
+editor_graph.from,Label beside an input fed by a node of another officer; {0} that node,from {0}
+editor_graph.port.bool,Port type,on or off
+editor_graph.port.scalar,Port type,number
+editor_graph.port.angle,Port type,angle
+editor_graph.port.vec3,Port type,vector
+editor_graph.port.text,Port type,text
+editor_graph.port.stance,Port type,stance
+editor_graph.port.emcon,Port type,emission setting
+editor_graph.port.track,Port type,track
+editor_graph.port.track_list,Port type,track list
+editor_graph.port.detection_list,Port type,detection list
+editor_graph.port.part_state,Port type,part state
+editor_graph.port.orders,Port type,orders
+editor_graph.port.any,Port type of a Select node's choices,any value
+editor_graph.port.tip,"Port tooltip; {0} port name, {1} its type","{0}, carries {1}"
+editor_graph.node.broken,Graph node problem,"This pinned node lost an input, so its officer drives its outputs. It is listed in Ship's Notes."
+editor_graph.node.pinned,Tooltip of the pin glyph,Pinned: kept as you set it when the design changes.
+editor_graph.node.no_ports,Graph node body,No ports
+editor_graph.node.officer,Graph inspector; {0} an officer,Runs under {0}.
+editor_graph.inspector.name,Accessible name of the graph inspector,Graph node settings
+editor_graph.overview.title,Graph inspector title with nothing selected,Graph
+editor_graph.overview.count,"Graph inspector; {0} officer or all officers, {1} number of nodes",{0}: {1} nodes
+editor_graph.overview.hint,Graph inspector,"Select a node to set its inputs and parameters. Drag from an output to an input to connect them, or pick the source in the inspector."
+editor_graph.legend.title,Graph legend heading,Key
+editor_graph.legend.generated,Graph legend,"Grey frame: generated from the design, rebuilt when it changes."
+editor_graph.legend.pinned,Graph legend,"Pin and white frame: edited by you, kept when the design changes."
+editor_graph.legend.broken,Graph legend,Lost an input; its officer drives that output.
+editor_graph.issues.title,Graph inspector heading,Problems
+editor_graph.issues.none,Graph inspector,No problems.
+editor_graph.state.generated,Graph node state,Generated from the design.
+editor_graph.state.rule,Graph node state,Compiled from the rules table.
+editor_graph.state.rule_edit,Graph node state,Edit it in the rules table on the Officers tab.
+editor_graph.state.own,Graph node state,Your node.
+editor_graph.state.pinned,Graph node state,Pinned: kept as you set it when the design changes.
+editor_graph.state.replaced,Graph node state,Replaced by your subgraph. Wire its outputs from your nodes.
+editor_graph.state.subgraph,Graph node state,Part of a replaced stage's subgraph.
+editor_graph.action.pin,Button,Pin
+editor_graph.action.pin_tip,Tooltip,Keep this node as it is when the design changes.
+editor_graph.action.unpin,Button,Unpin
+editor_graph.action.unpin_tip,Tooltip,Return this node to what the design generates.
+editor_graph.action.delete,Button,Delete node
+editor_graph.action.delete_tip,Tooltip,Remove this node and its connections.
+editor_graph.action.replace,Button,Replace with my subgraph
+editor_graph.action.replace_tip,Tooltip,"Fork this stage: your nodes drive its outputs, the officer keeps every other stage."
+editor_graph.action.restore,Button,Return to stock stage
+editor_graph.action.restore_tip,Tooltip,Drop the subgraph and run the officer's own stage again.
+editor_graph.params.title,Graph inspector heading,Parameters
+editor_graph.params.pins,Graph inspector,Changing a parameter pins the node.
+editor_graph.params.kind,Accessible name,Kind of value
+editor_graph.params.number,Constant kind,Number
+editor_graph.params.switch,Constant kind,On or off
+editor_graph.params.on,Switch,On
+editor_graph.inputs.title,Graph inspector heading,Inputs
+editor_graph.inputs.drive,Graph inspector; {0} an output of a replaced stage,Drive {0}
+editor_graph.inputs.pick,Accessible name; {0} input name,Source of {0}
+editor_graph.inputs.none,Input picker entry,Not connected
+editor_graph.inputs.unknown,Input picker entry,A node not on this design
+editor_graph.inputs.source,"Input picker entry; {0} node, {1} its output","{0}, {1}"
+editor_graph.outputs.title,Graph inspector heading,Outputs
+editor_graph.outputs.row,"Graph inspector; {0} output name, {1} where it goes",{0} to {1}
+editor_graph.outputs.unused,Graph inspector,nothing
+editor_graph.live.now,Graph inspector during a splash; {0} the port's current value,Now {0}
+editor_graph.refused.boundary,Graph refusal,"A replaced stage's inputs come from the generated graph, and its outputs from your nodes."
+editor_graph.refused.connect,Graph refusal,"Those ports cannot be joined: the types differ or it would close a loop."
+editor_graph.refused.layer,Graph refusal,This lobby's rules do not allow graph edits.
+editor_graph.refused.generated_edge,Graph refusal,"A generated connection cannot be cut. Connect another output to that input to replace it."
+editor_graph.refused.disconnect,Graph refusal,That connection was not removed.
+editor_graph.refused.delete_generated,Graph refusal,"Generated nodes cannot be deleted. Pin and edit them, or replace their stage."
+editor_graph.refused.param,Graph refusal,That value was not stored.
+editor_graph.refused.replace,Graph refusal,This stage cannot be replaced here. A pinned stage must be unpinned first.
+editor_graph.refused.edit,Graph refusal,That change was not stored.
+editor_graph.refused.add,Graph refusal,That node cannot be placed on this design.
+editor_graph.library.title,Node library title,Node library
+editor_graph.library.search,Search field placeholder,Search nodes
+editor_graph.library.place,Button,Place node
+editor_graph.library.unavailable,Library entry not allowed here; {0} node name,{0} (not allowed here)
+editor_graph.library.none,Node library with no match,No node matches.
+editor_graph.library.ports,"Node library; {0} inputs, {1} outputs","Inputs: {0}. Outputs: {1}."
+editor_graph.library.close,Icon button,Close the node library
+editor_graph.node.passed,Port of a replaced stage that passes one of its inputs to the player's nodes; {0} the input,"{0}, passed on"
+editor_graph.node.set_by_you,Port of a replaced stage driven by the player's nodes; {0} the output,"{0}, set by you"
+editor_script.name,Accessible name of the scripts view,Scripts
+editor_script.new_name,Field placeholder: name of a new script,Name a new script
+editor_script.add,Button,Add script
+editor_script.add_tip,Tooltip,Start an empty Luau script node with this name.
+editor_script.rearm,Button,Re-arm scripts
+editor_script.rearm_tip,Tooltip,Set scripts that greyed out after a fault running again.
+editor_script.rearmed,Status line,Scripts re-armed.
+editor_script.list,Accessible name of the script list,Scripts in this design
+editor_script.list.off,Script list entry; {0} script name,"{0}, switched off"
+editor_script.list.problem,Script list entry; {0} script name,"{0}, does not compile"
+editor_script.enabled,Switch,Running
+editor_script.enabled_tip,Tooltip,Off keeps the source but its officer stage drives the outputs.
+editor_script.place,Button,Place in graph
+editor_script.place_tip,Tooltip,Add this script as a node in the control graph.
+editor_script.placed,Status line,Placed in the control graph. Wire it there.
+editor_script.remove,Button,Delete script
+editor_script.remove_tip,Tooltip,Delete this script and its node from the graph.
+editor_script.remove_title,Confirmation title,Delete this script?
+editor_script.remove_body,Confirmation body; {0} script name,{0} and its node leave the graph. Undo brings them back.
+editor_script.remove_keep,Confirmation button that changes nothing,Keep script
+editor_script.remove_confirm,Confirmation button,Delete script
+editor_script.code,Accessible name of the code field,Luau source
+editor_script.help,Scripts view help line,"Declare ports one per line: --@in name: type and --@out name: type. Types: bool, scalar, angle, vec3, text, stance, emcon, track, track_list, detection_list, part_state, orders."
+editor_script.ports,"Scripts view; {0} inputs, {1} outputs",Inputs: {0}. Outputs: {1}.
+editor_script.ports.none,Scripts view,none
+editor_script.port,"Port in a list; {0} name, {1} type",{0} ({1})
+editor_script.closed,Scripts view with no design open,Open a design to write scripts for it.
+editor_script.not_in_build,Scripts view,"Scripts are not in this build. Luau script nodes arrive in the first update after the first public release."
+editor_script.not_allowed,Scripts view,"This lobby's rules do not allow scripts. They never run in PvP."
+editor_script.empty,Scripts view,"No scripts yet. Name one above and add it, then place it in the graph."
+editor_script.refused.add,Status line,No script was added. A design holds at most 64.
+editor_script.refused.store,Status line,The source was not stored.
+editor_script.refused.enable,Status line,That script cannot run in this lobby.
+editor_script.refused.place,Status line,That script could not be placed in the graph.
+editor_script.refused.rearm,Status line,Scripts re-arm in dry dock or during a splash.
+editor_graph.port.numbered,"Port name when a node has several of the same; {0} name, {1} its order",{0} {1}

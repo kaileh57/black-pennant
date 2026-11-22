@@ -1,0 +1,11 @@
+// Vec<(String, Ruleset)>: the PvP lobby ruleset presets (DESIGN.md L965-976). Unit `data-tuning-rules` owns this
+// file. Both start at the 400 t default cap; the host picks any act cap (150, 400, 900 or 1,800 t) on top.
+// Complexity caps are 600 points per vessel and 3,600 per lobby. Per-part copy limits come from each part's
+// `standard_limit` (point defence, missile launchers, decoys, drones, the jammer and the mine rail), so
+// `part_limits` lists only lobby-specific changes. Players are held to 90 m hulls, and Luau never runs in PvP.
+[
+    // Doctrine presets, sliders and the rules table; no forked officers or graph edits.
+    ("standard", (kind: Standard, tonnage_cap_t: 400.0, complexity_per_vessel: 600.0, complexity_per_lobby: 3600.0, part_limits: {}, max_length_m: 90.0, luau: false)),
+    // Forked officers and graphs allowed as well.
+    ("open", (kind: Open, tonnage_cap_t: 400.0, complexity_per_vessel: 600.0, complexity_per_lobby: 3600.0, part_limits: {}, max_length_m: 90.0, luau: false)),
+]
