@@ -173,6 +173,7 @@ fn is_own(key: &ItemKey, rel: Relevance) -> bool { matches!(key, ItemKey::Vessel
 fn weight(key: &ItemKey, rel: Relevance) -> f32 {
     match key {
         ItemKey::Section(Section::Ship) => 4.0,
+        ItemKey::Section(Section::ShipSlow) => 3.0,
         ItemKey::Section(Section::Pacing) => 3.0,
         ItemKey::Section(_) => 2.0,
         _ => match rel {
@@ -264,7 +265,7 @@ mod tests {
         let near = ItemKey::Vessel(EntityId { index: 1, generation: 1 });
         let far = ItemKey::Vessel(EntityId { index: 3, generation: 1 });
         let o = p.order(&s);
-        assert_eq!(o, vec![ItemKey::Vessel(EntityId { index: 2, generation: 1 }), ItemKey::Section(Section::Ship), ItemKey::Section(Section::Pacing), near, ItemKey::Section(Section::Allies), ItemKey::Section(Section::Alerts), ItemKey::Section(Section::Objectives), far]);
+        assert_eq!(o, vec![ItemKey::Vessel(EntityId { index: 2, generation: 1 }), ItemKey::Section(Section::Ship), ItemKey::Section(Section::Pacing), ItemKey::Section(Section::ShipSlow), near, ItemKey::Section(Section::Allies), ItemKey::Section(Section::Alerts), ItemKey::Section(Section::Objectives), far]);
         // Send everything but the near vessel: it waits, so next interval it outranks the sections.
         let sent: Vec<_> = o.iter().copied().filter(|k| *k != near).collect();
         p.sent(&sent, 0);

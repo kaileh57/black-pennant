@@ -248,6 +248,15 @@ pub fn relevance(own_pos: Option<DVec3>, pos: DVec3, vel: DVec3, own_side: bool,
     if weapon || closing > FAST_CLOSING_MPS { Relevance::DistantFast } else { Relevance::Distant }
 }
 
+/// A track's relevance. Distance comes first (L1425: "1 Hz for tracks more than 10 km from that client's
+/// hull; 2 Hz for weapons in flight and tracks closing faster than 30 kn"), so a friend or engaged track
+/// beyond 10 km takes the distant rates; within 10 km friend, engaged and near order as in [`relevance`].
+pub fn track_relevance(own_pos: Option<DVec3>, pos: DVec3, vel: DVec3, own_side: bool, engaged: bool, weapon: bool) -> Relevance {
+    let beyond = own_pos.is_some_and(|o| { let r = (pos - o).length(); !r.is_finite() || r > DISTANT_M });
+    if beyond { return relevance(own_pos, pos, vel, false, false, weapon); }
+    relevance(own_pos, pos, vel, own_side, engaged, weapon)
+}
+
 /// One track as the viewer sees it. Unit: `sys-snapshot`.
 pub fn track_view(track: &Track, own_pos: Option<DVec3>, tick: u64, tuning: &content::tuning::TrackTuning) -> TrackView {
     let pos = if track.is_live() { track.predict(tick) } else { track.pos };
@@ -274,7 +283,7 @@ pub fn track_view(track: &Track, own_pos: Option<DVec3>, tick: u64, tuning: &con
         engaged_by: track.engaged_by,
         envelope_m: 0.0,
         emitting: track.emitting,
-        relevance: relevance(own_pos, pos, vel, track.stance == Stance::Friend, track.is_live() && engaged, track.domain == Domain::Weapon),
+        relevance: track_relevance(own_pos, pos, vel, track.stance == Stance::Friend, track.is_live() && engaged, track.domain == Domain::Weapon),
         struck: track.struck,
     }
 }
@@ -578,6 +587,11 @@ mod tests {
         assert_eq!(relevance(o, DVec3::new(50_000.0, 0.0, 0.0), DVec3::ZERO, false, false, true), Relevance::DistantFast);
         assert_eq!(relevance(o, DVec3::new(50_000.0, 0.0, 0.0), DVec3::ZERO, false, true, false), Relevance::Engaged);
         assert_eq!(relevance(o, DVec3::new(50_000.0, 0.0, 0.0), DVec3::ZERO, true, true, false), Relevance::OwnSide);
+        // Tracks take the distant tiers beyond 10 km whatever their stance or engagement (L1425).
+        assert_eq!(track_relevance(o, DVec3::new(50_000.0, 0.0, 0.0), DVec3::ZERO, true, true, false), Relevance::Distant);
+        assert_eq!(track_relevance(o, DVec3::new(50_000.0, 0.0, 0.0), DVec3::ZERO, false, true, true), Relevance::DistantFast);
+        assert_eq!(track_relevance(o, DVec3::new(9_000.0, 0.0, 0.0), DVec3::ZERO, true, false, false), Relevance::OwnSide);
+        assert_eq!(track_relevance(o, DVec3::new(9_000.0, 0.0, 0.0), DVec3::ZERO, false, true, false), Relevance::Engaged);
         assert_eq!(relevance(None, DVec3::ZERO, DVec3::ZERO, false, false, false), Relevance::Distant);
         assert_eq!(relevance(o, DVec3::ZERO, DVec3::X, false, false, false), Relevance::Near);
         assert_eq!(relevance(o, DVec3::new(f64::NAN, 0.0, 0.0), DVec3::ZERO, false, false, false), Relevance::Distant);

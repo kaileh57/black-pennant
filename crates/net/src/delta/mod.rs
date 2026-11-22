@@ -46,7 +46,8 @@ use crate::error::NetError;
 use crate::msg::SnapshotAck;
 use crate::schema::replicate::{Coder, Elems, OptSub, WireEq};
 use crate::schema::quant::{dequantize_rot, dequantize_vec, quantize_rot};
-use crate::schema::{BitReader, BitWriter, Replicate, WireBody, WireDecoy, WireVessel, ANG_VEL_UNITS_PER_RADPS};
+use crate::schema::replicate::{track_pos_dq, track_pos_q, track_vel_q, TRACK_POS_UNITS_PER_M, TRACK_VEL_UNITS_PER_MPS};
+use crate::schema::{BitReader, BitWriter, Replicate, WireBody, WireDecoy, WireShipSlow, WireVessel, ANG_VEL_UNITS_PER_RADPS};
 use glam::DQuat;
 use serde::{Deserialize, Serialize};
 use sim_core::EntityId;
@@ -64,16 +65,29 @@ pub enum ItemKey { Vessel(EntityId), Body(EntityId), Decoy(EntityId), Track(Trac
 
 /// The non-list parts of a `Snapshot`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub enum Section { Ship, Allies, Alerts, Objectives, Pacing }
+pub enum Section { Ship, Allies, Alerts, Objectives, Pacing, ShipSlow }
 impl Section {
     /// Every section in key order.
-    pub const ALL: [Section; 5] = [Section::Ship, Section::Allies, Section::Alerts, Section::Objectives, Section::Pacing];
+    pub const ALL: [Section; 6] = [Section::Ship, Section::Allies, Section::Alerts, Section::Objectives, Section::Pacing, Section::ShipSlow];
     fn from_index(i: u64) -> Option<Section> { Section::ALL.get(i as usize).copied() }
 }
 
 /// Byte counts of one frame by item kind, for the bandwidth gate (L930-931) and the connection log.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct FrameBytes { pub header: u32, pub vessels: u32, pub vessel_items: u32, pub bodies: u32, pub tracks: u32, pub sections: u32 }
+pub struct FrameBytes {
+    pub header: u32, pub vessels: u32, pub vessel_items: u32, pub bodies: u32, pub tracks: u32, pub sections: u32,
+    /// Items written of bodies and decoys, and of tracks.
+    #[serde(default)]
+    pub body_items: u32,
+    #[serde(default)]
+    pub track_items: u32,
+    /// Bytes per section, in [`Section::ALL`] order (they sum to `sections`, give or take rounding).
+    #[serde(default)]
+    pub section_bytes: [u32; 6],
+    /// Removed-key list bytes (part of `header`).
+    #[serde(default)]
+    pub removals: u32,
+}
 
 /// What the encoder produced.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -97,6 +111,7 @@ pub(crate) enum ItemVal {
     Decoy(WireDecoy),
     Track(TrackView),
     Ship(Option<ShipStatus>),
+    ShipSlow(Option<WireShipSlow>),
     Allies(Vec<AllyStatus>),
     Alerts(Vec<AlertView>),
     Objectives(Vec<ObjectiveView>),
@@ -151,6 +166,21 @@ fn qmul(a: DQuat, b: DQuat) -> DQuat {
         a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
     )
 }
+/// A track estimate as the frame's tick would see it: the snapshot extrapolates live tracks to its own tick
+/// (`Track::predict`), so between filter updates the position moves by exactly the velocity it carries.
+/// Computed on the quantised grid with integer maths, identical on every platform.
+fn predict_track(b: &TrackView, dt: u64) -> TrackView {
+    let mut p = b.clone();
+    let dt = dt.min(MAX_PREDICT_TICKS);
+    if dt == 0 || b.vel == glam::DVec3::ZERO { return p; }
+    let (pos, vel) = (track_pos_q(b.pos), track_vel_q(b.vel));
+    // Position units per velocity unit-tick: (8 / 32) / 60 = 1 / 240.
+    const DIV: i64 = (TRACK_VEL_UNITS_PER_MPS / TRACK_POS_UNITS_PER_M) as i64 * sim_core::TICK_HZ as i64;
+    let mut q = pos;
+    for i in 0..3 { q[i] = (pos[i] as i64 + div_round(vel[i] as i64 * dt as i64, DIV)).clamp(i32::MIN as i64, i32::MAX as i64) as i32; }
+    p.pos = track_pos_dq(q);
+    p
+}
 fn predict_body(b: &WireBody, dt: u64) -> WireBody {
     let mut p = *b;
     p.pos = advance(b.pos, b.vel, dt.min(MAX_PREDICT_TICKS));
@@ -161,7 +191,7 @@ impl ItemVal {
     fn kind(&self) -> Kind {
         match self {
             ItemVal::Vessel(_) => Kind::Vessel, ItemVal::Body(_) => Kind::Body, ItemVal::Decoy(_) => Kind::Decoy, ItemVal::Track(_) => Kind::Track,
-            ItemVal::Ship(_) => Kind::Section(Section::Ship), ItemVal::Allies(_) => Kind::Section(Section::Allies), ItemVal::Alerts(_) => Kind::Section(Section::Alerts),
+            ItemVal::Ship(_) => Kind::Section(Section::Ship), ItemVal::ShipSlow(_) => Kind::Section(Section::ShipSlow), ItemVal::Allies(_) => Kind::Section(Section::Allies), ItemVal::Alerts(_) => Kind::Section(Section::Alerts),
             ItemVal::Objectives(_) => Kind::Section(Section::Objectives), ItemVal::Pacing(_) => Kind::Section(Section::Pacing),
         }
     }
@@ -173,6 +203,7 @@ impl ItemVal {
             ItemVal::Decoy(v) => ItemKey::Decoy(EntityId::from_u64(v.entity)),
             ItemVal::Track(t) => ItemKey::Track(t.id),
             ItemVal::Ship(_) => ItemKey::Section(Section::Ship),
+            ItemVal::ShipSlow(_) => ItemKey::Section(Section::ShipSlow),
             ItemVal::Allies(_) => ItemKey::Section(Section::Allies),
             ItemVal::Alerts(_) => ItemKey::Section(Section::Alerts),
             ItemVal::Objectives(_) => ItemKey::Section(Section::Objectives),
@@ -186,6 +217,7 @@ impl ItemVal {
             (ItemVal::Decoy(a), ItemVal::Decoy(b)) => a.wire_eq(b),
             (ItemVal::Track(a), ItemVal::Track(b)) => a.wire_eq(b),
             (ItemVal::Ship(a), ItemVal::Ship(b)) => <OptSub as Coder<Option<ShipStatus>>>::same(a, b),
+            (ItemVal::ShipSlow(a), ItemVal::ShipSlow(b)) => <OptSub as Coder<Option<WireShipSlow>>>::same(a, b),
             (ItemVal::Allies(a), ItemVal::Allies(b)) => <Elems as Coder<Vec<AllyStatus>>>::same(a, b),
             (ItemVal::Alerts(a), ItemVal::Alerts(b)) => <Elems as Coder<Vec<AlertView>>>::same(a, b),
             (ItemVal::Objectives(a), ItemVal::Objectives(b)) => <Elems as Coder<Vec<ObjectiveView>>>::same(a, b),
@@ -202,9 +234,10 @@ impl ItemVal {
             (ItemVal::Body(v), _) => v.write(None, w),
             (ItemVal::Decoy(v), Some(ItemVal::Decoy(b))) => v.write(Some(b), w),
             (ItemVal::Decoy(v), _) => v.write(None, w),
-            (ItemVal::Track(v), Some(ItemVal::Track(b))) => v.write(Some(b), w),
+            (ItemVal::Track(v), Some(ItemVal::Track(b))) => v.write(Some(&predict_track(b, dt)), w),
             (ItemVal::Track(v), _) => v.write(None, w),
             (ItemVal::Ship(v), b) => OptSub::put(v, match b { Some(ItemVal::Ship(b)) => Some(b), _ => None }, w),
+            (ItemVal::ShipSlow(v), b) => OptSub::put(v, match b { Some(ItemVal::ShipSlow(b)) => Some(b), _ => None }, w),
             (ItemVal::Allies(v), b) => Elems::put(v, match b { Some(ItemVal::Allies(b)) => Some(b), _ => None }, w),
             (ItemVal::Alerts(v), b) => Elems::put(v, match b { Some(ItemVal::Alerts(b)) => Some(b), _ => None }, w),
             (ItemVal::Objectives(v), b) => Elems::put(v, match b { Some(ItemVal::Objectives(b)) => Some(b), _ => None }, w),
@@ -218,8 +251,9 @@ impl ItemVal {
             Kind::Vessel => ItemVal::Vessel(WireVessel::read(match base { Some(ItemVal::Vessel(b)) => Some(predict_vessel(b, dt)), _ => None }.as_ref(), r)?),
             Kind::Body => ItemVal::Body(WireBody::read(match base { Some(ItemVal::Body(b)) => Some(predict_body(b, dt)), _ => None }.as_ref(), r)?),
             Kind::Decoy => ItemVal::Decoy(WireDecoy::read(match base { Some(ItemVal::Decoy(b)) => Some(b), _ => None }, r)?),
-            Kind::Track => ItemVal::Track(TrackView::read(match base { Some(ItemVal::Track(b)) => Some(b), _ => None }, r)?),
+            Kind::Track => ItemVal::Track(TrackView::read(match base { Some(ItemVal::Track(b)) => Some(predict_track(b, dt)), _ => None }.as_ref(), r)?),
             Kind::Section(Section::Ship) => ItemVal::Ship(OptSub::get(match base { Some(ItemVal::Ship(b)) => Some(b), _ => None }, r)?),
+            Kind::Section(Section::ShipSlow) => ItemVal::ShipSlow(OptSub::get(match base { Some(ItemVal::ShipSlow(b)) => Some(b), _ => None }, r)?),
             Kind::Section(Section::Allies) => ItemVal::Allies(Elems::get(match base { Some(ItemVal::Allies(b)) => Some(b), _ => None }, r)?),
             Kind::Section(Section::Alerts) => ItemVal::Alerts(Elems::get(match base { Some(ItemVal::Alerts(b)) => Some(b), _ => None }, r)?),
             Kind::Section(Section::Objectives) => ItemVal::Objectives(Elems::get(match base { Some(ItemVal::Objectives(b)) => Some(b), _ => None }, r)?),
@@ -235,7 +269,10 @@ fn items_of(snap: &Snapshot) -> BTreeMap<ItemKey, ItemVal> {
     for b in &snap.bodies { m.insert(ItemKey::Body(b.entity), ItemVal::Body(WireBody::from_view(b))); }
     for d in &snap.decoys { m.insert(ItemKey::Decoy(d.entity), ItemVal::Decoy(WireDecoy::from_view(d))); }
     for t in &snap.tracks { m.insert(ItemKey::Track(t.id), ItemVal::Track(t.clone())); }
-    m.insert(ItemKey::Section(Section::Ship), ItemVal::Ship(snap.ship.clone()));
+    let mut ship = snap.ship.clone();
+    let slow = ship.as_mut().map(WireShipSlow::split);
+    m.insert(ItemKey::Section(Section::Ship), ItemVal::Ship(ship));
+    m.insert(ItemKey::Section(Section::ShipSlow), ItemVal::ShipSlow(slow));
     m.insert(ItemKey::Section(Section::Allies), ItemVal::Allies(snap.allies.clone()));
     m.insert(ItemKey::Section(Section::Alerts), ItemVal::Alerts(snap.alerts.clone()));
     m.insert(ItemKey::Section(Section::Objectives), ItemVal::Objectives(snap.objectives.clone()));
@@ -272,7 +309,13 @@ fn get_key(r: &mut BitReader<'_>) -> Result<ItemKey, NetError> { let k = get_kin
 
 /// One write or removal of an item in a sent frame.
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) struct Touch { pub(crate) seq: u32, pub(crate) val: Option<ItemVal> }
+pub(crate) struct Touch {
+    pub(crate) seq: u32,
+    pub(crate) val: Option<ItemVal>,
+    /// Sim tick of the frame that carried it: the time the value describes, from which a later frame
+    /// predicts (both ends keep it, so the prediction interval is exact however long ago the item went).
+    pub(crate) tick: u64,
+}
 
 /// What the encoder knows about the client's copy of one item.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -287,7 +330,7 @@ pub(crate) struct ItemLog {
 }
 
 /// What the client holds for an item in its state after a given frame.
-enum Known<'a> { Value(&'a ItemVal), Absent, Unknown }
+enum Known<'a> { Value(&'a ItemVal, u64), Absent, Unknown }
 
 impl ItemLog {
     fn anchor_seq(&self) -> u32 { self.anchor.as_ref().map_or(0, |t| t.seq) }
@@ -296,7 +339,7 @@ impl ItemLog {
     /// it).
     fn at(&self, b: u32) -> Known<'_> {
         if (self.tainted() && self.unknown_upto <= b) || self.pending.iter().any(|t| t.seq <= b) { return Known::Unknown; }
-        match &self.anchor { Some(Touch { val: Some(v), .. }) => Known::Value(v), _ => Known::Absent }
+        match &self.anchor { Some(Touch { val: Some(v), tick, .. }) => Known::Value(v, *tick), _ => Known::Absent }
     }
     /// The client may hold some value for this item now.
     fn might_hold(&self) -> bool {
@@ -403,7 +446,7 @@ impl SnapshotEncoder {
         }
         for key in gone {
             let log = self.items.get_mut(&key).expect("key from the map");
-            if log.might_hold() { log.push(Touch { seq, val: None }); } else { self.items.remove(&key); }
+            if log.might_hold() { log.push(Touch { seq, val: None, tick }); } else { self.items.remove(&key); }
         }
         let mut removed_all = BitWriter::new();
         removed_all.write_varint(n_removed);
@@ -419,6 +462,8 @@ impl SnapshotEncoder {
         let mut n_items = 0u64;
         let mut cat_bits = [0usize; 5]; // vessels, bodies (and decoys), tracks, sections, removal/header
         let mut vessel_items = 0u32;
+        let (mut body_items, mut track_items) = (0u32, 0u32);
+        let mut sec_bits = [0usize; 6];
         for key in order {
             let Some(cur) = current.get(key) else { continue };
             if !done.insert(*key) { continue; }
@@ -428,11 +473,13 @@ impl SnapshotEncoder {
                 sent.push(*key);
                 continue;
             }
-            let base_val = match (base, log) {
-                (Some(b), Some(l)) => match l.at(b.seq) { Known::Value(v) => Some(v), _ => None },
-                _ => None,
+            let (base_val, base_tick) = match (base, log) {
+                (Some(b), Some(l)) => match l.at(b.seq) { Known::Value(v, t) => (Some(v), t), _ => (None, tick) },
+                _ => (None, tick),
             };
-            let dt = base.map_or(0, |b| tick.saturating_sub(b.tick));
+            // Predict over the time since the value the client holds was sampled, not since the baseline
+            // frame: an item not written every frame is older than the frame that carries it forward.
+            let dt = tick.saturating_sub(base_tick);
             let mut payload = BitWriter::new();
             cur.put(base_val, dt, &mut payload);
             let mut item = BitWriter::with_capacity(payload.bytes.len() + 8);
@@ -461,8 +508,13 @@ impl SnapshotEncoder {
             n_items += 1;
             let cat = match kind { Kind::Vessel => 0, Kind::Body | Kind::Decoy => 1, Kind::Track => 2, Kind::Section(_) => 3 };
             cat_bits[cat] += item.bit_len();
-            if kind == Kind::Vessel { vessel_items += 1; }
-            self.items.entry(*key).or_default().push(Touch { seq, val: Some(stored) });
+            match kind {
+                Kind::Vessel => vessel_items += 1,
+                Kind::Body | Kind::Decoy => body_items += 1,
+                Kind::Track => track_items += 1,
+                Kind::Section(s) => sec_bits[s as usize] += item.bit_len(),
+            }
+            self.items.entry(*key).or_default().push(Touch { seq, val: Some(stored), tick });
             sent.push(*key);
         }
 
@@ -474,7 +526,9 @@ impl SnapshotEncoder {
         let total = bytes.len() as u32;
         let to_bytes = |b: usize| (b / 8) as u32;
         let (v, b, t, s) = (to_bytes(cat_bits[0]), to_bytes(cat_bits[1]), to_bytes(cat_bits[2]), to_bytes(cat_bits[3]));
-        let stats = FrameBytes { header: total.saturating_sub(v + b + t + s), vessels: v, vessel_items, bodies: b, tracks: t, sections: s };
+        let section_bytes = sec_bits.map(to_bytes);
+        let removals = to_bytes(removed_all.bit_len());
+        let stats = FrameBytes { header: total.saturating_sub(v + b + t + s), vessels: v, vessel_items, bodies: b, tracks: t, sections: s, body_items, track_items, section_bytes, removals };
 
         self.history.push_back(FrameRec { seq, tick });
         while self.history.len() > HISTORY { self.history.pop_front(); }
@@ -503,7 +557,12 @@ pub struct DecodedFrame { pub seq: u32, pub tick: u64, pub snapshot: Snapshot, p
 
 /// The client's reconstructed state after one frame.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub(crate) struct ClientState { pub(crate) tick: u64, pub(crate) items: BTreeMap<ItemKey, ItemVal> }
+pub(crate) struct ClientState {
+    pub(crate) tick: u64,
+    pub(crate) items: BTreeMap<ItemKey, ItemVal>,
+    /// Tick of the frame that last wrote each item (the prediction base time, see [`Touch::tick`]).
+    pub(crate) ticks: BTreeMap<ItemKey, u64>,
+}
 
 impl ClientState {
     fn snapshot(&self) -> Snapshot {
@@ -515,11 +574,19 @@ impl ClientState {
                 ItemVal::Decoy(w) => s.decoys.push(w.to_view()),
                 ItemVal::Track(t) => s.tracks.push(t.clone()),
                 ItemVal::Ship(x) => s.ship = x.clone(),
+                ItemVal::ShipSlow(_) => {}
                 ItemVal::Allies(x) => s.allies = x.clone(),
                 ItemVal::Alerts(x) => s.alerts = x.clone(),
                 ItemVal::Objectives(x) => s.objectives = x.clone(),
                 ItemVal::Pacing(x) => s.pacing = x.clone(),
             }
+        }
+        // The own status is whole or absent: until its slow half has arrived it is not shown at all, so no
+        // reader ever sees empty part lists or an empty Bridge Board.
+        match (s.ship.as_mut(), self.items.get(&ItemKey::Section(Section::ShipSlow))) {
+            (Some(ship), Some(ItemVal::ShipSlow(Some(slow)))) => slow.merge_into(ship),
+            (Some(_), _) => s.ship = None,
+            _ => {}
         }
         // Own-side vessels first, then the others, each ascending (the order `Sim::snapshot` uses).
         s.vessels.sort_by_key(|v| (!matches!(v.relevance, Relevance::Own | Relevance::OwnSide), v.entity));
@@ -569,8 +636,8 @@ impl SnapshotDecoder {
             let key = get_key(&mut r)?;
             if matches!(key, ItemKey::Section(_)) { return Err(NetError::Decode("section removal".into())); }
             state.items.remove(&key);
+            state.ticks.remove(&key);
         }
-        let dt = base.map_or(0, |b| tick.saturating_sub(b.tick));
         let n_items = r.read_count(4)?;
         let mut fresh = Vec::with_capacity(n_items);
         for _ in 0..n_items {
@@ -579,12 +646,14 @@ impl SnapshotDecoder {
             let (key, val) = if delta {
                 let key = get_id(kind, &mut r)?;
                 let b = base.and_then(|b| b.items.get(&key)).ok_or_else(|| NetError::Decode("delta against an item the baseline lacks".into()))?;
-                (key, ItemVal::get(kind, Some(b), dt, &mut r)?)
+                let sampled = base.and_then(|b| b.ticks.get(&key)).copied().unwrap_or(tick);
+                (key, ItemVal::get(kind, Some(b), tick.saturating_sub(sampled), &mut r)?)
             } else {
                 let v = ItemVal::get(kind, None, 0, &mut r)?;
                 (v.key(), v)
             };
             state.items.insert(key, val);
+            state.ticks.insert(key, tick);
             fresh.push(key);
         }
 
@@ -833,6 +902,97 @@ mod tests {
         let (b, n) = bytes[60..].iter().fold((0u64, 0u64), |a, &(b, n)| (a.0 + b as u64, a.1 + n as u64));
         let avg = b as f64 / n as f64;
         assert!(avg <= 20.0, "{avg:.1} bytes per vessel update");
+    }
+
+    /// A live track as the snapshot builds it: extrapolated to the frame's tick (`Track::predict`), with a
+    /// filter update every 6 ticks that moves it by up to `noise_m` and its velocity by up to a tenth of that.
+    fn live_track(id: u32, tick: u64, noise_m: f64) -> TrackView {
+        let upd = tick / 6 * 6;
+        let mut rng = Lcg(upd.wrapping_mul(31).wrapping_add(id as u64));
+        let (dx, dz, dv) = ((rng.next() - 0.5) * 2.0 * noise_m, (rng.next() - 0.5) * 2.0 * noise_m, (rng.next() - 0.5) * 0.2 * noise_m);
+        let vel = DVec3::new(7.5 + dv, 0.0, -3.75);
+        let at_upd = DVec3::new(id as f64 * 2000.0 + upd as f64 * 0.125 + dx, 0.0, -(upd as f64) * 0.0625 + dz);
+        TrackView {
+            pos: at_upd + vel * ((tick - upd) as f64 / 60.0), vel, last_update_tick: upd,
+            shape: UncertaintyShape::Ellipse { semi_major_m: 40.0 + (tick - upd) as f32 * 0.2, semi_minor_m: 15.0 + (tick - upd) as f32 * 0.1, bearing_rad: 0.6 },
+            relevance: Relevance::Near, ..track(id, 0)
+        }
+    }
+
+    #[test]
+    fn prediction_runs_from_when_the_client_sampled_the_item() {
+        // A track on the quantisation grid moving one unit per tick, written every third frame (frames 2 ticks
+        // apart) and acked every frame, so the baseline is a frame that did not carry it. Predicting over the
+        // time since the client's sample makes the write a single "unchanged" bit; predicting from the
+        // baseline frame's tick would leave a 4-tick residual on every write.
+        let mut enc = SnapshotEncoder::new();
+        let mut dec = SnapshotDecoder::new();
+        let key = ItemKey::Track(TrackId(1));
+        let at = |tick: u64| {
+            let mut t = track(1, 0);
+            t.pos = DVec3::new(100.0 + tick as f64 * 0.125, 0.0, 0.0);
+            t.vel = DVec3::new(7.5, 0.0, 0.0);
+            t.relevance = Relevance::Near;
+            Snapshot { tick, tracks: vec![t], ..Default::default() }
+        };
+        for f in 0..30u64 {
+            let snap = at(f * 2);
+            let order = if f % 3 == 0 { vec![key] } else { vec![] };
+            let out = enc.encode(&snap, &order, 1 << 16);
+            let d = dec.decode(&out.bytes).unwrap().unwrap();
+            if f % 3 == 0 {
+                assert_eq!(d.snapshot.tracks[0].pos, snap.tracks[0].pos, "frame {f}");
+                if f >= 6 { assert!(out.stats.tracks <= 2, "frame {f}: {} bytes for an exactly predicted track", out.stats.tracks); }
+            }
+            enc.on_ack(dec.ack());
+        }
+    }
+
+    #[test]
+    fn track_updates_stay_small() {
+        // The byte budget of the dominant snapshot item in the reference soak (DESIGN.md L932): 40 live tracks
+        // at 10 Hz in 30 Hz frames, metres of filter noise per update, acks 6 frames late. Before tracks were
+        // predicted and quantised for what an estimate carries, the soak measured about 16.7 bytes per track
+        // update; it measures about 8.4 now.
+        let mut enc = SnapshotEncoder::new();
+        let mut dec = SnapshotDecoder::new();
+        let mut acc = PriorityAccumulator::new(RateTuning::default());
+        let mut acks: VecDeque<SnapshotAck> = VecDeque::new();
+        let (mut bytes, mut items) = (0u64, 0u64);
+        for f in 0..600u64 {
+            let tick = f * 2;
+            let snap = Snapshot { tick, tracks: (1..=40).map(|id| live_track(id, tick, 4.0)).collect(), ..Default::default() };
+            let order = acc.order(&snap);
+            let out = enc.encode(&snap, &order, 1 << 20);
+            acc.sent(&out.sent, tick);
+            let d = dec.decode(&out.bytes).unwrap().unwrap();
+            for (got, want) in d.snapshot.tracks.iter().zip(&snap.tracks) {
+                if d.fresh.contains(&ItemKey::Track(got.id)) { assert!((got.pos - want.pos).length() <= 0.11, "track {} off by {:.3} m", got.id.0, (got.pos - want.pos).length()); }
+            }
+            acks.push_back(dec.ack());
+            if acks.len() > 6 { enc.on_ack(acks.pop_front().unwrap()); }
+            if f >= 60 { bytes += out.stats.tracks as u64; items += out.stats.track_items as u64; }
+        }
+        let avg = bytes as f64 / items as f64;
+        assert!(avg <= 9.0, "{avg:.2} bytes per track update");
+    }
+
+    #[test]
+    fn ship_status_arrives_whole_from_its_two_sections() {
+        let mut enc = SnapshotEncoder::new();
+        let mut dec = SnapshotDecoder::new();
+        let mut snap = world(0, 2);
+        let ship = snap.ship.as_mut().unwrap();
+        ship.compartments = vec![sim_systems::protocol::snapshot::CompartmentView { id: Default::default(), fill: 9, fire: 0, breached: true, valve_open: false, sealed: false }];
+        ship.board.esm_warning = true;
+        // Only the fast half fits: the client shows no status rather than one with empty lists.
+        let fast: Vec<ItemKey> = items_of(&snap).keys().copied().filter(|k| *k != ItemKey::Section(Section::ShipSlow)).collect();
+        let d = dec.decode(&enc.encode(&snap, &fast, 1 << 16).bytes).unwrap().unwrap();
+        assert_eq!(d.snapshot.ship, None);
+        enc.on_ack(dec.ack());
+        let d = dec.decode(&enc.encode(&snap, &[ItemKey::Section(Section::ShipSlow)], 1 << 16).bytes).unwrap().unwrap();
+        assert_eq!(d.snapshot.ship, truth(&snap).ship);
+        assert!(d.snapshot.ship.as_ref().unwrap().board.esm_warning);
     }
 
     #[test]

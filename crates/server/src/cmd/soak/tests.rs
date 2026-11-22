@@ -7,7 +7,7 @@ use content::enums::Act;
 use sim_core::math::DQuat;
 
 fn client(slot: u8) -> ClientReport {
-    ClientReport { slot, frames_rendered: 1000, traffic: Traffic { snapshot_bytes: 1000, vessel_bytes: 200, vessel_updates: 10, event_bytes: 500, projectile_bytes: 100, session_bytes: 0, bulk_bytes: 0, p95_kbps: 200.0 }, ..Default::default() }
+    ClientReport { slot, frames_rendered: 1000, traffic: Traffic { snapshot_bytes: 1000, vessel_bytes: 200, vessel_updates: 10, event_bytes: 500, projectile_bytes: 100, session_bytes: 0, bulk_bytes: 0, p95_kbps: 200.0, ..Default::default() }, ..Default::default() }
 }
 fn report(clients: Vec<ClientReport>) -> SoakReport { SoakReport { sorties: 1, ticks: 100, minutes: 1.0, clients, ..Default::default() } }
 fn verdict(gates: &[(String, bool, f64, f64)], name: &str) -> Option<bool> { gates.iter().find(|g| g.0 == name).map(|g| g.1) }

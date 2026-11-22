@@ -84,6 +84,42 @@ pub struct WireBody {
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WireDecoy { pub entity: u64, pub kind: content::part::DecoyKind, pub owner: u64, pub pos: [i32; 3], pub age_ds: u16 }
 
+/// The slow lists of the own `ShipStatus`, replicated as their own section at the slow-section rate
+/// (`delta::Section::ShipSlow`): part states and readouts, compartments (2 Hz, L640), crew, the Bridge Board
+/// (L1664), offboard units and actions. The rest of the status (speed, heading, attitude, orders, route,
+/// power, mounts, held roles) stays in `Section::Ship` at the ship-status rate.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct WireShipSlow {
+    pub parts: Vec<sim_systems::protocol::snapshot::PartView>,
+    pub compartments: Vec<sim_systems::protocol::snapshot::CompartmentView>,
+    pub crew: sim_systems::protocol::snapshot::CrewView,
+    pub board: sim_systems::protocol::snapshot::BridgeBoard,
+    pub offboard: Vec<sim_systems::protocol::snapshot::OffboardView>,
+    pub actions: Vec<sim_systems::protocol::snapshot::ActionView>,
+}
+impl WireShipSlow {
+    /// Take the slow lists out of a status, leaving them empty in it. Unit: `net-schema`.
+    pub fn split(s: &mut sim_systems::protocol::snapshot::ShipStatus) -> Self {
+        WireShipSlow {
+            parts: std::mem::take(&mut s.parts),
+            compartments: std::mem::take(&mut s.compartments),
+            crew: std::mem::take(&mut s.crew),
+            board: std::mem::take(&mut s.board),
+            offboard: std::mem::take(&mut s.offboard),
+            actions: std::mem::take(&mut s.actions),
+        }
+    }
+    /// Put the slow lists back into a status. Unit: `net-schema`.
+    pub fn merge_into(&self, s: &mut sim_systems::protocol::snapshot::ShipStatus) {
+        s.parts = self.parts.clone();
+        s.compartments = self.compartments.clone();
+        s.crew = self.crew.clone();
+        s.board = self.board.clone();
+        s.offboard = self.offboard.clone();
+        s.actions = self.actions.clone();
+    }
+}
+
 /// Delta coding generated from one field list per item (see `replicate.rs`). `base` is the receiver's copy
 /// of the same item from the acknowledged baseline frame, or `None` for a full write.
 pub trait Replicate: Sized {

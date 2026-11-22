@@ -796,3 +796,24 @@ fn time_compression_steps_the_sim_faster_through_the_session() {
     assert!((r1 - r0 - 240.0).abs() < 24.0, "render advanced {} ticks in 1 s", r1 - r0);
     assert_eq!(client.buffer().stats().extrapolated, before);
 }
+
+#[test]
+fn a_slow_first_tick_does_not_raise_the_ladder() {
+    // The world build makes a sortie's first tick slow (100 ms or more). Without a warm-up guard that one
+    // sample is the whole 2 s p95 window at 00:00 and the ladder steps to rung 2 before anything happens.
+    let dt = Duration::from_millis(5);
+    let mut w = world(1, 0, None);
+    w.start_skirmish(dt);
+    // Replay the start: no steps yet, and the only tick in the window is the slow build tick.
+    w.server.sortie_steps = 0;
+    w.server.load.ticks.clear();
+    w.server.load.record(w.now(), 150.0);
+    assert_eq!(w.server.host_load().tick_p95_ms, 0.0, "not reported before a second of steps");
+    let logged = w.server.log.entries.len();
+    w.run(1.5, dt);
+    let ups: Vec<_> = w.server.log.entries[logged..].iter().filter(|e| matches!(e.kind, LogKind::LadderStep { up: true, .. })).collect();
+    assert!(ups.is_empty(), "ladder rose on the build tick: {ups:?}");
+    assert!(w.server.sortie_steps >= MIN_P95_STEPS);
+    // Past the guard the meter reports what it measures.
+    assert_eq!(w.server.host_load().tick_p95_ms, w.server.load.load(0).tick_p95_ms);
+}

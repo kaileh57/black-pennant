@@ -58,6 +58,8 @@ pub struct ServerOptions {
     /// Dedicated server: no host member, slot 0 is an ordinary player.
     pub dedicated: bool,
     pub quality: QualityTuning,
+    /// Replication rates. The default is fallback 1 of L935 (vessels other than the client's own at 20 Hz):
+    /// the per-client total measured over 256 kbps at 30 Hz, which is the condition L935 names.
     pub rates: RateTuning,
     pub router: RouterOptions,
     /// Record a replay of every sortie (L1043).
@@ -70,7 +72,7 @@ pub struct ServerOptions {
 }
 impl ServerOptions {
     pub fn new(game_version: &str, mode: GameMode) -> Self {
-        Self { game_version: game_version.into(), lobby_name: String::new(), mode, upload_kbps: 1_000, dedicated: false, quality: QualityTuning::default(), rates: RateTuning::default(), router: RouterOptions::default(), record_replays: true, synthetic_tick_ms: 0.0, max_catch_up_ticks: 8 }
+        Self { game_version: game_version.into(), lobby_name: String::new(), mode, upload_kbps: 1_000, dedicated: false, quality: QualityTuning::default(), rates: RateTuning::fallback_20hz(), router: RouterOptions::default(), record_replays: true, synthetic_tick_ms: 0.0, max_catch_up_ticks: 8 }
     }
 }
 

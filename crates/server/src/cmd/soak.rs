@@ -197,6 +197,7 @@ pub fn run(args: &SoakArgs) -> Result<Code, CliError> {
     crate::runtime::write_report(&report, args.out.as_deref())?;
     let failed: Vec<&(String, bool, f64, f64)> = report.gates.iter().filter(|g| !g.1).collect();
     for g in &report.gates { eprintln!("gate {} {} measured {:.4} limit {:.4}", g.0, if g.1 { "pass" } else { "FAIL" }, g.2, g.3); }
+    for c in &report.clients { for line in breakdown(c, report.minutes * 60.0) { eprintln!("{line}"); } }
     eprintln!("soak {} minutes link {} clients {}: {} ticks, tick p95 {:.3} ms p99 {:.3} ms, {:.1} s wall", args.minutes, report.link, report.clients.len(), report.ticks, report.tick_p95_ms, report.tick_p99_ms, started.elapsed().as_secs_f64());
     Ok(if failed.is_empty() { crate::error::PASS } else { crate::error::FAIL })
 }
@@ -399,6 +400,35 @@ fn settled_after(samples: &[(f64, f64)], from_s: f64, limit: f64, hold_s: f64) -
         if covers && window.iter().all(|(_, w)| *w < limit) { return Some(t - from_s); }
     }
     None
+}
+
+/// Per-client byte breakdown lines: each channel, and each part of the snapshot frames, with its total, its
+/// share of the client's bytes and its mean rate over `secs`.
+pub(crate) fn breakdown(c: &ClientReport, secs: f64) -> Vec<String> {
+    let d = &c.traffic.detail;
+    let total: u64 = d.channel_bytes.iter().sum();
+    let kbps = |b: u64| if secs > 0.0 { b as f64 * 8.0 / 1000.0 / secs } else { 0.0 };
+    let share = |b: u64| if total > 0 { b as f64 / total as f64 } else { 0.0 };
+    let mut rows: Vec<(String, u64, u64)> = Vec::new();
+    for (i, name) in ["session", "events", "entity", "projectile", "snapshot", "bulk"].iter().enumerate() {
+        rows.push((format!("channel {name}"), d.channel_bytes[i], d.channel_msgs[i]));
+    }
+    rows.push(("frames deferring".into(), 0, d.deferred_frames));
+    rows.push(("items deferred".into(), 0, d.deferred_items));
+    for (i, name) in ["none", "distant tracks slow", "untracked poses"].iter().enumerate() { rows.push((format!("frames shedding {name}"), 0, d.shed_frames[i])); }
+    rows.push(("frame header".into(), d.frame_header_bytes, d.frames));
+    rows.push(("frame removals".into(), d.removal_bytes, d.frames));
+    rows.push(("frame vessels".into(), c.traffic.vessel_bytes, c.traffic.vessel_updates));
+    rows.push(("frame bodies".into(), d.body_bytes, d.body_items));
+    rows.push(("frame tracks".into(), d.track_bytes, d.track_items));
+    for (i, name) in ["ship", "allies", "alerts", "objectives", "pacing", "ship slow"].iter().enumerate() {
+        rows.push((format!("frame section {name}"), d.section_bytes[i], 0));
+    }
+    let mut out = vec![format!("traffic slot {} total {} bytes, mean {:.1} kbps, p95 {:.1} kbps", c.slot, total, kbps(total), c.traffic.p95_kbps)];
+    for (name, b, n) in rows {
+        out.push(format!("traffic slot {} {name}: {b} bytes ({:.1}%), {:.1} kbps, count {n}", c.slot, share(b) * 100.0, kbps(b)));
+    }
+    out
 }
 
 /// p95 and p99 (nearest rank) of tick times in ms.

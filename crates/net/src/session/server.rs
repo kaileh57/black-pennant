@@ -132,6 +132,8 @@ const LOBBY_BULK_BYTES: usize = 4 * (crate::blueprints::CHUNK_BYTES + 64);
 /// relax after this many quiet ones (2 s).
 const SHED_UP: i32 = 15;
 const SHED_DOWN: i32 = -60;
+/// Steps of a sortie before its tick p95 is reported: one second at 1x (mirrors gdclient's channel backend).
+const MIN_P95_STEPS: u64 = sim_core::TICK_HZ as u64;
 /// Per-second kbps samples kept for the p95 (4 hours).
 const KBPS_KEEP: usize = 4 * 3600;
 
@@ -259,6 +261,8 @@ pub struct ServerSession {
     pub(crate) synthetic_debt_s: f64,
     pub(crate) backlog: u32,
     pub(crate) over_reported: bool,
+    /// Simulation steps run since `start_sortie` (the tick-p95 warm-up guard, see [`MIN_P95_STEPS`]).
+    pub(crate) sortie_steps: u64,
 }
 
 /// What one client message asks for.
@@ -278,7 +282,7 @@ impl ServerSession {
             entitlements: Entitlements::default(), load, saturation: SaturationDetector::new(), log: ConnectionLog::default(), replay: None, last_update: now,
             tick_accumulator: 0.0, last_snapshot: now, last_panel: now, pending_host: Vec::new(), held_events: Vec::new(), accepted: BTreeMap::new(),
             exterior_of: BTreeMap::new(), seq_base: BTreeMap::new(), shut_down: false, last_quality: now, lobby_dirty: true, last_lobby_sent: now,
-            last_lobby_check: now, panel_dirty: true, can_start_prev: false, lobby_print: None, pause_acc: 0.0, synthetic_debt_s: 0.0, backlog: 0, over_reported: false,
+            last_lobby_check: now, panel_dirty: true, can_start_prev: false, lobby_print: None, pause_acc: 0.0, synthetic_debt_s: 0.0, backlog: 0, over_reported: false, sortie_steps: 0,
         }
     }
     /// Add a backend (in-memory for the host's own client; UDP when the player hosts). Returns its index.
@@ -765,10 +769,21 @@ impl ServerSession {
         }
     }
 
+    /// The host load the ladder and the panel see. The tick p95 is not reported for a sortie's first second of
+    /// steps, so the world's slow first tick (the build, 100 ms or more) is not read as overload; it would
+    /// otherwise step the ladder to rung 2 at 00:00 and hold it until the tick leaves the 2 s window. The
+    /// guard counts steps since `start_sortie`, once, as gdclient's channel backend does.
+    fn host_load(&self) -> sim_systems::lod::HostLoad {
+        let mut load = self.load.load(self.backlog);
+        if self.sortie_steps < MIN_P95_STEPS { load.tick_p95_ms = 0.0; }
+        load
+    }
+
     /// The driver contract of `sim_systems::sim`.
     fn run_sim(&mut self, now: Duration, dt: Duration, out: &mut Vec<HostEvent>) {
+        let load = self.host_load();
         let Some(sim) = self.sim.as_mut() else { return };
-        sim.set_host_load(self.load.load(self.backlog));
+        sim.set_host_load(load);
         for p in self.peers.values_mut() {
             if !(p.loaded && p.input_dirty) { continue; }
             p.input_dirty = false;
@@ -803,6 +818,7 @@ impl ServerSession {
             self.load.record(t1, t1.saturating_sub(t0).as_secs_f64() as f32 * 1000.0);
             self.synthetic_debt_s += synthetic_s;
             steps += 1;
+            self.sortie_steps += 1;
             if paused { self.pause_acc -= 1.0; } else { self.tick_accumulator -= 1.0; }
             let drained = sim.drain_events();
             if let Some(r) = self.replay.as_mut() { r.record(sim, &drained); }
@@ -814,7 +830,7 @@ impl ServerSession {
         self.backlog = (self.tick_accumulator.max(0.0) / rate.max(1e-6)).floor().min(u32::MAX as f64) as u32;
         for e in &events {
             if let SimEvent::LadderStep { rung, sub_step, up } = e.event {
-                self.log.push(now, LogKind::LadderStep { rung, sub_step, up, tick_p95_ms: self.load.load(self.backlog).tick_p95_ms });
+                self.log.push(now, LogKind::LadderStep { rung, sub_step, up, tick_p95_ms: self.host_load().tick_p95_ms });
                 self.panel_dirty = true;
             }
         }
@@ -921,6 +937,20 @@ impl ServerSession {
         p.traffic.snapshot_bytes += n as u64;
         p.traffic.vessel_bytes += frame.stats.vessels as u64;
         p.traffic.vessel_updates += frame.stats.vessel_items as u64;
+        let d = &mut p.traffic.detail;
+        d.channel_bytes[Channel::Unreliable.id() as usize] += n as u64;
+        d.channel_msgs[Channel::Unreliable.id() as usize] += 1;
+        d.frames += 1;
+        d.frame_header_bytes += frame.stats.header as u64;
+        d.removal_bytes += frame.stats.removals as u64;
+        d.body_bytes += frame.stats.bodies as u64;
+        d.body_items += frame.stats.body_items as u64;
+        d.track_bytes += frame.stats.tracks as u64;
+        d.track_items += frame.stats.track_items as u64;
+        for (a, b) in d.section_bytes.iter_mut().zip(frame.stats.section_bytes) { *a += b as u64; }
+        d.deferred_items += frame.deferred as u64;
+        d.deferred_frames += u64::from(frame.deferred > 0);
+        d.shed_frames[match p.priority.shedding() { Shedding::None => 0, Shedding::DistantTracksSlow => 1, Shedding::UntrackedPoses => 2 }] += 1;
         p.account(now, n);
         if p.capture.is_some() { p.capture_pending.push_back((frame.seq, snap.tick, frame.bytes.clone())); }
         if let Some(Some(t)) = self.transports.get_mut(conn.transport as usize) {
@@ -1079,7 +1109,7 @@ impl ServerSession {
             players.push(PlayerLink { slot, name, host: false, ping_ms: 0, loss: 0.0, frames_behind: 0, quality: LinkQuality::Poor, cap_kbps: 0, warning: None, held_s: Some(left.as_secs().min(u16::MAX as u64) as u16) });
         }
         players.sort_by_key(|p| p.slot);
-        let load = self.load.load(self.backlog);
+        let load = self.host_load();
         ConnectionPanel { players, host_tick_hz: self.load.tick_hz(now), host_tick_p95_ms: load.tick_p95_ms, saturated: self.saturation.saturated() }
     }
 
@@ -1099,6 +1129,8 @@ impl ServerSession {
             Channel::Bulk => p.traffic.bulk_bytes += n as u64,
             Channel::Unreliable => p.traffic.snapshot_bytes += n as u64,
         }
+        p.traffic.detail.channel_bytes[ch.id() as usize] += n as u64;
+        p.traffic.detail.channel_msgs[ch.id() as usize] += 1;
         p.account(now, n);
         p.outbox[slot_of(ch)].push_back(bytes);
     }
@@ -1185,6 +1217,7 @@ impl ServerSession {
         self.synthetic_debt_s = 0.0;
         self.backlog = 0;
         self.over_reported = false;
+        self.sortie_steps = 0;
         let seated: Vec<ConnRef> = {
             let sim = self.sim.as_ref().expect("just set");
             self.peers.iter().filter(|(_, p)| p.admitted() && p.slot.is_some_and(|s| sim.players().iter().any(|q| q.slot == s))).map(|(c, _)| *c).collect()
@@ -1383,6 +1416,33 @@ pub struct Traffic {
     pub session_bytes: u64,
     /// p95 of per-second totals in kbps.
     pub p95_kbps: f32,
+    /// Where the bytes went (soak breakdown). Additive diagnostics; the gates read the fields above.
+    #[serde(default)]
+    pub detail: TrafficDetail,
+}
+
+/// Per-client byte breakdown by channel and, inside snapshot frames, by item kind.
+#[derive(Clone, Copy, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct TrafficDetail {
+    /// Bytes and messages queued per channel, by [`Channel::id`] (Session, Events, Entity, Projectile,
+    /// Unreliable, Bulk).
+    pub channel_bytes: [u64; 6],
+    pub channel_msgs: [u64; 6],
+    /// Snapshot frames sent and their bytes by part: frame header (including removals), removals alone,
+    /// bodies and decoys, tracks, and each section in `delta::Section::ALL` order.
+    pub frames: u64,
+    pub frame_header_bytes: u64,
+    pub removal_bytes: u64,
+    pub body_bytes: u64,
+    pub body_items: u64,
+    pub track_bytes: u64,
+    pub track_items: u64,
+    pub section_bytes: [u64; 6],
+    /// Items due that did not fit their frame's budget, and frames that deferred any.
+    pub deferred_items: u64,
+    pub deferred_frames: u64,
+    /// Frames sent at each over-cap shedding stage (L937): none, distant tracks slow, untracked poses.
+    pub shed_frames: [u64; 3],
 }
 
 #[cfg(test)]

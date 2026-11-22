@@ -14,14 +14,14 @@
 //! and pacing), so `delta` sends their changed fields rather than whole values.
 use super::bits::small_bits;
 use super::quant::{dequantize_pos, dequantize_vec, pack_rot, quantize_pos, quantize_vec, unpack_rot};
-use super::{BitReader, BitWriter, QuantPose, Replicate, WireBody, WireDecoy, WireTurret, WireVessel, LIN_VEL_UNITS_PER_MPS, QUAT_COMPONENT_BITS};
+use super::{BitReader, BitWriter, QuantPose, Replicate, WireBody, WireDecoy, WireShipSlow, WireTurret, WireVessel, LIN_VEL_UNITS_PER_MPS, QUAT_COMPONENT_BITS};
 use crate::error::NetError;
 use bincode::Options;
 use content::ids::PartSlot;
 use glam::DVec3;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use sim_systems::protocol::snapshot::{BridgeBoard, Pacing, ShipStatus, TrackView};
+use sim_systems::protocol::snapshot::{BridgeBoard, Pacing, ShipStatus, TrackView, UncertaintyShape};
 
 /// Largest serde blob inside a frame or event batch.
 pub(crate) const MAX_BLOB_BYTES: u64 = 1 << 20;
@@ -65,6 +65,27 @@ pub(crate) struct Rot;
 pub(crate) struct Pos;
 /// Linear velocity in m/s, quantised to 1/256 m/s.
 pub(crate) struct Vel;
+/// A track's estimated position at 1/[`TRACK_POS_UNITS_PER_M`] m as a [`Resid`] residual against the base
+/// (which `delta` advances by the base velocity, so a track between filter updates costs a few bits).
+pub(crate) struct TrackPos;
+/// A track's estimated velocity at 1/[`TRACK_VEL_UNITS_PER_MPS`] m/s as a [`Resid`] residual.
+pub(crate) struct TrackVel;
+/// A track's uncertainty shape, lengths at 1/[`SHAPE_UNITS_PER_M`] m and angles at 16 bits per turn;
+/// component residuals against a base of the same variant.
+pub(crate) struct Shape;
+
+/// Uncertainty-shape length units per metre (0.25 m). DESIGN.md fixes no precision for the drawn 95% contour
+/// (L460); a quarter metre is below a pixel at every plot scale.
+pub const SHAPE_UNITS_PER_M: f32 = 4.0;
+/// Track estimate units: 1/8 m and 1/32 m/s. A track is a filtered sensor estimate whose updates move it by
+/// metres (L460), so the 2 mm pose grid of L920 only carries noise; DESIGN.md fixes no track precision. An
+/// eighth of a metre is far under the 18 px symbol-jump limit (L1437) at any plot scale.
+pub const TRACK_POS_UNITS_PER_M: f64 = 8.0;
+pub const TRACK_VEL_UNITS_PER_MPS: f64 = 32.0;
+pub(crate) fn track_pos_q(p: DVec3) -> [i32; 3] { quantize_vec(p, TRACK_POS_UNITS_PER_M) }
+pub(crate) fn track_pos_dq(q: [i32; 3]) -> DVec3 { dequantize_vec(q, TRACK_POS_UNITS_PER_M) }
+pub(crate) fn track_vel_q(v: DVec3) -> [i32; 3] { quantize_vec(v, TRACK_VEL_UNITS_PER_MPS) }
+pub(crate) fn track_vel_dq(q: [i32; 3]) -> DVec3 { dequantize_vec(q, TRACK_VEL_UNITS_PER_MPS) }
 
 fn bad(what: &str) -> NetError { NetError::Decode(format!("bad {what}")) }
 
@@ -329,6 +350,125 @@ macro_rules! vec3_coder {
     };
 }
 vec3_coder!(Pos, quantize_pos, dequantize_pos);
+
+macro_rules! resid_vec3_coder {
+    ($name:ty, $q:expr, $dq:expr) => {
+        impl Coder<DVec3> for $name {
+            fn same(cur: &DVec3, base: &DVec3) -> bool { ($q)(*cur) == ($q)(*base) }
+            fn put(cur: &DVec3, base: Option<&DVec3>, w: &mut BitWriter) {
+                let b = base.map(|b| ($q)(*b));
+                <Resid as Coder<[i32; 3]>>::put(&($q)(*cur), b.as_ref(), w)
+            }
+            fn get(base: Option<&DVec3>, r: &mut BitReader<'_>) -> Result<DVec3, NetError> {
+                let b = base.map(|b| ($q)(*b));
+                Ok(($dq)(<Resid as Coder<[i32; 3]>>::get(b.as_ref(), r)?))
+            }
+        }
+    };
+}
+resid_vec3_coder!(TrackPos, track_pos_q, track_pos_dq);
+resid_vec3_coder!(TrackVel, track_vel_q, track_vel_dq);
+
+/// Shape lengths and angles as integers: (variant, components). Lengths clamp at 0 and at about 4,000 km.
+fn shape_q(s: &UncertaintyShape) -> (u8, [i64; 5]) {
+    let len = |m: f32| if m.is_finite() { (m.max(0.0) * SHAPE_UNITS_PER_M).round().min(16_000_000.0) as i64 } else { 0 };
+    let ang = |a: f32| super::quant::quantize_angle(a) as i64;
+    match *s {
+        UncertaintyShape::Circle { radius_m } => (0, [len(radius_m), 0, 0, 0, 0]),
+        UncertaintyShape::Ellipse { semi_major_m, semi_minor_m, bearing_rad } => (1, [len(semi_major_m), len(semi_minor_m), ang(bearing_rad), 0, 0]),
+        UncertaintyShape::Wedge { apex, bearing_rad, half_angle_rad, near_m, far_m } => {
+            let p = quantize_pos(DVec3::new(apex.x, 0.0, apex.y));
+            // The apex is a world position (1/512 m like every position); packed as x then z.
+            (2, [((p[0] as i64) << 32) | (p[2] as u32 as i64), ang(bearing_rad), ang(half_angle_rad), len(near_m), len(far_m)])
+        }
+    }
+}
+fn shape_dq(kind: u8, c: [i64; 5]) -> Result<UncertaintyShape, NetError> {
+    let len = |q: i64| q as f32 / SHAPE_UNITS_PER_M;
+    let ang = |q: i64| super::quant::dequantize_angle(q as u16);
+    Ok(match kind {
+        0 => UncertaintyShape::Circle { radius_m: len(c[0]) },
+        1 => UncertaintyShape::Ellipse { semi_major_m: len(c[0]), semi_minor_m: len(c[1]), bearing_rad: ang(c[2]) },
+        2 => {
+            let p = dequantize_pos([(c[0] >> 32) as i32, 0, c[0] as u32 as i32]);
+            UncertaintyShape::Wedge { apex: glam::DVec2::new(p.x, p.z), bearing_rad: ang(c[1]), half_angle_rad: ang(c[2]), near_m: len(c[3]), far_m: len(c[4]) }
+        }
+        _ => return Err(bad("shape kind")),
+    })
+}
+/// Components each variant uses, and which of them are angles (wrapping 16-bit deltas) or the packed apex.
+const SHAPE_PARTS: [usize; 3] = [1, 3, 5];
+fn shape_part_kind(kind: u8, i: usize) -> u8 {
+    // 0 length, 1 angle, 2 packed apex.
+    match (kind, i) { (1, 2) | (2, 1) | (2, 2) => 1, (2, 0) => 2, _ => 0 }
+}
+fn shape_check(kind: u8, c: &[i64; 5]) -> Result<(), NetError> {
+    for (i, &v) in c.iter().enumerate().take(SHAPE_PARTS[kind as usize]) {
+        let ok = match shape_part_kind(kind, i) { 0 => (0..=16_000_000).contains(&v), 1 => (0..=65_535).contains(&v), _ => true };
+        if !ok { return Err(bad("shape component")); }
+    }
+    Ok(())
+}
+impl Coder<UncertaintyShape> for Shape {
+    fn same(cur: &UncertaintyShape, base: &UncertaintyShape) -> bool { shape_q(cur) == shape_q(base) }
+    fn put(cur: &UncertaintyShape, base: Option<&UncertaintyShape>, w: &mut BitWriter) {
+        let (k, c) = shape_q(cur);
+        if let Some(b) = base {
+            let (bk, bc) = shape_q(b);
+            w.write_bool(bk == k);
+            if bk == k {
+                for i in 0..SHAPE_PARTS[k as usize] {
+                    match shape_part_kind(k, i) {
+                        1 => w.write_small((c[i] as u16).wrapping_sub(bc[i] as u16) as i16 as i64),
+                        2 => { for (x, y) in [((c[i] >> 32) as i32, (bc[i] >> 32) as i32), (c[i] as u32 as i32, bc[i] as u32 as i32)] { w.write_small(x as i64 - y as i64); } }
+                        _ => w.write_small(c[i] - bc[i]),
+                    }
+                }
+                return;
+            }
+        }
+        w.write_bits(k as u64, 2);
+        for i in 0..SHAPE_PARTS[k as usize] {
+            match shape_part_kind(k, i) {
+                1 => w.write_bits(c[i] as u64, 16),
+                2 => { w.write_svarint((c[i] >> 32) as i32 as i64); w.write_svarint(c[i] as u32 as i32 as i64); }
+                _ => w.write_varint(c[i] as u64),
+            }
+        }
+    }
+    fn get(base: Option<&UncertaintyShape>, r: &mut BitReader<'_>) -> Result<UncertaintyShape, NetError> {
+        let pack = |x: i64, z: i64| -> Result<i64, NetError> {
+            let (x, z) = (i32::try_from(x).map_err(|_| bad("shape apex"))?, i32::try_from(z).map_err(|_| bad("shape apex"))?);
+            Ok(((x as i64) << 32) | (z as u32 as i64))
+        };
+        if let Some(b) = base {
+            if r.read_bool()? {
+                let (k, mut c) = shape_q(b);
+                for i in 0..SHAPE_PARTS[k as usize] {
+                    c[i] = match shape_part_kind(k, i) {
+                        1 => (c[i] as u16).wrapping_add(i16::try_from(r.read_small()?).map_err(|_| bad("shape angle"))? as u16) as i64,
+                        2 => { let x = (c[i] >> 32) as i32 as i64 + r.read_small()?; let z = c[i] as u32 as i32 as i64 + r.read_small()?; pack(x, z)? }
+                        _ => c[i].checked_add(r.read_small()?).ok_or_else(|| bad("shape length"))?,
+                    };
+                }
+                shape_check(k, &c)?;
+                return shape_dq(k, c);
+            }
+        }
+        let k = r.read_bits(2)? as u8;
+        if k > 2 { return Err(bad("shape kind")); }
+        let mut c = [0i64; 5];
+        for (i, ci) in c.iter_mut().enumerate().take(SHAPE_PARTS[k as usize]) {
+            *ci = match shape_part_kind(k, i) {
+                1 => r.read_bits(16)? as i64,
+                2 => { let x = r.read_svarint()?; let z = r.read_svarint()?; pack(x, z)? }
+                _ => i64::try_from(r.read_varint()?).map_err(|_| bad("shape length"))?,
+            };
+        }
+        shape_check(k, &c)?;
+        shape_dq(k, c)
+    }
+}
 vec3_coder!(Vel, |v| quantize_vec(v, LIN_VEL_UNITS_PER_MPS), |q| dequantize_vec(q, LIN_VEL_UNITS_PER_MPS));
 
 /// Declare one replicated item: `replicate!(Type { field: Coder, ... })` with every field of `Type`.
@@ -357,6 +497,49 @@ macro_rules! replicate {
                         if !r.read_bool()? { return Ok(b.clone()); }
                         $( let $f = r.read_bool()?; )+
                         Ok(Self { $( $f: if $f { <$c as Coder<_>>::get(Some(&b.$f), r)? } else { b.$f.clone() }, )+ })
+                    }
+                }
+            }
+        }
+    };
+}
+
+/// Like `replicate!`, with the fields split into a hot group (one mask bit each) and a cold group behind a
+/// single "any cold field changed" bit, then one mask bit per cold field. For items where a few fields
+/// change on almost every write and the rest rarely do (tracks), this saves most of the mask.
+macro_rules! replicate_hot_cold {
+    ($ty:ty { hot: { $($h:ident : $hc:ty),+ $(,)? }, cold: { $($c:ident : $cc:ty),+ $(,)? } $(,)? }) => {
+        impl WireEq for $ty {
+            fn wire_eq(&self, o: &Self) -> bool { true $(&& <$hc as Coder<_>>::same(&self.$h, &o.$h))+ $(&& <$cc as Coder<_>>::same(&self.$c, &o.$c))+ }
+        }
+        impl Replicate for $ty {
+            fn write(&self, base: Option<&Self>, w: &mut BitWriter) {
+                match base {
+                    None => { $( <$hc as Coder<_>>::put(&self.$h, None, w); )+ $( <$cc as Coder<_>>::put(&self.$c, None, w); )+ }
+                    Some(b) => {
+                        let any = !self.wire_eq(b);
+                        w.write_bool(any);
+                        if !any { return; }
+                        $( w.write_bool(!<$hc as Coder<_>>::same(&self.$h, &b.$h)); )+
+                        let cold = false $(|| !<$cc as Coder<_>>::same(&self.$c, &b.$c))+;
+                        w.write_bool(cold);
+                        if cold { $( w.write_bool(!<$cc as Coder<_>>::same(&self.$c, &b.$c)); )+ }
+                        $( if !<$hc as Coder<_>>::same(&self.$h, &b.$h) { <$hc as Coder<_>>::put(&self.$h, Some(&b.$h), w); } )+
+                        $( if !<$cc as Coder<_>>::same(&self.$c, &b.$c) { <$cc as Coder<_>>::put(&self.$c, Some(&b.$c), w); } )+
+                    }
+                }
+            }
+            fn read(base: Option<&Self>, r: &mut BitReader<'_>) -> Result<Self, NetError> {
+                match base {
+                    None => Ok(Self { $( $h: <$hc as Coder<_>>::get(None, r)?, )+ $( $c: <$cc as Coder<_>>::get(None, r)?, )+ }),
+                    Some(b) => {
+                        if !r.read_bool()? { return Ok(b.clone()); }
+                        $( let $h = r.read_bool()?; )+
+                        let cold = r.read_bool()?;
+                        $( let $c = cold && r.read_bool()?; )+
+                        $( let $h = if $h { <$hc as Coder<_>>::get(Some(&b.$h), r)? } else { b.$h.clone() }; )+
+                        $( let $c = if $c { <$cc as Coder<_>>::get(Some(&b.$c), r)? } else { b.$c.clone() }; )+
+                        Ok(Self { $( $h, )+ $( $c, )+ })
                     }
                 }
             }
@@ -394,29 +577,33 @@ replicate!(WireBody {
 
 replicate!(WireDecoy { entity: UVar, kind: Serde, owner: UVar, pos: Resid, age_ds: UVar });
 
-replicate!(TrackView {
-    id: Serde,
-    domain: Serde,
-    stance: Serde,
-    stance_reason: Serde,
-    rung: Serde,
-    rung_reason: Serde,
-    grade: Serde,
-    pos: Pos,
-    vel: Vel,
-    shape: Serde,
-    last_update_tick: SVar,
-    last_known: Raw,
-    class: Serde,
-    candidates: UVar,
-    sources: Serde,
-    trend: Serde,
-    inbound: Raw,
-    engaged_by: Raw,
-    envelope_m: F32,
-    emitting: Raw,
-    relevance: Serde,
-    struck: Raw,
+replicate_hot_cold!(TrackView {
+    hot: {
+        pos: TrackPos,
+        vel: TrackVel,
+        shape: Shape,
+        last_update_tick: SVar,
+    },
+    cold: {
+        id: Serde,
+        domain: Serde,
+        stance: Serde,
+        stance_reason: Serde,
+        rung: Serde,
+        rung_reason: Serde,
+        grade: Serde,
+        last_known: Raw,
+        class: Serde,
+        candidates: UVar,
+        sources: Serde,
+        trend: Serde,
+        inbound: Raw,
+        engaged_by: Raw,
+        envelope_m: F32,
+        emitting: Raw,
+        relevance: Serde,
+        struck: Raw,
+    },
 });
 
 replicate!(BridgeBoard { officers: Elems, radiating: Serde, esm_warning: Raw, emcon: Serde, radio: Serde });
@@ -443,6 +630,8 @@ replicate!(ShipStatus {
     longest_envelope_m: F32,
     cells_lost: F32,
 });
+
+replicate!(WireShipSlow { parts: Elems, compartments: Elems, crew: Serde, board: Sub, offboard: Elems, actions: Elems });
 
 replicate!(Pacing {
     paused: Raw,
