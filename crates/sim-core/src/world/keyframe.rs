@@ -9,8 +9,8 @@
 //!
 //! What is stored, and what is rebuilt:
 //! - The entity table, the flat stores (`Projectiles`, `Bodies`, `Decoys`, whole through serde, private
-//!   columns included), split jobs, weather, the wave set, the queued events and every world counter go in
-//!   as they are.
+//!   columns included), split jobs, weather, the wave set and any weather turn in progress, the queued
+//!   events and every world counter go in as they are.
 //! - Each vessel stores its blueprint hash and all mutable state. Its cell grid is the damage array (run
 //!   lengths), scorch, the sealed-air bits and the dirty chunk marks; chunks, interned types and line extents
 //!   are rebuilt from the prefab by removing the cells at bucket 8. Compartments, cuboids, buoyancy blocks
@@ -118,6 +118,7 @@ struct Frame<'a> {
     tick: Tick,
     weather: WeatherState,
     waves: WaveSet,
+    wave_blend: Option<super::weather::WaveBlend>,
     entities: Cow<'a, EntityTable>,
     /// Ascending slot.
     vessels: Vec<VesselFrame<'a>>,
@@ -158,7 +159,7 @@ fn finite_kin(k: &Kinematics) -> bool {
 fn steer_finite(s: &crate::munitions::Steer) -> bool {
     use crate::munitions::Steer;
     match s {
-        Steer::Hold | Steer::Detonate => true,
+        Steer::Hold | Steer::Detonate | Steer::Ditch => true,
         Steer::Accel(a) => a.is_finite(),
         Steer::Waypoint(p) => p.is_finite(),
         Steer::Orbit { centre, radius_m } => centre.is_finite() && radius_m.is_finite(),
@@ -194,9 +195,11 @@ fn check_stores(frame: &Frame<'_>) -> Result<(), KeyframeError> {
     if !(all3(&p.pos) && all3(&p.vel) && all1(&p.v_1km) && all1(&p.path_m)) { return Err(corrupt("projectile state is not finite")); }
     if !p.sphere_prev.windows(2).all(|w| w[0].0 < w[1].0) || !p.sphere_prev.iter().all(|s| s.1.is_finite()) { return Err(corrupt("projectile sweep cache is inconsistent")); }
 
-    let w = &frame.waves;
-    if w.count as usize > crate::waves::MAX_WAVES { return Err(corrupt("wave set has too many components")); }
-    if !w.waves.iter().all(|g| g.dir.is_finite() && g.k.is_finite() && g.omega.is_finite() && g.amplitude.is_finite() && g.q.is_finite() && g.phase.is_finite()) { return Err(corrupt("wave set is not finite")); }
+    let sets = [Some(&frame.waves), frame.wave_blend.as_ref().map(|b| &b.from), frame.wave_blend.as_ref().map(|b| &b.to)];
+    for w in sets.into_iter().flatten() {
+        if w.count as usize > crate::waves::MAX_WAVES { return Err(corrupt("wave set has too many components")); }
+        if !w.waves.iter().all(|g| g.dir.is_finite() && g.k.is_finite() && g.omega.is_finite() && g.amplitude.is_finite() && g.q.is_finite() && g.phase.is_finite()) { return Err(corrupt("wave set is not finite")); }
+    }
     Ok(())
 }
 
@@ -379,6 +382,7 @@ impl World {
             tick: self.tick,
             weather: self.weather,
             waves: self.waves,
+            wave_blend: self.wave_blend,
             entities: Cow::Borrowed(&self.entities),
             vessels: self.vessels.iter().map(|(_, v)| save_vessel(v, self.prefabs.get(v.id).map(|p| &**p), self.aux.get(v.id).unwrap_or(&no_aux))).collect(),
             split_jobs: Cow::Borrowed(&self.split_jobs),
@@ -431,6 +435,7 @@ impl World {
             decoys: frame.decoys.into_owned(),
             physics: PhysicsWorld::new(),
             waves: frame.waves,
+            wave_blend: frame.wave_blend,
             weather: frame.weather,
             terrain: Terrain::new(config.map.clone()),
             events: frame.events.into_owned(),

@@ -49,7 +49,8 @@
 //!   A vessel or decoy that appears is drawn at its first pose until the playback tick reaches it; a body
 //!   (missile, torpedo) is not drawn before its first sample, so it never hangs in the air at launch.
 //! - Non-entity sections (tracks, ship status, allies, alerts, objectives, pacing) come from the newest frame
-//!   at or before the playback tick, so plot symbols and HUD stay in step with the drawn hulls.
+//!   at or before the playback tick, so plot symbols and HUD stay in step with the drawn hulls. Live tracks are
+//!   carried by their velocity from that frame's tick to the sampled snapshot's tick.
 //! - Client shells end at their impact or splash point: [`ShellTracker::close`] keeps a shell until the
 //!   playback tick reaches the impact, so it disappears where the effect plays instead of a delay early. A
 //!   shell the client never hears the end of is dropped below the deepest wave trough or past the server's
@@ -338,6 +339,17 @@ impl SnapshotBuffer {
             alerts: base.alerts.clone(),
             objectives: base.objectives.clone(),
         };
+        // The tracks are the base frame's, which describe its own tick (`snapshot::track_view` carries a live
+        // track to its frame's tick): carry live ones to this snapshot's tick, so a track's position describes
+        // `snapshot.tick` like everything else in it, and the client carries it on from there to the render
+        // tick (gdclient `interp::carried_track_pos`). DECISION (r4).
+        let dt_s = (snapshot.tick as f64 - base.tick as f64) / sim_core::TICK_HZ as f64;
+        if dt_s != 0.0 && dt_s.is_finite() {
+            for t in snapshot.tracks.iter_mut().filter(|t| !t.last_known && t.vel.is_finite()) {
+                let p = t.pos + t.vel * dt_s;
+                if p.is_finite() { t.pos = p; }
+            }
+        }
         for (e, ring) in &self.vessels {
             if self.drawn(*e, r, ring.first_tick(), false) { if let Some(v) = sample_vessel(ring, r) { snapshot.vessels.push(v); } }
         }

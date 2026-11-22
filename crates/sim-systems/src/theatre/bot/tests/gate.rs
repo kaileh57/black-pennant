@@ -11,7 +11,10 @@
 //!   (default 4), `BP_FIRST`: index of the first seed (default 0). `BP_MIN`: the cap in simulated minutes (45).
 //! - `BP_DROP=n`: the L317 fallback for this run only: drop the n last-added droppable hostile hulls of every
 //!   operation run (`CampaignRules::hostile_drop`; `all` drops every droppable one). Nothing is written to data.
-//! - `BP_PILOT`: `full` (default, the gate) or `route` (the hull only sails the briefing route). The pilot no
+//! - `BP_PILOT`: `full` (default, the gate), `route` (the hull only sails the briefing route) or `ordered`
+//!   (`full` plus the two orders a player plainly gives: emission control Active once, on contact or at the
+//!   route's end, and a designation on the objective's or the nearest Hostile track; `PilotOrders::ORDERED`).
+//!   `ordered` says whether a player who gives basic orders wins; it is not the gate. The gate's pilot no
 //!   longer orders EMCON Active or designates (22 November 2026), so the diagnosis's `noradiate`,
 //!   `nodesignate` and `nosensor` are accepted and mean `full`.
 //! - `BP_EMCON`: the emission setting the player hull spawns with. Unset, the config's own (the generator
@@ -24,7 +27,8 @@
 //! - `BP_ASSERT=1`: fail unless every operation run passes the gate at this seed count: wins at least 80%,
 //!   the median inside 15 to 30 minutes and no sortie at the stop. For the nightly gate.
 //! - The run always fails if the stand-in pilot orders an emission state after its first orders or designates
-//!   a track: those are the player's and the officers' (L108, L507), not the gate's.
+//!   a track, unless `BP_PILOT=ordered` asked for them: those are the player's and the officers' (L108, L507),
+//!   not the gate's.
 //! - `BP_CHECK=1`: also resolve each sortie through `FullPhysicsResolver` and assert the same outcome and
 //!   length (doubles the run time; for checking this loop against the gate's).
 //! - `BP_LOG=1`: print pilot commands, own-hull status changes and a 60 s sample line as they happen.
@@ -79,8 +83,9 @@ pub(super) fn pilot_orders() -> (String, PilotOrders) {
     let name = std::env::var("BP_PILOT").unwrap_or_else(|_| "full".into());
     let o = match name.as_str() {
         "full" | "noradiate" | "nodesignate" | "nosensor" => PilotOrders::ALL,
-        "route" => PilotOrders { beyond_route: false },
-        other => panic!("BP_PILOT={other}: expected full or route"),
+        "route" => PilotOrders { beyond_route: false, sensors: false },
+        "ordered" => PilotOrders::ORDERED,
+        other => panic!("BP_PILOT={other}: expected full, ordered or route"),
     };
     (name, o)
 }
@@ -311,22 +316,11 @@ pub(super) fn play(op: &content::campaign::OperationDef, index: u32, config: &So
     let own_hull = sim.objectives.hulls.iter().find(|h| h.vessel == own);
     let own_lost = r.players.first().is_some_and(|p| p.hull_lost);
     let time_up = prepared.time_limit_s.is_some_and(|s| r.duration_ticks >= s as u64 * HZ);
-    let end = match r.outcome {
-        Outcome::Victory => "objective_done",
-        Outcome::Defeat if primary.is_some_and(|o| o.state == ObjectiveState::Failed) => "objective_failed",
-        Outcome::Defeat if own_lost => "own_hull_lost",
-        Outcome::Defeat => "defeat_other",
-        Outcome::Withdrawn if time_up => "time_limit",
-        Outcome::Withdrawn => "withdrew",
-        Outcome::Draw if capped && own_status == VesselStatus::Disabled => "cap_own_disabled",
-        Outcome::Draw if capped => "cap",
-        Outcome::Draw => "draw",
-        Outcome::Aborted => "aborted",
-    };
+    let end = end_label(r.outcome, sim.objectives.end_reason, primary.is_some_and(|o| o.state == ObjectiveState::Failed), own_lost, time_up, capped, own_status == VesselStatus::Disabled);
     let result = if win { "win" } else if matches!(r.outcome, Outcome::Draw | Outcome::Withdrawn) { "draw" } else { "loss" };
     let hulls = &sim.objectives.hulls;
     let named_n = hulls.iter().filter(|h| named(h)).count();
-    let named_out = hulls.iter().filter(|h| named(h) && h.out()).count();
+    let named_out = hulls.iter().filter(|h| named(h) && named_down(h)).count();
     let named_struck = hulls.iter().filter(|h| named(h) && h.struck).count();
     let enemy_n = hulls.iter().filter(|h| h.enemy && h.role != VesselRole::Site).count();
     let enemy_out = hulls.iter().filter(|h| h.enemy && h.role != VesselRole::Site && h.out()).count();
@@ -360,6 +354,38 @@ pub(super) fn play(op: &content::campaign::OperationDef, index: u32, config: &So
         if orders_s.is_empty() { "-".into() } else { orders_s.join(",") },
     );
     Some(Record { sensor_orders, win, end, outcome: r.outcome, minutes: if minutes.is_finite() { minutes.max(0.0) } else { 0.0 }, ticks: r.duration_ticks, line })
+}
+
+/// The `end` column: why the sortie ended, from the reason the objectives recorded with the outcome
+/// (`ObjectivesState::end_reason`), so a defeat by disabled player hulls is not read off the primary's Failed
+/// state as a failed objective; from the outcome where no reason was recorded (the cap, an abort).
+pub(super) fn end_label(outcome: Outcome, reason: Option<crate::objectives::EndReason>, primary_failed: bool, own_lost: bool, time_up: bool, capped: bool, own_disabled: bool) -> &'static str {
+    use crate::objectives::EndReason as E;
+    match (outcome, reason) {
+        (_, Some(E::ObjectiveDone)) => "objective_done",
+        (_, Some(E::ObjectiveFailed)) => "objective_failed",
+        (_, Some(E::PlayerHullsLost)) => "own_hull_lost",
+        (_, Some(E::PlayerHullsDisabled)) => "own_hulls_disabled",
+        (_, Some(E::TimeLimit)) => "time_limit",
+        (_, Some(E::Withdrew)) => "withdrew",
+        (Outcome::Victory, None) => "objective_done",
+        (Outcome::Defeat, None) if own_lost => "own_hull_lost",
+        (Outcome::Defeat, None) if primary_failed => "objective_failed",
+        (Outcome::Defeat, None) => "defeat_other",
+        (Outcome::Withdrawn, None) if time_up => "time_limit",
+        (Outcome::Withdrawn, None) => "withdrew",
+        (Outcome::Draw, None) if capped && own_disabled => "cap_own_disabled",
+        (Outcome::Draw, None) if capped => "cap",
+        (Outcome::Draw, None) => "draw",
+        (Outcome::Aborted, None) => "aborted",
+    }
+}
+
+/// A hull the objective names is down: a site once destroyed by the objective's own rule (lost, or its share
+/// of cells gone, `objectives::site_hull_progress`), any other hull once out of action (`HullFacts::out`). A
+/// site is never disabled, so `out` left a destroyed site counted as standing (`named_out=0/1` on wins).
+pub(super) fn named_down(h: &crate::objectives::HullFacts) -> bool {
+    if h.role == VesselRole::Site { crate::objectives::site_hull_progress(h) >= 1.0 } else { h.out() }
 }
 
 /// Median as `winnability` takes it (the mean of the two middle lengths of an even count).
@@ -425,7 +451,7 @@ fn gate_act1() {
                     assert!(std::env::var("BP_STARTER").is_err(), "BP_CHECK compares against the gate's starter");
                 }
                 eprintln!("SORTIE {} pilot={pilot_name} drop={drop} spawn_emcon={emcon_name} starter={} starter_fits={starter_fits}", rec.line, starter.header.name.replace(' ', "_"));
-                assert_eq!(rec.sensor_orders, 0, "{} seed {s}: the stand-in pilot ordered an emission state or a designation", id.as_str());
+                if !orders.sensors { assert_eq!(rec.sensor_orders, 0, "{} seed {s}: the stand-in pilot ordered an emission state or a designation", id.as_str()); }
                 if rec.win { wins += 1; } else if matches!(rec.outcome, Outcome::Draw | Outcome::Withdrawn) { draws += 1; } else { losses += 1; }
                 if rec.minutes >= cap_min as f64 - 1e-9 { over_cap += 1; }
                 *ends.entry(rec.end).or_default() += 1;
@@ -503,4 +529,32 @@ fn drop_commitment_act1() {
             if left.iter().all(|c| *c == 0) && ok < n { break; }
         }
     }
+}
+
+/// The `end` column reads the reason the objectives recorded: a defeat by disabled player hulls, whose
+/// primary objective view is Failed, is `own_hulls_disabled`, not `objective_failed`.
+#[test]
+fn the_end_column_reads_the_recorded_reason() {
+    use crate::objectives::EndReason as E;
+    assert_eq!(end_label(Outcome::Defeat, Some(E::PlayerHullsDisabled), true, false, false, false, true), "own_hulls_disabled");
+    assert_eq!(end_label(Outcome::Defeat, Some(E::ObjectiveFailed), true, false, false, false, false), "objective_failed");
+    assert_eq!(end_label(Outcome::Defeat, Some(E::PlayerHullsLost), true, true, false, false, false), "own_hull_lost");
+    assert_eq!(end_label(Outcome::Victory, Some(E::ObjectiveDone), false, false, false, false, false), "objective_done");
+    assert_eq!(end_label(Outcome::Withdrawn, Some(E::TimeLimit), false, false, true, false, false), "time_limit");
+    assert_eq!(end_label(Outcome::Draw, None, false, false, false, true, true), "cap_own_disabled");
+    assert_eq!(end_label(Outcome::Draw, None, false, false, false, true, false), "cap");
+    assert_eq!(end_label(Outcome::Defeat, None, true, false, false, false, false), "objective_failed");
+}
+
+/// `named_out` counts a site by its destroyed state: a site is never disabled.
+#[test]
+fn a_destroyed_site_counts_as_down() {
+    // 1,000 original cells: the destroyed share is a whole number of buckets past it, half of it is not.
+    let buckets = |share: f64| libm::ceil(share * f64::from(content::cell::BUCKET_DESTROYED) * 1_000.0) as u32;
+    let site = crate::objectives::HullFacts { role: VesselRole::Site, cells0: 1_000, site_damage: buckets(crate::objectives::SITE_DESTROYED_SHARE), ..Default::default() };
+    assert!(!site.out() && named_down(&site));
+    let standing = crate::objectives::HullFacts { role: VesselRole::Site, cells0: 1_000, site_damage: buckets(0.5 * crate::objectives::SITE_DESTROYED_SHARE), ..Default::default() };
+    assert!(!named_down(&standing));
+    let disabled = crate::objectives::HullFacts { role: VesselRole::Combatant, disabled: true, ..Default::default() };
+    assert!(named_down(&disabled));
 }

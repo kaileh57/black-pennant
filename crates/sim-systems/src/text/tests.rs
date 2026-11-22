@@ -15,7 +15,7 @@ fn every_msg() -> Vec<Msg> {
         HoldReason::ElevationLimit { need_deg: 85.0, limit_deg: 80.0 }, HoldReason::Masked, HoldReason::Slewing,
         HoldReason::Reloading { seconds: f64::NAN }, HoldReason::NoAmmunition, HoldReason::Unpowered, HoldReason::Shed, HoldReason::Damaged,
         HoldReason::FriendInLine { friend: t }, HoldReason::SalvoInFlight, HoldReason::PermissionWithheld, HoldReason::PlayerControl,
-        HoldReason::EmconSilent, HoldReason::NoSolution,
+        HoldReason::EmconSilent, HoldReason::NoSolution, HoldReason::ShoreSite,
     ];
     v.extend(holds.iter().map(hold_reason));
     let fires = [FireReason::Doctrine, FireReason::PointDefence, FireReason::SelfDefence, FireReason::Designated, FireReason::Rule(3), FireReason::Manual, FireReason::Graph, FireReason::LocalControl];
@@ -39,7 +39,7 @@ fn every_msg() -> Vec<Msg> {
     for b in [CompressionBlock::WeaponInbound, CompressionBlock::ThreatInOwnEnvelope, CompressionBlock::InsideThreatEnvelope, CompressionBlock::HostLoad, CompressionBlock::TimeScaleDegraded, CompressionBlock::NotAllPlayers, CompressionBlock::ModeForbids] { v.push(compression_block(b)); }
     for r in [RejectReason::NotAllowedInMode, RejectReason::NotAllowedByRuleset, RejectReason::OnlyInDryDockOrSplash, RejectReason::NoSuchPart, RejectReason::NoSuchTrack, RejectReason::FriendCannotBeEngaged, RejectReason::RoleNotHeld, RejectReason::HullLost, RejectReason::TooManyRules, RejectReason::InvalidValue, RejectReason::SinglePlayerOnly, RejectReason::ConditionsNotMet, RejectReason::Duplicate] { v.push(reject(r)); }
     for f in [ScriptFault::Error, ScriptFault::Memory, ScriptFault::Budget, ScriptFault::Backstop] { v.push(script_fault(f)); }
-    for r in [EmconReason::SilentOrdered, EmconReason::PassiveNoTrigger, EmconReason::BurstTrackInside { track: t, range_m: 18_000.0 }, EmconReason::BurstWeaponInbound, EmconReason::BurstRefreshForWeapon, EmconReason::HoldingLockWeaponsInFlight, EmconReason::ActiveOrdered, EmconReason::PointDefenceException] { v.push(emcon_reason(&r)); }
+    for r in [EmconReason::SilentOrdered, EmconReason::PassiveNoTrigger, EmconReason::BurstTrackInside { track: t, range_m: 18_000.0 }, EmconReason::BurstWeaponInbound, EmconReason::BurstRefreshForWeapon, EmconReason::HoldingLockWeaponsInFlight, EmconReason::ActiveOrdered, EmconReason::PointDefenceException, EmconReason::SelfDefenceUnderFire] { v.push(emcon_reason(&r)); }
     for s in [Stance::Friend, Stance::Neutral, Stance::Suspect, Stance::Hostile] { v.push(Msg { key: stance_word(s), args: vec![] }); }
     for r in [IdRung::Unknown, IdRung::Domain, IdRung::Type, IdRung::Class, IdRung::Exact] { v.push(Msg { key: rung_word(r), args: vec![] }); }
     for g in [TrackGrade::Bearing, TrackGrade::Coarse, TrackGrade::Fine, TrackGrade::Lock] { v.push(Msg { key: grade_word(g), args: vec![] }); }

@@ -135,6 +135,19 @@ jobs:
           "$GODOT" --headless --path game --import || true
           "$GODOT" --headless --path game -- --smoke 2>&1 | tee smoke.log
           if grep -E "ERROR|SCRIPT ERROR|Parse Error|panicked" smoke.log; then exit 1; fi
+      # Suspend and resume (DESIGN.md L112, L826-828): a campaign sortie is saved, left and resumed twice. It
+      # writes a campaign and a suspend save, so user data goes to a scratch home on both runners.
+      - name: Suspend and resume (resume_play)
+        shell: bash
+        run: |
+          rm -rf scratch-home && mkdir scratch-home
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            export APPDATA="$(cygpath -w "$PWD/scratch-home")"
+          else
+            export HOME="$PWD/scratch-home"
+          fi
+          "$GODOT" --headless --path game res://test/ui/resume_play.tscn 2>&1 | tee resume.log
+          if grep -E "ERROR|SCRIPT ERROR|Parse Error|panicked|resume: FAIL" resume.log; then exit 1; fi
       - name: UI lint (theme, scenes, scripts, copy, fonts)
         shell: bash
         run: |

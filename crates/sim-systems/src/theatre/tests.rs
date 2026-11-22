@@ -78,8 +78,10 @@ fn sortie_round_trip() {
     r.operation = Some(op.clone());
     r.duration_ticks = 60 * 60 * 25;
     r.players = vec![player_result(false)];
+    r.end_reason = Some(crate::objectives::EndReason::ObjectiveDone);
     let aa = t.apply_result(&r);
     assert_eq!(aa.operation, Some(op.clone()));
+    assert_eq!(aa.end_reason, Some(crate::objectives::EndReason::ObjectiveDone), "the report says how the sortie ended");
     assert!(t.active().is_none());
     assert!(!t.state.hulls.iter().find(|h| h.id == victim).unwrap().alive);
     assert!(t.state.ops.completed.contains(&op));
@@ -128,7 +130,7 @@ fn long_wait_soak() {
         t.commit(&TheatreAction::Wait { hours: 24 }).unwrap();
         loop {
             match t.advance(500) {
-                Interrupt::ActEnded => { ended = true; }
+                Interrupt::ActEnded { .. } => { ended = true; }
                 Interrupt::WaitDone => break,
                 Interrupt::Paused => panic!("stuck"),
                 _ => {}

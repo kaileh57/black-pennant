@@ -32,7 +32,9 @@
 //!   hulls with a hull record that were neither lost nor captured, Disabled ones included.
 //! - The minefield of a mine-laying objective counts player mines within [`MINEFIELD_RADIUS_M`] of its marker;
 //!   a site objective counts Site-role hulls within [`SITE_RADIUS_M`] of its marker, each destroyed when lost or
-//!   when it has lost [`SITE_DESTROYED_CELLS`] of its cells.
+//!   when gunfire has taken [`SITE_DESTROYED_SHARE`] of its health. Missile hits, and the fires they light,
+//!   do not count ([`note_site_damage`]). Where the operation offers the insert action (radar decapitation,
+//!   L797), a completed insert hold at a shore landing also takes the site.
 use crate::ai::commander::CommanderState;
 use crate::prelude::*;
 use crate::protocol::config::{Faction, KillFate, KillRecord, ModeRules, Outcome, PlayerResult, PrizeRecord, SideDef, SortieConfig, SortieResult, SortieStats, SortieSummary, SurvivorRecord, VesselRole};
@@ -60,14 +62,30 @@ pub const CLEAR_HOLD_S: f64 = 10.0;
 pub const MINEFIELD_RADIUS_M: f64 = 2_000.0;
 /// DECISION: radius around a site objective's marker in which Site-role hulls belong to the site.
 pub const SITE_RADIUS_M: f64 = 1_500.0;
-/// DECISION (owner ruling of 22 November 2026 to make site destruction a rule a player can see): a site is
-/// destroyed when it is lost or has lost this share of its original cells (destroyed cells, L561), and its
-/// objective progress is the share lost over this. Its propulsion does not count: a moored depot hulk or radar
-/// tender that loses its engines still holds its stores and its radar, and propulsion was the lottery that
-/// decided one magazine in some seeds and not in others. Sites never strike (L2539). The value is set below
-/// the smallest share one 400-round magazine of the patrol boat starter took off the site in the twelve
-/// logged sorties that emptied it into a site (0.3%, depot strike seed 1 with every droppable hostile removed).
-pub const SITE_DESTROYED_CELLS: f64 = 0.0025;
+/// A site is destroyed when it is lost or gunfire has taken this share of its health, and its objective
+/// progress is the share taken over this. Health is L561's: each cell's damage is a bucket from 0 to 8 and the
+/// site's health is the mean of 1 - bucket / 8 over its original cells, so the share is the counted damage
+/// buckets ([`note_site_damage`]) over 8 per cell.
+///
+/// Two rulings and two decisions, all of 22 November 2026; the spec does not say what destroys a site.
+/// - Owner: site destruction is a rule a player can see, a stated share of the site and not its propulsion (a
+///   moored depot hulk or radar tender that loses its engines still holds its stores and its radar; propulsion
+///   decided one magazine in some seeds and not in others). Sites never strike (L2539). The owner's measure was
+///   destroyed cells, 0.25% of them.
+/// - Coordinator: anti-ship missile hits do not count toward a site.
+/// - DECISION (s3, replacing the owner's measure, not only its number): the share is of health, not of
+///   destroyed cells. A 30 mm hit adds buckets long before it destroys a cell, so under the cell measure the
+///   objective sat still through most of the patrol boat starter's magazine, and no share of destroyed cells
+///   came inside 70% of its 400 rounds of 30 mm in every seed (0.10%, 9 cells: 114 to 362 rounds; 0.25%: 161
+///   to 400). Counted damage starts within the first 33 rounds for both starters.
+/// - DECISION (s3, the value): the largest step of 0.25% at which both Act 1 gun starters destroy the site
+///   inside 70% of their main magazine in every sortie that opened fire (depot strike, radar decapitation and
+///   Blind Crane Head, seeds 0 to 3, every droppable hostile removed: 12 sorties of the fast attack craft, 11
+///   of the patrol boat). Rounds to reach it: patrol boat 104 to 243 of 400 (61% at worst), fast attack craft
+///   54 to 92 of 224 (41%). At 1.5% the patrol boat needs up to 288 (72%); at 1.0%, 86 to 206. A whole
+///   magazine takes 2.9% to 3.4% (patrol boat, 400 rounds of 30 mm) and 4.3% to 6.2% (fast attack craft, 224
+///   rounds of 76 mm, fired after its four missiles had hit the site).
+pub const SITE_DESTROYED_SHARE: f64 = 0.0125;
 /// DECISION: a wreck that sank in water this shallow or less is grounded and salvageable (the 20 m despawn
 /// depth, L686).
 pub const SALVAGE_DEPTH_M: f64 = 20.0;
@@ -76,6 +94,14 @@ pub const SALVAGE_DEPTH_M: f64 = 20.0;
 /// a break. Five minutes leaves Damage Control time to restore propulsion; a hull that regains it restarts the
 /// count.
 pub const PLAYER_DISABLED_DEFEAT_S: f64 = 300.0;
+/// DECISION (r4; the ruling behind [`PLAYER_DISABLED_DEFEAT_S`] is silent on an objective that completes
+/// without a mobile player hull): the disabled defeat waits while the primary objective is still completing on
+/// its own ([`completing_without_player`]: a taken prize or a released escorted hull under way to its exit), at
+/// most this long past the defeat's own five minutes. A cut-out prize at 8 kn covers the 5 km to its exit in
+/// about 20 minutes. A hull that stops, is disabled or is lost ends the wait.
+pub const CARRY_ON_MAX_S: f64 = 1_800.0;
+/// Speed through the water above which a prize or escorted hull counts as under way, m/s (about 1 kn).
+pub const UNDER_WAY_MPS: f64 = 0.5;
 /// Objectives and end rules are evaluated at 10 Hz.
 const EVAL_HZ: u32 = 10;
 /// A kill is observed through a picture track updated this recently, in ticks (one second).
@@ -166,6 +192,21 @@ pub struct HullFacts {
     /// Tick the hull's status last became Disabled; `None` while it is Active, lost or never disabled.
     #[serde(default)]
     pub disabled_since: Option<u64>,
+    /// Site hulls: damage that counts toward the site's destruction, in buckets (L561: 8 destroy a cell), from
+    /// the damage stream ([`note_site_damage`]): everything but a missile hit and the fire or cook-off that
+    /// follows one. Over 8 per original cell it is the share [`SITE_DESTROYED_SHARE`] is measured against.
+    #[serde(default)]
+    pub site_damage: u32,
+    /// Site hulls: the bucket each damaged cell last reported, which turns the stream's new buckets into
+    /// increments. Seeded from the hull's damage when it is bound.
+    #[serde(default)]
+    pub site_buckets: BTreeMap<u32, u8>,
+    /// Site hulls: the last direct hit was a missile, so the fire and cook-off damage after it is the missile's.
+    #[serde(default)]
+    pub missile_hit_last: bool,
+    /// Speed along the hull's heading at the last evaluation, m/s (magnitude).
+    #[serde(default)]
+    pub speed_mps: f64,
 }
 impl HullFacts {
     pub fn out(&self) -> bool { self.lost || self.disabled }
@@ -370,6 +411,8 @@ fn bind_hull(state: &mut ObjectivesState, vessel: EntityId, index: Option<u16>, 
     };
     refresh_from_config(&mut h, config);
     if h.role == VesselRole::PlayerHull { h.player_side = true; }
+    // A site that spawns damaged: only what is done to it from now on counts.
+    if h.role == VesselRole::Site { h.site_buckets = v.grid.damage.iter().enumerate().filter(|(_, b)| **b > 0).map(|(i, b)| (i as u32, *b)).collect(); }
     let i = state.hulls.partition_point(|x| x.vessel < vessel);
     state.hulls.insert(i, h);
 }
@@ -407,6 +450,7 @@ pub fn ingest(state: &mut ObjectivesState, events: &[PhysEvent], world: &World, 
             PhysEvent::VesselSpawned { vessel, .. } => ensure_hull(state, *vessel, world, ships, config),
             PhysEvent::CellsDamaged { vessel, changes, cause, attacker } => {
                 ensure_hull(state, *vessel, world, ships, config);
+                if let Some(h) = state.hull_mut(*vessel) { if h.role == VesselRole::Site { note_site_damage(h, changes, *cause); } }
                 let attacker = state.body(*attacker).map_or(*attacker, |(l, _)| l);
                 let victim = world.vessel(*vessel).map(|v| v.kin.pose.pos);
                 let (range, emcon) = if attacker.is_none() { (0.0, Emcon::default()) } else {
@@ -566,6 +610,9 @@ pub(crate) struct EvalFacts<'a> {
     pub clear_of_contact: bool,
     pub passengers_lost: u16,
     pub allowed_losses: Option<u8>,
+    /// The operation offers the insert action (`SortieConfig::actions`): of the site templates, radar
+    /// decapitation does and depot strike does not (L797).
+    pub insertion: bool,
 }
 
 fn marker_pos<'a>(markers: &'a [Marker], name: &str) -> Option<DVec2> { markers.iter().find(|m| m.name == name).map(|m| DVec2::from(m.pos_m)).filter(|p| p.x.is_finite() && p.y.is_finite()) }
@@ -607,7 +654,11 @@ pub(crate) fn eval_objective(obj: &Objective, f: &EvalFacts<'_>) -> (ObjectiveSt
             let at = marker_pos(f.markers, marker);
             let mut site: Vec<&HullFacts> = f.hulls.iter().filter(|h| h.role == VesselRole::Site && at.map_or(true, |p| p.distance(DVec2::from(h.pos)) <= SITE_RADIUS_M)).collect();
             if site.is_empty() { site = f.hulls.iter().filter(|h| h.enemy && !marker.is_empty() && h.tag == *marker).collect(); }
-            (site_state(&site), site_progress(&site))
+            // L797 "radar decapitation uses weapons or an insertion", L791 the insertion: a landing party put
+            // ashore by a completed insert hold at a shore landing (or at the site's own marker) takes the
+            // site. No walking crew is simulated (L784), so the hold's end is the site's.
+            let landed = f.insertion && f.holds.iter().any(|(name, _)| (!marker.is_empty() && name == marker) || f.markers.iter().any(|m| m.kind == MarkerKind::ShoreLanding && m.name == *name));
+            if landed { (Done, 1.0) } else { (site_state(&site), site_progress(&site)) }
         }
         Objective::Extract { marker, .. } => {
             let at = marker_pos(f.markers, marker);
@@ -675,16 +726,37 @@ pub(crate) fn eval_objective(obj: &Objective, f: &EvalFacts<'_>) -> (ObjectiveSt
     match f.allowed_losses { Some(a) if f.passengers_lost > a as u16 => (Failed, res.1), _ => res }
 }
 
-/// How far one site hull is destroyed (0 to 1): 1 when lost, else its destroyed cells over
-/// [`SITE_DESTROYED_CELLS`]. Disabled (no propulsion) and struck do not count. Pure.
+/// Fold one damage application to a site hull into [`HullFacts::site_damage`]: the buckets each cell gained
+/// (the stream carries a cell's new bucket, L561). DECISION (coordinator ruling, 22 November 2026: an anti-ship
+/// missile that reaches a site does not count toward its destruction; the spec is silent, L797 says only
+/// "weapons"): the damage of a missile hit does not count, nor does the fire or cook-off damage after it
+/// (those events name no weapon, so they go to the last direct hit). Shells, and everything else, count. Pure.
+pub(crate) fn note_site_damage(h: &mut HullFacts, changes: &[CellChange], cause: DamageCause) {
+    if !matches!(cause, DamageCause::Fire | DamageCause::CookOff) { h.missile_hit_last = cause == DamageCause::Missile; }
+    let mut gained = 0u32;
+    for c in changes {
+        let now = c.bucket.min(content::cell::BUCKET_DESTROYED);
+        let before = h.site_buckets.insert(c.cell.0, now).unwrap_or(0);
+        gained = gained.saturating_add(now.saturating_sub(before) as u32);
+    }
+    if !h.missile_hit_last { h.site_damage = h.site_damage.saturating_add(gained); }
+}
+/// Share of a site hull's health taken by what counts ([`note_site_damage`]), 0 to 1. Pure.
+pub(crate) fn site_share(h: &HullFacts) -> f64 {
+    if h.cells0 == 0 { return 0.0; }
+    (h.site_damage as f64 / (content::cell::BUCKET_DESTROYED as f64 * h.cells0 as f64)).clamp(0.0, 1.0)
+}
+/// How far one site hull is destroyed (0 to 1): 1 when lost, else [`site_share`] over
+/// [`SITE_DESTROYED_SHARE`]. Disabled (no propulsion) and struck do not count. Pure.
 pub(crate) fn site_hull_progress(h: &HullFacts) -> f64 {
     if h.lost { return 1.0; }
-    let c = if h.cells_lost.is_finite() { h.cells_lost.max(0.0) } else { 0.0 };
-    (c / SITE_DESTROYED_CELLS).clamp(0.0, 1.0)
+    (site_share(h) / SITE_DESTROYED_SHARE).clamp(0.0, 1.0)
 }
 fn site_progress(site: &[&HullFacts]) -> f64 { if site.is_empty() { 0.0 } else { site.iter().map(|h| site_hull_progress(h)).sum::<f64>() / site.len() as f64 } }
+/// A site is destroyed when every hull of it is lost (gone, whatever sank it: a site that no longer exists
+/// cannot be shot at, and the operation must be able to end) or has lost its share to what counts.
 fn site_state(site: &[&HullFacts]) -> ObjectiveState {
-    if !site.is_empty() && site.iter().all(|h| h.lost || h.cells_lost >= SITE_DESTROYED_CELLS - 1e-12) { ObjectiveState::Done } else { ObjectiveState::Active }
+    if !site.is_empty() && site.iter().all(|h| h.lost || site_share(h) >= SITE_DESTROYED_SHARE - 1e-12) { ObjectiveState::Done } else { ObjectiveState::Active }
 }
 
 /// Ghost-condition state during play. Pure. `ace` is (captured, lost) of the ace's hull if known.
@@ -759,7 +831,8 @@ pub fn evaluate(state: &mut ObjectivesState, world: &World, ships: &ShipTable, p
     let spawned: BTreeSet<u16> = state.hulls.iter().filter_map(|h| h.index).collect();
     let pending = config.vessels.iter().enumerate().filter(|(i, _)| !spawned.contains(&(*i as u16))).map(|(_, v)| (if is_pvp(config) { true } else { enemy_of_players(config, v.side) }, v.tag.clone())).collect();
     let allowed_losses = config.tags.iter().find_map(|t| match t { ConstraintTag::Passengers { allowed_losses, .. } => Some(*allowed_losses), _ => None });
-    let facts = EvalFacts { now_s, hulls: &state.hulls, markers, prizes, holds, mines: &state.mines, photos, pending, detected: state.detected_tick.is_some(), feint_held_s: state.feint_held_s, clear_of_contact: clear, passengers_lost: state.passengers_lost, allowed_losses };
+    let insertion = config.actions.contains(&StationAction::InsertOrExtract);
+    let facts = EvalFacts { now_s, hulls: &state.hulls, markers, prizes, holds, mines: &state.mines, photos, pending, detected: state.detected_tick.is_some(), feint_held_s: state.feint_held_s, clear_of_contact: clear, passengers_lost: state.passengers_lost, allowed_losses, insertion };
 
     let mut primary = state.primary.clone();
     if let Some(p) = primary.as_mut() {
@@ -769,6 +842,7 @@ pub fn evaluate(state: &mut ObjectivesState, world: &World, ships: &ShipTable, p
             p.progress = prog;
         }
     }
+    let completing = primary.as_ref().is_some_and(|p| p.state == ObjectiveState::Active && completing_without_player(&p.objective, &facts));
     drop(facts);
     state.primary = primary;
     if primary_state(state) == ObjectiveState::Done && state.primary_done_tick.is_none() { state.primary_done_tick = Some(tick); }
@@ -779,7 +853,7 @@ pub fn evaluate(state: &mut ObjectivesState, world: &World, ships: &ShipTable, p
     for g in ghosts.iter_mut() { g.state = eval_ghost(&g.ghost.kind, g.state, state, now_s, done_s, ace); }
     state.ghosts = ghosts;
 
-    end_rules(state, world, pictures, config, tick, now_s);
+    end_rules(state, world, pictures, config, tick, now_s, completing);
     if state.outcome.is_some() { finalize_ghosts(state); }
     changed_views(state, config)
 }
@@ -798,6 +872,8 @@ fn refresh_hulls(state: &mut ObjectivesState, world: &World, ships: &ShipTable, 
         let lost_share = v.cells_lost_fraction();
         if lost_share.is_finite() { h.cells_lost = h.cells_lost.max(lost_share.clamp(0.0, 1.0)); }
         h.pos = [v.kin.pose.pos.x, v.kin.pose.pos.z];
+        let speed = v.forward_speed().abs();
+        h.speed_mps = if speed.is_finite() { speed } else { 0.0 };
         h.at_exits.clear();
         if !h.lost {
             let here = DVec2::from(h.pos);
@@ -847,6 +923,29 @@ pub(crate) fn player_hulls_out(hulls: &[HullFacts], tick: u64) -> Option<EndReas
     if ph.iter().all(|h| h.lost) { return Some(EndReason::PlayerHullsLost); }
     let dead = |h: &HullFacts| h.disabled_since.is_some_and(|t| Tick(tick.saturating_sub(t)).seconds() >= PLAYER_DISABLED_DEFEAT_S);
     if ph.iter().all(|h| h.lost || dead(h)) { Some(EndReason::PlayerHullsDisabled) } else { None }
+}
+
+/// The primary objective is still completing without a mobile player hull: a taken prize afloat, not stripped,
+/// in action, under way and not yet at its exit (CutOut); or an escorted hull released and under way, neither
+/// through nor out (Escort). A defector still waiting at anchor for the rendezvous makes no way, so it does not
+/// count. Pure.
+pub(crate) fn completing_without_player(obj: &Objective, f: &EvalFacts<'_>) -> bool {
+    let under_way = |h: &HullFacts| !h.out() && h.speed_mps >= UNDER_WAY_MPS;
+    match obj {
+        Objective::CutOut { tag, exit } => f.prizes.iter().filter(|p| tag_match(&p.tag, tag) && p.afloat && !p.stripped).any(|p| {
+            f.hulls.iter().any(|h| h.vessel == p.vessel && under_way(h) && !at_exit(h, exit, f.markers))
+        }),
+        Objective::Escort { tag, exit } => !tag.is_empty() && f.hulls.iter().any(|h| !h.enemy && h.tag == *tag && !reached(h, exit, f.markers) && under_way(h)),
+        _ => false,
+    }
+}
+
+/// The disabled defeat waits at `tick`: the objective is still completing on its own and the players' hulls
+/// have been out less than [`PLAYER_DISABLED_DEFEAT_S`] + [`CARRY_ON_MAX_S`]. Pure.
+pub(crate) fn defeat_waits(hulls: &[HullFacts], tick: u64, completing: bool) -> bool {
+    if !completing { return false; }
+    let since = hulls.iter().filter(|h| (h.player.is_some() || h.role == VesselRole::PlayerHull) && !h.lost).filter_map(|h| h.disabled_since).max();
+    since.is_some_and(|t| Tick(tick.saturating_sub(t)).seconds() < PLAYER_DISABLED_DEFEAT_S + CARRY_ON_MAX_S)
 }
 
 /// Does any enemy picture hold a non-Friend live track on a player hull now (contact), and when first.
@@ -901,7 +1000,7 @@ fn decide_why(state: &mut ObjectivesState, why: EndReason, outcome: Outcome, win
     decide(state, outcome, winner, tick);
 }
 
-fn end_rules(state: &mut ObjectivesState, world: &World, pictures: &Pictures, config: &SortieConfig, tick: u64, now_s: f64) {
+fn end_rules(state: &mut ObjectivesState, world: &World, pictures: &Pictures, config: &SortieConfig, tick: u64, now_s: f64, completing: bool) {
     let time_up = config.time_limit_s.map_or(false, |s| now_s >= s as f64);
     match &config.rules {
         ModeRules::Objective => {
@@ -910,7 +1009,10 @@ fn end_rules(state: &mut ObjectivesState, world: &World, pictures: &Pictures, co
                 ObjectiveState::Failed => { decide_why(state, EndReason::ObjectiveFailed, Outcome::Defeat, first_enemy_side(config), tick); return; }
                 _ => {}
             }
-            if let Some(why) = player_hulls_out(&state.hulls, tick) { decide_why(state, why, Outcome::Defeat, first_enemy_side(config), tick); return; }
+            if let Some(why) = player_hulls_out(&state.hulls, tick) {
+                let wait = why == EndReason::PlayerHullsDisabled && defeat_waits(&state.hulls, tick, completing);
+                if !wait { decide_why(state, why, Outcome::Defeat, first_enemy_side(config), tick); return; }
+            }
             if time_up { decide_why(state, EndReason::TimeLimit, Outcome::Withdrawn, None, tick); return; }
             // Withdrawal: every player with a hull afloat asked, and those hulls are clear of contact.
             let afloat: Vec<PlayerSlot> = state.hulls.iter().filter(|h| h.afloat()).filter_map(|h| h.player).collect();
@@ -976,10 +1078,12 @@ fn changed_views(state: &mut ObjectivesState, config: &SortieConfig) -> Vec<Obje
 // Views and text
 // ---------------------------------------------------------------------------------------------------------
 
-fn objective_text(o: &Objective, progress: f64, hold: (f64, f64)) -> Msg {
+/// `insertion`: the operation offers the insert action (a site can then also be taken by a landing party).
+fn objective_text(o: &Objective, progress: f64, hold: (f64, f64), insertion: bool) -> Msg {
     match o {
         Objective::DestroyAll => Msg::new("objective.destroy_all"),
         Objective::DestroyGroup { fraction, .. } => Msg::new("objective.destroy_group").num((fraction.clamp(0.0, 1.0) * 100.0).round(), Unit::Percent),
+        Objective::DestroySite { .. } if insertion => Msg::new("objective.destroy_site.landing").num(hold.0, Unit::Metres).num(hold.1, Unit::Seconds),
         Objective::DestroySite { .. } => Msg::new("objective.destroy_site"),
         Objective::Extract { passengers, .. } => {
             if progress >= 0.5 { Msg::new("objective.extract.leave") }
@@ -1028,7 +1132,7 @@ pub fn views(state: &ObjectivesState, config: &SortieConfig) -> Vec<ObjectiveVie
         // the objectives' last texts.
         (ModeRules::Objective, Some(p)) => match state.end_reason.and_then(|r| r.text_key().map(|k| (r, k))) {
             Some((EndReason::PlayerHullsDisabled, k)) => (Msg::new(k).num(PLAYER_DISABLED_DEFEAT_S, Unit::Seconds), ObjectiveState::Failed, p.progress, objective_marker(&p.objective, config)),
-            _ => (objective_text(&p.objective, p.progress, hold), p.state, p.progress, objective_marker(&p.objective, config)),
+            _ => (objective_text(&p.objective, p.progress, hold, config.actions.contains(&StationAction::InsertOrExtract)), p.state, p.progress, objective_marker(&p.objective, config)),
         },
         (ModeRules::Elimination, _) => (Msg::new("objective.elimination"), mode_state(state), 0.0, None),
         (ModeRules::Escort { required_fraction, exit, .. }, _) => (Msg::new("objective.pvp_escort").num((required_fraction.clamp(0.0, 1.0) * 100.0).round(), Unit::Percent), mode_state(state), 0.0, marker_pos(&config.map.markers, exit)),
@@ -1179,7 +1283,7 @@ pub fn build_result(state: &ObjectivesState, world: &World, ships: &ShipTable, s
         duration_ticks: state.ended_tick.unwrap_or(world.tick().0), objective_done, ghosts, kills, survivors, prizes, aces: aces_out, players,
         sightings, evidence, photos: distinct_photos.len().min(u8::MAX as usize) as u8, survivors_recovered: specops.survivors_recovered, crew_captured,
         passengers_delivered, mines_laid: specops.mines_laid.max(state.mines.len().min(u16::MAX as usize) as u16), site_destroyed: state.site_destroyed || (matches!(config.objective, Objective::DestroySite { .. }) && objective_done),
-        tender_lost: state.tender_lost, highest_rung, belief, stats,
+        tender_lost: state.tender_lost, highest_rung, belief, stats, end_reason: state.end_reason,
     }
 }
 
@@ -1189,7 +1293,7 @@ pub fn summary(result: &SortieResult, config: &SortieConfig) -> SortieSummary {
     let mut objectives = Vec::with_capacity(1 + result.ghosts.len());
     if matches!(config.rules, ModeRules::Objective) { objectives.push((ObjectiveId(0), result.objective_done)); }
     for (i, g) in result.ghosts.iter().enumerate() { objectives.push((ObjectiveId((i + 1).min(u8::MAX as usize) as u8), *g)); }
-    SortieSummary { outcome: result.outcome, winner: result.winner, duration_ticks: result.duration_ticks, objectives, stats: result.stats.clone(), tip: None }
+    SortieSummary { outcome: result.outcome, winner: result.winner, duration_ticks: result.duration_ticks, objectives, stats: result.stats.clone(), tip: None, end_reason: result.end_reason }
 }
 
 /// Trial-battery score of a finished fight: 100 x share of enemy tonnage disabled - 50 x share of own cells
@@ -1199,7 +1303,7 @@ pub fn trial_score(stats: &SortieStats) -> f64 { let e = if stats.enemy_tonnage_
 /// Every `objective.*` key this unit can emit (`game/i18n/objectives.csv`). Unit: `sys-objectives`.
 pub fn text_keys() -> Vec<&'static str> {
     vec![
-        "objective.destroy_all", "objective.destroy_group", "objective.destroy_site",
+        "objective.destroy_all", "objective.destroy_group", "objective.destroy_site", "objective.destroy_site.landing",
         "objective.extract.hold", "objective.extract.passengers", "objective.extract.leave",
         "objective.lay_mines", "objective.capture", "objective.capture.decide", "objective.escort",
         "objective.feint.detect", "objective.feint.hold", "objective.feint.escape",

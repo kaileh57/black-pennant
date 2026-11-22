@@ -55,6 +55,9 @@ pub fn track_markers(view: &ViewFrame, snapshot: Option<&Snapshot>, lens: &Lens,
         let info = snapshot.and_then(|s| s.tracks.binary_search_by(|x| x.id.cmp(&t.id)).ok().map(|i| &s.tracks[i]));
         // A dropped track keeps its mark on the plot only; the bridge view shows what is held now.
         if info.is_some_and(|i| i.last_known) { continue; }
+        // Own-side weapons in flight are not contacts (the track list drops them too); the spec's HUD rules
+        // give them no marker of their own.
+        if info.is_some_and(|i| !crate::hud::tracks::listed(i)) { continue; }
         let mut pos = Vec3::from(t.pos);
         if !pos.is_finite() { continue; }
         let drawn = view.vessels.iter().find(|v| v.track == t.id && !v.own);
@@ -288,6 +291,30 @@ mod tests {
         assert_eq!(out.len(), 2);
         track_markers(&view, None, &lens, &top, &mut out);
         assert_eq!(out.len(), 3);
+    }
+
+    #[test]
+    fn own_weapons_in_flight_get_no_contact_marker() {
+        let lens = Lens::look(Vec3::new(0.0, 20.0, 100.0), Vec3::new(0.0, 5.0, 0.0), 0.0, 60.0, [1920.0, 1080.0]);
+        let view = ViewFrame {
+            origin: RenderOrigin::default(), vessels: Vec::new(), own: None,
+            tracks: vec![
+                TrackPose { id: TrackId(6), pos: [0.0, 30.0, -1_400.0], world_xz: [0.0, -1_400.0] },
+                TrackPose { id: TrackId(7), pos: [10.0, 30.0, -900.0], world_xz: [10.0, -900.0] },
+                TrackPose { id: TrackId(8), pos: [-50.0, 0.0, -600.0], world_xz: [-50.0, -600.0] },
+            ],
+            ..Default::default()
+        };
+        let mut own_missile = track(6, Stance::Friend);
+        own_missile.domain = Domain::Weapon;
+        let mut inbound = track(7, Stance::Hostile);
+        inbound.domain = Domain::Weapon;
+        inbound.inbound = true;
+        let snap = Snapshot { tracks: vec![own_missile, inbound, track(8, Stance::Friend)], ..Default::default() };
+        let mut out = Vec::new();
+        track_markers(&view, Some(&snap), &lens, &|_| None, &mut out);
+        // The own missile (Friend, Weapon) is dropped; a hostile weapon and a friendly hull keep theirs.
+        assert_eq!(out.iter().map(|m| m.track.0).collect::<Vec<_>>(), [7, 8]);
     }
 
     #[test]

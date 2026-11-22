@@ -6,6 +6,8 @@
 //! to a re-hosting member (L843). It never holds prefabs or other derived data; `Sim::new` builds those.
 //! [`SortieResult`] is the only channel from a sortie into `crate::theatre::Theatre`.
 use crate::ids::{GroupId, ObjectiveId, SideMask, TrackId};
+/// Defined beside the end rules that set it; re-exported here because the result and summary carry it.
+pub use crate::objectives::EndReason;
 use content::blueprint::Blueprint;
 use content::campaign::{CardEffect, ConstraintTag, FleetKind, Formation, GhostCondition, KillMethod, MapDef, Objective, RangeBand, StationAction};
 use content::cell::CellChange;
@@ -342,6 +344,11 @@ pub struct SortieResult {
     /// (world x, world z, weight) samples.
     pub belief: Vec<[f32; 3]>,
     pub stats: SortieStats,
+    /// Why an objective-mode sortie ended (`ObjectivesState::end_reason`); `None` in the other modes and for a
+    /// sortie ended from outside (host quit, forced end) before it was decided. Last field: bincode is
+    /// positional, so adding it was a layout change (keyframes carry the result; PROTOCOL_VERSION 3).
+    #[serde(default)]
+    pub end_reason: Option<EndReason>,
 }
 
 /// What a client may show when the sortie ends.
@@ -354,4 +361,7 @@ pub struct SortieSummary {
     pub stats: SortieStats,
     /// One tip for the splash report card (L216).
     pub tip: Option<super::text::Msg>,
+    /// [`SortieResult::end_reason`], for the sortie-end screen. Last field (wire and replay layout).
+    #[serde(default)]
+    pub end_reason: Option<EndReason>,
 }

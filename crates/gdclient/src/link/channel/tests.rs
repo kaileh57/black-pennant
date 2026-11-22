@@ -270,3 +270,12 @@ fn a_sim_restored_from_a_checkpoint_takes_the_new_sessions_commands() {
     let refused = sim_events(&link).into_iter().filter(|e| matches!(e.event, SimEvent::CommandRejected { .. })).count();
     assert_eq!(refused, 0);
 }
+
+#[test]
+fn the_stand_in_interpolates_at_its_own_snapshot_rate() {
+    // Whole snapshots every 2 real ticks: 30 Hz, so L914's default 4 x 33 ms.
+    assert_eq!(channel_interp(), InterpTuning::default());
+    let clock = ManualClock::new();
+    let (_host, link) = ends(&clock);
+    assert_eq!(*link.presenter.buffer.tuning(), InterpTuning::default());
+}

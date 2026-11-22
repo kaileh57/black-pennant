@@ -15,6 +15,11 @@
 //!   (Mahalanobis `TrackTuning::gate_sigma` = 3.03) contains it, else it starts a new track.
 //! - Drop after no update for 120 s (surface, subsurface) or 20 s (air, weapon); the plot keeps a last-known
 //!   mark for 10 minutes. Track numbers are never reused.
+//! - Where the spec is silent (each marked DECISION at its code): one sensor's reports of one instant are
+//!   associated together; three successive fixes of one rotating radar on a line start a fast track
+//!   (`fuse_core`, step 4); an air or weapon track that sits on a hull returns to Surface
+//!   (`settle_to_surface`); a detection renames a track only when association was sure of it
+//!   (`RELABEL_MARGIN`).
 //! - Grade: Lock = updated by a fire-control radar or seeker within the last 1 s; Fine = 95% radius at most
 //!   250 m; Coarse = at most 2 km; Bearing = bearing-only or wider.
 //! - The drawn shape is the 95% contour (2.45 sigma in 2D).
@@ -232,10 +237,6 @@ pub const CROSS_FIX_WINDOW_TICKS: u64 = 120;
 pub const BEARING_DIFFUSION_S: f64 = 30.0;
 /// A track with no update for this long starts its source mask afresh at its next update (10 s).
 pub const SOURCE_STALE_TICKS: u64 = 600;
-/// Speeds above which a surface-domain track, confidently (speed minus its 95% velocity error), must be
-/// airborne or a weapon, m/s.
-pub const AIR_SPEED_MPS: f64 = 35.0;
-pub const WEAPON_SPEED_MPS: f64 = 100.0;
 /// Vertical speed for the climb and dive glyph, m/s; it must also exceed the velocity sigma.
 pub const TREND_MIN_MPS: f64 = 5.0;
 /// Re-acquisition: when the predicted sigma exceeds this multiple of the measurement sigma, the update uses
@@ -250,6 +251,25 @@ pub const FRESH_MERGE_SIGMA: f64 = 4.5;
 /// A track not updated for this long (5 s, two search-radar looks) while a neighbour inside
 /// [`FRESH_MERGE_SIGMA`] is being updated has lost its object to that neighbour and is merged into it.
 pub const GHOST_TICKS: u64 = 300;
+/// Three-point initiation (see `fuse_core`, step 4). The gap between two successive looks of one rotating
+/// radar at one object, in ticks: 100 to 280 covers the 24 and 15 rpm sets (150 and 240 ticks) with the shift
+/// an object's own bearing change adds. Two gaps of one sensor's three fixes may differ by
+/// [`LOOK_SLACK_TICKS`].
+pub const LOOK_MIN_TICKS: u64 = 100;
+pub const LOOK_MAX_TICKS: u64 = 280;
+pub const LOOK_SLACK_TICKS: u64 = 30;
+/// Two fixes show motion when they lie farther apart than this many sigma of their combined errors.
+pub const TWO_POINT_SIGMA: f64 = 3.0;
+/// Demotion of an air or weapon track that is on a hull (see `settle_to_surface`): at least this many ranged
+/// fixes without air evidence over at least this long, whose travel from the first to the latest, plus
+/// [`DEMOTE_SIGMA`] of the two fixes' errors, is under a hull's top speed.
+pub const DEMOTE_FIXES: u32 = 4;
+pub const DEMOTE_SPAN_S: f64 = 5.0;
+pub const DEMOTE_SIGMA: f64 = 3.0;
+/// A detection renames the track it joined (`Track::truth`) only when association was sure of it: no other
+/// track inside its gate lay within this much of the chosen one in squared Mahalanobis distance (4.0, a
+/// likelihood ratio of about 7). See `update_track`.
+pub const RELABEL_MARGIN: f64 = 4.0;
 const MIN_SIGMA_M: f64 = 0.5;
 const MIN_SIGMA_V: f64 = 0.05;
 const MAX_SIGMA_M: f64 = 1.0e6;
@@ -364,6 +384,31 @@ impl Track {
         if r <= FINE_RADIUS_M { TrackGrade::Fine } else if r <= COARSE_RADIUS_M { TrackGrade::Coarse } else { TrackGrade::Bearing }
     }
     fn is_friend(&self) -> bool { self.stance == Stance::Friend && self.stance_reason == StanceReason::Datalink && self.sources.contains(SourceMask::DATALINK) }
+    /// A track with one search-radar fix and nothing else: no height, no emitter, no sighting and no second
+    /// fix, so neither its domain nor its motion is known. It is `Surface` only because nothing said otherwise
+    /// (`initial_domain`), and it coasts the surface time (L465) like any other Surface track.
+    fn unproven(&self) -> bool {
+        self.domain == Domain::Surface && self.bearing_only.is_none() && self.created_tick == self.last_update_tick
+            && !self.sources.is_empty() && (self.sources - (SourceMask::SEARCH_RADAR | SourceMask::DATALINK)).is_empty()
+    }
+}
+
+/// An air track faster than any aircraft is a weapon. `speed` is the estimate before the domain's speed limit
+/// is applied and `sigma_v` its 1-sigma error. The fastest aircraft is the Air track's own speed limit, so the
+/// estimate can pass it by one update's correction at most: it must clear the limit by its 1-sigma error.
+/// DECISION, b1 (L463 gives missiles their own sigma_a, and nothing says how a track comes to be a missile's
+/// when the first return read it as Air): a surface-to-air missile (600 m/s) first seen above 15 m became an
+/// Air track, limited to 400 m/s, that could not keep up with it. In 3 minutes of the reference scene the
+/// trace (`probe::duplicate_trace`) counted 26,000 cases of a fire-control fix of a surface-to-air missile
+/// starting a track beside an existing track of that missile (one case per existing track). Surface tracks
+/// are not judged here: the gain can put one bad fix's whole pull into a hull track's speed for one update. A
+/// build that did judge them failed `the_fac22_lands_a_tenth_of_its_first_salvos_at_a_reduced_spec` (1 of 11
+/// first salvos); that build also raised hull tracks' velocity uncertainty at a displaced second fix, and
+/// which of the two did it was not separated. A fast object seen only by search radar is found by the
+/// three-point pass in `fuse_core`.
+fn promote_by_speed(t: &mut Track, speed: f64, sigma_v: f64) {
+    if !(speed.is_finite() && sigma_v.is_finite()) { return; }
+    if t.domain == Domain::Air && speed - sigma_v > max_speed(Domain::Air) { t.domain = Domain::Weapon; }
 }
 
 /// One detection prepared for association: unit vectors computed once.
@@ -378,6 +423,8 @@ struct Meas<'a> {
     height: Option<f64>,
     sr: f64,
     sb: f64,
+    /// Association found no second track this detection could as well have joined (see `RELABEL_MARGIN`).
+    sure: bool,
 }
 impl<'a> Meas<'a> {
     fn new(det: &'a Detection) -> Option<Self> {
@@ -390,7 +437,7 @@ impl<'a> Meas<'a> {
         let (sin, cos) = dir(bearing);
         let sb = pos_f(det.sigma_bearing_rad).max(1e-5);
         let sr = pos_f(det.sigma_range_m).max(0.5);
-        Some(Meas { det, ranged, range, bearing, sin, cos, height, sr, sb })
+        Some(Meas { det, ranged, range, bearing, sin, cos, height, sr, sb, sure: true })
     }
     /// Measured point for a target height `y`, and its horizontal covariance.
     fn point(&self, y: f64) -> (DVec3, Cov2, f64) {
@@ -466,7 +513,9 @@ fn gate_d2(m: &Meas<'_>, t: &Track, tuning: &TrackTuning, gate2: f64) -> Option<
     }
 }
 
-fn blank_track(id: TrackId, side: SideId, truth: EntityId, domain: Domain, tick: u64) -> Track {
+/// A live track with no evidence yet: the tracker's starting point, and a fixture for code that reads track
+/// views outside it.
+pub fn blank_track(id: TrackId, side: SideId, truth: EntityId, domain: Domain, tick: u64) -> Track {
     Track {
         id, side, domain, truth, pos: DVec3::ZERO, vel: DVec3::ZERO, r0_m: MIN_SIGMA_M, sigma_v: prior_speed(domain), bearing_only: None,
         created_tick: tick, last_update_tick: tick, last_lock_tick: None, dropped_tick: None, grade: TrackGrade::Bearing,
@@ -507,7 +556,7 @@ fn new_track(id: TrackId, side: SideId, m: &Meas<'_>, tuning: &TuningTable) -> T
         let (p, _, h) = m.point(y);
         t.pos = if domain == Domain::Surface { DVec3::new(p.x, 0.0, p.z) } else { p };
         t.r0_m = m.iso_var(h).sqrt().clamp(MIN_SIGMA_M, MAX_SIGMA_M);
-        if fits(domain) { t.fit = MotionFit::start(p.x, p.z, m.iso_var(h).max(MIN_SIGMA_M * MIN_SIGMA_M), det.tick, Some(m.shape(h))); }
+        if fits(domain) { t.fit = MotionFit::start(p.x, p.z, m.iso_var(h).max(MIN_SIGMA_M * MIN_SIGMA_M), det.tick, Some(m.shape(h))).map(|f| f.seen_by(det.sensor)); }
     } else {
         let (range, sr) = bearing_prior(m, tuning);
         let o = det.sensor_pos;
@@ -516,7 +565,9 @@ fn new_track(id: TrackId, side: SideId, m: &Meas<'_>, tuning: &TuningTable) -> T
         t.bearing_only = Some(BearingState { origin: o, bearing_rad: m.bearing, bearing_rate: 0.0, sigma_bearing_rad: m.sb, range_m: range, sigma_range_m: sr, sensors: 1 });
         t.r0_m = sr.max(sc);
     }
-    t.sigma_v = prior_speed(domain);
+    // A first return above the sea cannot tell an aircraft from a missile: until a second return gives the
+    // track a velocity, its gate allows for a weapon's speed.
+    t.sigma_v = prior_speed(if domain == Domain::Air { Domain::Weapon } else { domain });
     hold_to_surface(&mut t);
     if is_lock_kind(det.kind) { t.last_lock_tick = Some(det.tick); }
     t.sources = source_of(det.kind) | if det.side != side { SourceMask::DATALINK } else { SourceMask::empty() };
@@ -539,8 +590,9 @@ fn apply_hint(t: &mut Track, m: &Meas<'_>) {
 }
 
 /// Alpha-beta update of a ranged (or wedge-converting) track from the ranged detections of one batch, fused
-/// by inverse-variance weighting.
-fn ranged_update(t: &mut Track, rs: &[Meas<'_>], tuning: &TrackTuning) {
+/// by inverse-variance weighting. `air_evidence`: a detection of this batch said the object is in the air (see
+/// `settle_to_surface`).
+fn ranged_update(t: &mut Track, rs: &[Meas<'_>], air_evidence: bool, tuning: &TrackTuning) {
     let tu = rs.iter().map(|m| m.det.tick).max().unwrap_or(t.last_update_tick).max(t.last_update_tick);
     let dt = t.age_s(tu);
     let p = t.predict(tu);
@@ -549,7 +601,7 @@ fn ranged_update(t: &mut Track, rs: &[Meas<'_>], tuning: &TrackTuning) {
     // Inverse-variance fusion of the batch, each fix carried to the update tick on the track's velocity.
     let (mut wx, mut wz, mut w) = (0.0, 0.0, 0.0);
     let (mut hy, mut hw) = (0.0, 0.0);
-    let mut best: Option<(f64, SensorKind)> = None;
+    let mut best: Option<(f64, SensorKind, SensorRef)> = None;
     let mut best_shape: Option<(f64, FixShape)> = None;
     for m in rs {
         let y = m.height.unwrap_or(p.y);
@@ -562,12 +614,12 @@ fn ranged_update(t: &mut Track, rs: &[Meas<'_>], tuning: &TrackTuning) {
         wz += wi * z.z;
         w += wi;
         if let Some(hh) = m.height { let wv = 1.0 / m.height_var(); hy += wv * hh; hw += wv; }
-        if best.is_none_or(|(bw, _)| wi > bw) { best = Some((wi, m.det.kind)); }
+        if best.is_none_or(|(bw, _, _)| wi > bw) { best = Some((wi, m.det.kind, m.det.sensor)); }
         if best_shape.is_none_or(|(bw, _)| wi > bw) { best_shape = Some((wi, m.shape(h))); }
     }
     // The fused fix's shape: the heaviest fix's (the others add little to a fix they weigh far less than).
     let shape = best_shape.map(|(_, s)| s);
-    let Some((_, kind)) = best else { return };
+    let Some((_, kind, sensor)) = best else { return };
     if !(w > 0.0) { return; }
     let (zx, zz) = (wx / w, wz / w);
     let vf = 1.0 / w;
@@ -581,10 +633,24 @@ fn ranged_update(t: &mut Track, rs: &[Meas<'_>], tuning: &TrackTuning) {
         t.r0_m = vf.sqrt().clamp(MIN_SIGMA_M, MAX_SIGMA_M);
         t.sigma_v = prior_speed(t.domain);
         t.last_update_tick = tu;
-        t.fit = if fits(t.domain) { MotionFit::start(zx, zz, vf, tu, shape) } else { None };
+        t.fit = if fits(t.domain) { MotionFit::start(zx, zz, vf, tu, shape).map(|f| f.seen_by(sensor)) } else { None };
         hold_to_surface(t);
         return;
     }
+    // Two-point start of an air or weapon track. Its first fix gives it no velocity; when its second fix lies
+    // farther from the first than `TWO_POINT_SIGMA` of the two fixes' errors, the object has plainly moved at about that
+    // distance over the time between them. The gains still make the estimate (L462), but the velocity
+    // uncertainty is raised to that speed, so the gate stays open while the estimate catches up. DECISION, b1
+    // (L463's growth law takes sigma_v from the filter, and a track with one fix has only its domain's prior):
+    // a surface-to-air missile at 600 m/s moves 60 m between fire-control returns 0.1 s apart; against the
+    // prior the gain gave the track 74 m/s, the third return lay outside its gate and started another track,
+    // and that repeated for the whole flight (34 tracks in 12 s of one missile). Setting the velocity outright
+    // from the two fixes was tried and dropped: in the Act 1 reference battle an Air track born 0.1 s before a
+    // lock on a hull ended 4 km from that hull and was held by ESM bearings alone as its second track for 41 s
+    // (the two returns that gave it its velocity were not traced).
+    let first = DVec3::new(zx - t.pos.x, zy.map_or(0.0, |y| y - t.pos.y), zz - t.pos.z);
+    let moved = air_like(t.domain) && t.created_tick == t.last_update_tick && dt > 0.0 && t.vel == DVec3::ZERO && first.length_squared() > sq(TWO_POINT_SIGMA) * (sq(t.r0_m) + vf);
+    let sigma_v_prior = if moved { t.sigma_v.max((first.length() / dt).min(max_speed(Domain::Weapon))) } else { t.sigma_v };
     let alpha = alpha_for(kind);
     let beta = beta_for(alpha);
     let a = if sp2 > sq(REACQUIRE_RATIO) * vf { sp2 / (sp2 + vf) } else { alpha };
@@ -597,27 +663,68 @@ fn ranged_update(t: &mut Track, rs: &[Meas<'_>], tuning: &TrackTuning) {
     // bearing error times range) would otherwise become a climb rate, and a gun solution leading a phantom
     // 10 m/s climb lays several hundred metres long or short at medium range.
     if t.domain == Domain::Surface { pos.y = 0.0; vel.y = 0.0; }
-    let vmax = max_speed(t.domain);
-    let sp = vel.length();
-    if !(sp.is_finite()) { vel = t.vel; } else if sp > vmax { vel *= vmax / sp; }
     // Fixed-gain covariance (Joseph form per axis) from the growth-law prior, folded back into the law.
     let sa = sigma_a(tuning, t.domain, false);
-    let sv2 = sq(t.sigma_v);
+    let sv2 = sq(sigma_v_prior);
     let ppv = sv2 * dt + 0.5 * sa * sa * dt * dt * dt;
     let pvv = sv2 + sq(sa * dt);
     let (pp, pv, vv) = joseph(a, kv, sp2, ppv, pvv, vf);
+    let sp = vel.length();
+    promote_by_speed(t, sp, pos_f(vv).sqrt());
+    let vmax = max_speed(t.domain);
+    if !(sp.is_finite()) { vel = t.vel; } else if sp > vmax { vel *= vmax / sp; }
     if pos.is_finite() { t.pos = pos; }
     t.vel = vel;
     (t.r0_m, t.sigma_v) = fold(pp, pv, vv, nominal_interval_s(kind), vmax);
     t.last_update_tick = tu;
     // The fire-control fit takes the fused fix itself, never the filtered position (L462's gains stay the
-    // filter's; the fit is the consumer's estimate).
-    t.fit = if fits(t.domain) { MotionFit::update(t.fit, zx, zz, vf, tu, shape) } else { None };
+    // filter's; the fit is the consumer's estimate). An air or weapon track keeps a fit only while its fixes
+    // carry no air evidence, for `settle_to_surface`.
+    if fits(t.domain) {
+        t.fit = MotionFit::update(t.fit, zx, zz, vf, tu, shape).map(|f| f.seen_by(sensor));
+    } else if air_evidence || t.pos.y >= AIR_HEIGHT_M {
+        t.fit = None;
+    } else {
+        t.fit = MotionFit::update(t.fit, zx, zz, vf, tu, shape).map(|f| f.seen_by(sensor));
+        settle_to_surface(t, zx, zz, vf, tu, shape, sensor);
+    }
     hold_to_surface(t);
 }
 
+/// Demotion: an air or weapon track that is on a hull goes back to Surface. The track's ranged fixes that
+/// carry no air evidence (no air or weapon hint from any sensor, no height reading above the sea clutter, and
+/// the track itself below `AIR_HEIGHT_M`) are compared first against latest: when the distance between them
+/// plus [`DEMOTE_SIGMA`] of their errors, over the time between them, is under a hull's top speed, across at
+/// least [`DEMOTE_FIXES`] fixes and [`DEMOTE_SPAN_S`], the object is no faster than a hull and nothing says it
+/// flies. A run that has plainly moved faster than a hull starts again from the latest fix. An air or weapon
+/// hint from the eye, the ear or a height-finding radar ends the run (`ranged_update`), so a hovering drone
+/// under a lookout's eye stays Air. DECISION, b2 (L463 and L471 give a track its domain from evidence and are
+/// silent on a domain that turns out wrong): a missile's track born at its launcher can take the launcher's
+/// search-radar fixes (which measure no height) and follow the hull as a Weapon track. Doctrine reads a
+/// Weapon track as an inbound weapon, EMCON and the Bridge Board skip it as a hostile hull, and the merge pass
+/// never folds it into the hull's Surface track, so the hull held two tracks for the rest of the battle.
+fn settle_to_surface(t: &mut Track, zx: f64, zz: f64, vf: f64, tick: u64, shape: Option<FixShape>, sensor: SensorRef) {
+    let Some(f) = t.fit else { return };
+    let (span, moved, sigma) = f.moved(vf);
+    if !(span > 0.0) { return; }
+    let hull = max_speed(Domain::Surface);
+    if (moved - DEMOTE_SIGMA * sigma) / span > hull {
+        t.fit = MotionFit::start(zx, zz, vf, tick, shape).map(|f| f.seen_by(sensor));
+        return;
+    }
+    if f.fixes < DEMOTE_FIXES || span < DEMOTE_SPAN_S || !((moved + DEMOTE_SIGMA * sigma) / span < hull) { return; }
+    t.domain = Domain::Surface;
+    // The hull's course is the fit's when it has one; the filter's velocity was estimated with a weapon's
+    // manoeuvre noise and is not a hull's.
+    let v = f.estimate().map_or(DVec2::ZERO, |e| e.vel);
+    let v = if v.is_finite() { v.clamp_length_max(hull) } else { DVec2::ZERO };
+    t.vel = DVec3::new(v.x, 0.0, v.y);
+    t.sigma_v = prior_speed(Domain::Surface);
+}
+
 /// Domains the fire-control fit runs for: hulls, whose courses guns lead. Air and weapon tracks keep the
-/// filter's estimate (point defence and air gunnery are tuned and gated on it, L606).
+/// filter's estimate (point defence and air gunnery are tuned and gated on it, L606); the fit one of them may
+/// carry is read by `settle_to_surface` alone.
 fn fits(d: Domain) -> bool { matches!(d, Domain::Surface | Domain::Subsurface) }
 
 /// Gain scale for a fix far coarser than the track (L460: sensors fuse by inverse-variance weighting). When the
@@ -688,7 +795,7 @@ fn bearing_update(t: &mut Track, m: &Meas<'_>, tuning: &TrackTuning) {
             // circle to 1,780 s and never became the wedge L459 draws, so its hull stayed the chaff cloud after the
             // cloud had gone, the track turned Suspect, and the ace stood off from 630 to 1,990 s to identify it.
             // Air and weapon tracks keep no fit and keep the old prior.
-            let along_prior = match t.fit.as_ref().filter(|f| f.tick <= tk) {
+            let along_prior = match t.fit.as_ref().filter(|f| f.tick <= tk && fits(t.domain)) {
                 Some(f) => cpv.max(t.growth2((tk - f.tick) as f64 * TICK_S, tuning)),
                 None => cpv,
             };
@@ -767,25 +874,42 @@ fn update_track(t: &mut Track, ms: &[Meas<'_>], side: SideId, tuning: &TrackTuni
     t.sources = if first_tick.saturating_sub(t.last_update_tick) > SOURCE_STALE_TICKS { batch } else { t.sources | batch };
     for m in ms { apply_hint(t, m); }
     let ranged: Vec<Meas<'_>> = ms.iter().filter(|m| m.ranged).copied().collect();
-    if !ranged.is_empty() { ranged_update(t, &ranged, tuning); }
+    let air_evidence = ms.iter().any(|m| m.det.domain_hint.is_some_and(air_like) || m.height.is_some_and(|h| h >= AIR_HEIGHT_M));
+    if !ranged.is_empty() { ranged_update(t, &ranged, air_evidence, tuning); }
     for m in ms.iter().filter(|m| !m.ranged) { bearing_update(t, m, tuning); }
     // The hull behind a track follows its positional fixes: a bearing-only intercept that associated on the same
     // line (an ESM bearing of a radar further out behind the contact) refines the bearing but does not make the
     // track that other hull. A briefing-declared Neutral (a defector) otherwise became the pursuing Combine
     // hull's track, turned Hostile on that hull's emitter, and drew the player's own guns.
     // A track with a position fix keeps its hull through batches that hold only bearings.
+    // Among the batch's positional fixes, only one that association was sure of renames the track (the heaviest
+    // of them): a fix that could as well have joined another track (`Meas::sure`, `RELABEL_MARGIN`) says
+    // nothing about which hull this track is on. DECISION, b2 (L460 and L467: `Track::truth` is bookkeeping,
+    // and identification follows it). The base rule took the latest fix's hull whatever it was. A lookout's
+    // fix at 12 km (range error 10%, 1.2 km) gates every hull of a group in line; it renamed the track to
+    // whichever hull it was a sighting of, and identification followed (91 rung changes a second to each
+    // client of the reference scene). b1 let no fix much coarser than the track rename it. Scored by position
+    // (a track is on the hull its prediction is nearest), that left the label on the wrong hull at 2.6 to 8.6%
+    // of the updates of tracks nearest a hull in the probe scene (3 seeds), against 0.6 to 1.9% for the base
+    // rule: a sighting's range is coarse but its bearing is not, so across the line of sight it does tell two
+    // hulls apart. This rule gave 0.9 to 1.6% there and the fewest wrong labels of the three in the two-hull
+    // probes (`tests::kb1::kb1_swaps_by_position`), with a quarter to a half of the base rule's renamings.
     let key = |m: &&Meas<'_>| (m.det.tick, m.det.sensor);
-    match ms.iter().filter(|m| m.ranged).max_by_key(key) {
-        Some(last) => t.truth = last.det.target,
-        None if t.bearing_only.is_some() || t.truth.is_none() => { if let Some(last) = ms.iter().max_by_key(key) { t.truth = last.det.target; } }
-        None => {}
+    let var = |m: &Meas<'_>| m.iso_var(m.range).max(MIN_SIGMA_M * MIN_SIGMA_M);
+    let heaviest = |sure_only: bool| ranged.iter().filter(|m| m.sure || !sure_only).min_by(|a, b| var(a).total_cmp(&var(b)).then(key(b).cmp(&key(a))));
+    match (heaviest(true), heaviest(false)) {
+        (Some(m), _) => t.truth = m.det.target,
+        (None, Some(m)) => { if t.truth.is_none() { t.truth = m.det.target; } }
+        (None, None) if t.bearing_only.is_some() || t.truth.is_none() => {
+            // Two hulls heard by one sensor at one instant tie on (tick, sensor): the hull the track already
+            // follows keeps it (DECISION, r4). Before, the higher entity id took it, so a defector's wedge became
+            // its pursuer's (and Hostile) whenever both were heard, and its own again when the pursuer was not.
+            let cur = t.truth;
+            if let Some(last) = ms.iter().max_by_key(|m| (m.det.tick, m.det.sensor, m.det.target == cur)) { t.truth = last.det.target; }
+        }
+        (None, None) => {}
     }
     if let Some(l) = ms.iter().filter(|m| is_lock_kind(m.det.kind)).map(|m| m.det.tick).max() { t.last_lock_tick = Some(t.last_lock_tick.map_or(l, |x| x.max(l))); }
-    // A surface-domain fix moving faster than any hull is airborne or a weapon.
-    if t.domain == Domain::Surface && t.bearing_only.is_none() {
-        let v = (t.vel.x * t.vel.x + t.vel.z * t.vel.z).sqrt() - SIGMA_95 * t.sigma_v;
-        if v > WEAPON_SPEED_MPS { t.domain = Domain::Weapon; } else if v > AIR_SPEED_MPS { t.domain = Domain::Air; }
-    }
 }
 
 /// Grade, trend and source bookkeeping of a live track at `tick`.
@@ -971,11 +1095,21 @@ pub(crate) fn fuse_core(picture: &mut SidePicture, detections: &[Detection], own
         }
         work = work.saturating_add(1);
     }
+    // A unit that has left the link leaves a last-known mark (L465), except an own weapon: its side watched its
+    // flight end over the link, so there is no contact left to remember. DECISION, b1 (L465 does not say whether
+    // a weapon whose end was seen keeps a mark): every missile a side fired stayed on its plot for 10 minutes
+    // as a mark where it hit or fell (353 marks on the Combine plot 3 minutes into the reference scene).
+    let mut ended: Vec<TrackId> = Vec::new();
     for t in picture.tracks.iter_mut() {
         if t.is_live() && t.is_friend() && own_ids.binary_search(&t.truth).is_err() {
+            if t.domain == Domain::Weapon { ended.push(t.id); continue; }
             t.dropped_tick = Some(tick);
             changes.push(TrackChange::Dropped(t.id));
         }
+    }
+    if !ended.is_empty() {
+        picture.tracks.retain(|t| !ended.contains(&t.id));
+        for id in ended { changes.push(TrackChange::Expired(id)); }
     }
 
     // ---- 2. Detections: own-side returns are the datalink's (never tracks), the rest associate ----
@@ -993,12 +1127,80 @@ pub(crate) fn fuse_core(picture: &mut SidePicture, detections: &[Detection], own
     let mut born_of: Vec<Option<(usize, Option<(f64, usize)>)>> = vec![None; picture.tracks.len()];
     let mut index = TrackIndex::build(&picture.tracks, tick, tt);
     let mut cand: Vec<usize> = Vec::new();
+    // One sensor's ranged reports of one instant are separate objects, so they are associated together: every
+    // (report, track) pair inside the gate, nearest pair first, each report and each track used once. DECISION,
+    // b1 (L465 "a detection joins the nearest track whose 99% contour contains it"): taking the reports one at a
+    // time in target order let the first of two hulls 300 m apart take the other's track when noise put it
+    // nearer, and the second then took the first's or started a new one; both tracks were dragged sideways
+    // every look.
+    let mut joined: Vec<bool> = vec![false; meas.len()];
+    let mut pairs: Vec<(f64, usize, usize)> = Vec::new();
+    let mut assigned: Vec<(usize, usize)> = Vec::new();
+    let mut unsure: Vec<bool> = vec![false; meas.len()];
+    let mut gated: Vec<(f64, usize)> = Vec::new();
+    let mut g0 = 0;
+    while g0 < meas.len() {
+        let key = (meas[g0].det.sensor, meas[g0].det.tick);
+        let mut g1 = g0 + 1;
+        if meas[g0].ranged { while g1 < meas.len() && meas[g1].ranged && (meas[g1].det.sensor, meas[g1].det.tick) == key { g1 += 1; } }
+        if g1 - g0 > 1 {
+            pairs.clear();
+            for (mi, m) in meas.iter().enumerate().take(g1).skip(g0) {
+                index.candidates(m, tick, gate2, &mut cand);
+                for &ti in &cand {
+                    let t = &picture.tracks[ti];
+                    if !t.is_live() || t.is_friend() || taken[ti].contains(&key) { continue; }
+                    if let Some(d2) = gate_d2(m, t, tt, gate2) { if d2 <= gate2 { pairs.push((d2, mi, ti)); } }
+                }
+            }
+            pairs.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)).then(a.2.cmp(&b.2)));
+            assigned.clear();
+            for &(_, mi, ti) in &pairs {
+                if joined[mi] || assigned.iter().any(|a| a.1 == ti) { continue; }
+                assigned.push((mi, ti));
+                joined[mi] = true;
+            }
+            // Nearest pair first can strand a report: its only gated track went to a report that had a second
+            // track in its own gate. That report moves to its other track and the stranded one takes the freed
+            // track (the cheapest such exchange), so two reports beside two tracks never start a third.
+            // DECISION, b2: with hulls 300 m apart 8 km off, noise that put one hull's report nearer the other
+            // hull's track left the first hull's report without a track about once a minute; it started a new
+            // track, and the track nobody updated was merged away (verifier kb1's 300 m geometries: 3 track
+            // numbers for 2 hulls where the base code used 2).
+            for mi in g0..g1 {
+                if joined[mi] { continue; }
+                let mut swap: Option<(f64, usize, usize)> = None;
+                for &(d1, _, ti) in pairs.iter().filter(|p| p.1 == mi) {
+                    let Some(slot) = assigned.iter().position(|a| a.1 == ti) else { continue };
+                    let other = assigned[slot].0;
+                    for &(d2, _, tj) in pairs.iter().filter(|p| p.1 == other) {
+                        if tj != ti && !assigned.iter().any(|a| a.1 == tj) && swap.is_none_or(|(b, _, _)| d1 + d2 < b) { swap = Some((d1 + d2, slot, tj)); }
+                    }
+                }
+                if let Some((_, slot, tj)) = swap {
+                    let ti = assigned[slot].1;
+                    assigned[slot].1 = tj;
+                    assigned.push((mi, ti));
+                    joined[mi] = true;
+                }
+            }
+            for &(mi, ti) in &assigned {
+                groups[ti].push(mi);
+                taken[ti].push(key);
+                let own = pairs.iter().find(|p| p.1 == mi && p.2 == ti).map_or(0.0, |p| p.0);
+                unsure[mi] = pairs.iter().any(|p| p.1 == mi && p.2 != ti && p.0 - own < RELABEL_MARGIN);
+            }
+        }
+        g0 = g1;
+    }
     for (mi, m) in meas.iter().enumerate() {
+        if joined[mi] { continue; }
         let key = (m.det.sensor, m.det.tick);
         let mut best: Option<(f64, usize)> = None;
         let mut blocked: Option<(f64, usize)> = None;
         let mut near: Option<(f64, usize)> = None;
         index.candidates(m, tick, fresh_gate2, &mut cand);
+        gated.clear();
         for &ti in &cand {
             let t = &picture.tracks[ti];
             if !t.is_live() || t.is_friend() { continue; }
@@ -1007,6 +1209,7 @@ pub(crate) fn fuse_core(picture: &mut SidePicture, detections: &[Detection], own
                 if d2 <= fresh_gate2 && !fresh[ti] && !taken[ti].contains(&key) && near.is_none_or(|(b, _)| d2 < b) { near = Some((d2, ti)); }
                 continue;
             }
+            gated.push((d2, ti));
             let slot = if taken[ti].contains(&key) { &mut blocked } else { &mut best };
             if slot.is_none_or(|(b, _)| d2 < b) { *slot = Some((d2, ti)); }
         }
@@ -1018,9 +1221,15 @@ pub(crate) fn fuse_core(picture: &mut SidePicture, detections: &[Detection], own
         // 1,009 merged in 14 minutes of the player's log, each also re-identified.
         let best = best.or(if m.ranged { None } else { blocked });
         match best {
-            Some((_, ti)) => { groups[ti].push(mi); taken[ti].push(key); }
+            Some((own, ti)) => {
+                groups[ti].push(mi);
+                taken[ti].push(key);
+                unsure[mi] = gated.iter().any(|g| g.1 != ti && g.0 - own < RELABEL_MARGIN);
+            }
             None => {
                 let id = TrackId(picture.next_id);
+                #[cfg(test)]
+                if trace::on() { trace::birth(picture, id, m, &cand, &taken, tt, gate2); }
                 picture.next_id = picture.next_id.saturating_add(1);
                 picture.tracks.push(new_track(id, side, m, tuning));
                 let ti = picture.tracks.len() - 1;
@@ -1041,7 +1250,7 @@ pub(crate) fn fuse_core(picture: &mut SidePicture, detections: &[Detection], own
     let mut updated: Vec<bool> = fresh.clone();
     for (ti, g) in groups.iter().enumerate() {
         if g.is_empty() { continue; }
-        let mut ms: Vec<Meas<'_>> = g.iter().map(|&i| meas[i]).collect();
+        let mut ms: Vec<Meas<'_>> = g.iter().map(|&i| Meas { sure: !unsure[i], ..meas[i] }).collect();
         ms.sort_by_key(|m| (m.det.tick, m.det.sensor, m.det.target));
         update_track(&mut picture.tracks[ti], &ms, side, tt);
         updated[ti] = true;
@@ -1050,13 +1259,92 @@ pub(crate) fn fuse_core(picture: &mut SidePicture, detections: &[Detection], own
 
     // ---- 4. Merge duplicates: no object may hold two live tracks (L467) ----
     let n = picture.tracks.len();
+    #[cfg(test)]
+    if trace::on() { trace::pairs(picture, &updated, &taken, tick, tt, gate2, fresh_gate2); }
     let mut gone = vec![false; n];
     let mut unseen: Vec<TrackId> = Vec::new();
+    // Three-point initiation of a fast object seen by a rotating radar alone. A search radar measures no height,
+    // so a missile's first return starts a track like a hull's, and its next return, 700 to 1,500 m on, is
+    // outside that track's gate and starts another. Nothing is done at two fixes: two new contacts a look apart
+    // are as likely two hulls coming into view as one fast object. When a third new fix arrives, the three are
+    // one object if (a) one sensor reported all three, (b) the two gaps are a rotating radar's look period and
+    // equal within `LOOK_SLACK_TICKS`, (c) the first two lie farther apart than `TWO_POINT_SIGMA` of their
+    // errors at a speed above any hull's and within a weapon's, and (d) the third lies inside the association
+    // gate about the point that speed predicts, with a weapon's manoeuvre allowance (L463). The first track
+    // then takes the third fix, the velocity across the three and the domain that speed means; the second
+    // track merges into it and the third fix never shows as a track. All three tracks are unproven (one fix
+    // each, nothing since), so no track that a later look confirmed, or that any other sensor touched, is
+    // moved, renamed or deleted. DECISION, b1 and b2 (L465 starts a new track for every ungated detection and
+    // is silent on a contact of unknown domain): without it each rotation left one stationary surface track
+    // per missile, each coasting 120 s; 55 of the players' 282 tracks a minute into the reference scene were
+    // such tracks of surface-to-air missiles. b1 joined at the second fix and moved the first track onto it;
+    // that took a hull's track whenever a second hull was first seen one look after it (verifier kb1), which
+    // is why this waits for the third.
+    let seeds: Vec<usize> = (0..n).filter(|&i| !fresh[i] && !updated[i] && { let t = &picture.tracks[i]; t.is_live() && !t.is_friend() && t.unproven() }).collect();
+    for j in 0..n {
+        let Some((mi, _)) = born_of[j] else { continue };
+        if seeds.len() < 2 || !groups[j].is_empty() || !picture.tracks[j].unproven() { continue; }
+        let sensor = meas[mi].det.sensor;
+        let c = &picture.tracks[j];
+        let of_sensor = |i: usize| !gone[i] && !updated[i] && picture.tracks[i].fit.as_ref().is_some_and(|f| f.sensor == sensor);
+        let look = |from: &Track, to: &Track| to.created_tick.checked_sub(from.created_tick).filter(|g| (LOOK_MIN_TICKS..=LOOK_MAX_TICKS).contains(g));
+        let (hull, weapon) = (max_speed(Domain::Surface), max_speed(Domain::Weapon));
+        let mut best: Option<(f64, usize, usize)> = None;
+        for &k in &seeds {
+            let b = &picture.tracks[k];
+            let Some(g2) = look(b, c).filter(|_| of_sensor(k)) else { continue };
+            let t2 = g2 as f64 * TICK_S;
+            let v2 = ((c.pos.x - b.pos.x) * (c.pos.x - b.pos.x) + (c.pos.z - b.pos.z) * (c.pos.z - b.pos.z)).sqrt() / t2;
+            if !(v2 > hull && v2 <= weapon) { continue; }
+            for &i in &seeds {
+                let a = &picture.tracks[i];
+                let Some(g1) = look(a, b).filter(|g1| i != k && of_sensor(i) && g1.abs_diff(g2) <= LOOK_SLACK_TICKS) else { continue };
+                let t1 = g1 as f64 * TICK_S;
+                let (ux, uz) = ((b.pos.x - a.pos.x) / t1, (b.pos.z - a.pos.z) / t1);
+                let v1 = (ux * ux + uz * uz).sqrt();
+                if !(v1 > hull && v1 <= weapon) || sq(v1 * t1) <= sq(TWO_POINT_SIGMA) * (sq(a.r0_m) + sq(b.r0_m)) { continue; }
+                // The third fix against B + (B - A) t2 / t1, whose error is (1 + r) B's and r A's, r = t2 / t1.
+                let r = t2 / t1;
+                let (ex, ez) = (c.pos.x - (b.pos.x + ux * t2), c.pos.z - (b.pos.z + uz * t2));
+                let var = sq(c.r0_m) + sq((1.0 + r) * b.r0_m) + sq(r * a.r0_m) + sq(0.5 * sigma_a(tt, Domain::Weapon, false) * t2 * t2);
+                let d2 = (ex * ex + ez * ez) / var;
+                if d2 <= gate2 && best.is_none_or(|(bd, _, _)| d2 < bd) { best = Some((d2, i, k)); }
+            }
+        }
+        let Some((_, i, k)) = best else { continue };
+        let (b, c) = (picture.tracks[k].clone(), picture.tracks[j].clone());
+        // The second track folds into the first as any duplicate does (stance, identification, evidence).
+        absorb(&mut picture.tracks[i], &b, tick, tt);
+        let a = &mut picture.tracks[i];
+        let span = (c.created_tick - a.created_tick) as f64 * TICK_S;
+        let vel = DVec3::new((c.pos.x - a.pos.x) / span, 0.0, (c.pos.z - a.pos.z) / span);
+        a.sigma_v = ((sq(a.r0_m) + sq(c.r0_m)).sqrt() / span).clamp(MIN_SIGMA_V, weapon);
+        a.domain = if vel.length() > max_speed(Domain::Air) { Domain::Weapon } else { Domain::Air };
+        a.vel = vel.clamp_length_max(max_speed(a.domain));
+        a.pos = c.pos;
+        a.r0_m = c.r0_m;
+        a.fit = None;
+        a.last_update_tick = c.last_update_tick;
+        a.truth = c.truth;
+        a.sources |= c.sources;
+        if c.rcs_m2 > 0.0 { a.rcs_m2 = c.rcs_m2; }
+        let into = a.id;
+        gone[j] = true;
+        gone[k] = true;
+        updated[i] = true;
+        let absorbed = taken[j].clone();
+        taken[i].extend(absorbed);
+        changes.retain(|ch| !matches!(ch, TrackChange::Created(id) | TrackChange::Split { new: id, .. } if *id == c.id));
+        created.retain(|&id| id != c.id);
+        unseen.push(c.id);
+        changes.push(TrackChange::Merged { from: b.id, into });
+        work = work.saturating_add(1);
+    }
     // Outliers first: a track born of one detection that lay within 4.5 sigma of an established track (and
     // took no further detection) is folded back into it, unseen.
     for j in 0..n {
         let Some((_, Some((_, i)))) = born_of[j] else { continue };
-        if !groups[j].is_empty() || gone[i] || !picture.tracks[i].is_live() { continue; }
+        if !groups[j].is_empty() || gone[i] || gone[j] || !picture.tracks[i].is_live() { continue; }
         if taken[i].iter().any(|k| taken[j].contains(k)) { continue; }
         let b = picture.tracks[j].clone();
         absorb(&mut picture.tracks[i], &b, tick, tt);
@@ -1190,9 +1478,12 @@ pub(crate) fn local_track_core(detections: &[Detection], sensor: SensorRef, prev
 #[cfg(test)]
 mod probe;
 #[cfg(test)]
+pub(crate) mod trace;
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::sensors::{measurement_error, Evidence};
+    mod kb1;
 
     fn eid(i: u32) -> EntityId { EntityId { index: i, generation: 0 } }
     fn tun() -> TuningTable { TuningTable::default() }
@@ -1501,6 +1792,38 @@ mod tests {
     }
 
     #[test]
+    fn a_wedge_keeps_its_hull_when_a_second_hull_is_heard_on_its_bearing() {
+        // defector_escort: the defector (lower entity id) and a radiating pursuer (higher id) inside one ESM
+        // bearing gate, no ranged fix. While both were heard at one instant the shared wedge's hull became the
+        // pursuer's; when the pursuer missed a look it went back to the defector.
+        let tun = tun();
+        let mut rng = Rng(3);
+        let mut pic = picture();
+        let from = DVec3::new(0.0, 8.0, 0.0);
+        let defector = DVec3::new(0.0, 0.0, -9_000.0);
+        let pursuer = DVec3::new(40.0, 0.0, -11_000.0);
+        let mut dets = Vec::new();
+        let mut hulls: BTreeMap<TrackId, Vec<EntityId>> = BTreeMap::new();
+        for tick in 1..=(2 * 3_600u64) {
+            if tick % 30 == 0 {
+                dets.push(det(&mut rng, tick, sref(1), SensorKind::Esm, from, eid(1), defector));
+                if (tick / 30) % 2 == 0 { dets.push(det(&mut rng, tick, sref(1), SensorKind::Esm, from, eid(2), pursuer)); }
+            }
+            if tick % 6 == 0 {
+                let mut ch = Vec::new();
+                fuse_core(&mut pic, &dets, &[], tick, &tun, &mut ch);
+                dets.clear();
+                for t in pic.tracks.iter().filter(|t| t.is_live() && t.bearing_only.is_some()) {
+                    let seen = hulls.entry(t.id).or_default();
+                    if seen.last() != Some(&t.truth) { seen.push(t.truth); }
+                }
+            }
+        }
+        assert!(hulls.values().any(|h| h.first() == Some(&eid(1))), "{hulls:?}");
+        assert!(hulls.values().all(|h| h.len() == 1), "a wedge changed hull: {hulls:?}");
+    }
+
+    #[test]
     fn a_wedge_folded_into_a_ranged_track_leaves_its_hull() {
         let tun = tun();
         let mut a = blank_track(TrackId(1), SideId(0), eid(1), Domain::Surface, 100);
@@ -1687,6 +2010,343 @@ mod tests {
     }
 
     #[test]
+    fn one_search_radar_return_coasts_the_surface_time() {
+        // L465: 120 s for a surface track. One return with no height, never seen again, is a Surface track
+        // (`initial_domain`) and coasts like one; b1 dropped it at 20 s, and a hull seen once every 25 s then
+        // changed its number at every return (verifier kb1).
+        let tun = tun();
+        let mut rng = Rng(8);
+        let mut pic = picture();
+        let from = DVec3::new(0.0, 20.0, 0.0);
+        let mut ch = Vec::new();
+        fuse_core(&mut pic, &[det(&mut rng, 6, sref(1), SensorKind::SearchRadar, from, eid(9), DVec3::new(0.0, 0.0, -10_000.0))], &[], 6, &tun, &mut ch);
+        assert!(pic.tracks[0].unproven() && pic.tracks[0].fit.is_some_and(|f| f.sensor == sref(1)));
+        fuse_core(&mut pic, &[], &[], 6 + 7_200, &tun, &mut ch);
+        assert!(pic.tracks[0].is_live(), "still coasting at 120 s");
+        ch.clear();
+        fuse_core(&mut pic, &[], &[], 6 + 7_206, &tun, &mut ch);
+        assert_eq!(ch, vec![TrackChange::Dropped(TrackId(1))]);
+    }
+
+    #[test]
+    fn a_missile_seen_by_search_radar_alone_is_one_fast_track() {
+        // A 600 m/s missile at 5 m crossing 9 km off, one search radar, a look every 2.5 s, no height and no
+        // hint. Each return used to start a stationary surface track (the missile is 1,500 m on at the next
+        // look, far outside a hull's gate), and each of those coasted for 120 s.
+        let tun = tun();
+        let mut rng = Rng(21);
+        let mut pic = picture();
+        let from = DVec3::new(0.0, 20.0, 0.0);
+        let at = |tick: u64| DVec3::new(-9_000.0 + 600.0 * (tick as f64 / 60.0), 5.0, -9_000.0);
+        let mut ch = Vec::new();
+        let mut most_live = 0;
+        let mut first_fast = None;
+        for tick in (6..=(20 * 60u64)).step_by(6) {
+            let dets: Vec<Detection> = if tick % 150 == 0 { vec![det(&mut rng, tick, sref(1), SensorKind::SearchRadar, from, eid(7), at(tick))] } else { Vec::new() };
+            fuse_core(&mut pic, &dets, &[], tick, &tun, &mut ch);
+            most_live = most_live.max(pic.tracks.iter().filter(|t| t.is_live()).count());
+            if first_fast.is_none() && pic.tracks.iter().any(|t| air_like(t.domain)) { first_fast = Some(tick); }
+            // Two fixes change nothing: two Surface tracks, as two hulls a look apart would be.
+            if tick == 300 { assert_eq!(pic.tracks.iter().map(|t| (t.id, t.domain, t.is_live())).collect::<Vec<_>>(), vec![(TrackId(1), Domain::Surface, true), (TrackId(2), Domain::Surface, true)]); }
+        }
+        // The third fix on the line makes them one track: the first keeps its number, the second merges into
+        // it, and the third never showed. The cost of waiting for it: the missile is a weapon track 5 s after
+        // its first return, where b1's two-point pass had it at 2.5 s.
+        assert_eq!(first_fast, Some(450));
+        assert!(ch.contains(&TrackChange::Merged { from: TrackId(2), into: TrackId(1) }), "{ch:?}");
+        let live: Vec<&Track> = pic.tracks.iter().filter(|t| t.is_live()).collect();
+        assert!(most_live <= 2, "{most_live} live tracks of one missile");
+        assert_eq!(live.len(), 1, "{:?}", live.iter().map(|t| (t.id, t.domain, t.vel.length())).collect::<Vec<_>>());
+        assert!(live[0].id == TrackId(1) && air_like(live[0].domain) && live[0].vel.length() > 400.0, "{:?} {:?} at {:.0} m/s", live[0].id, live[0].domain, live[0].vel.length());
+        assert!(ch.iter().filter(|c| matches!(c, TrackChange::Created(_))).count() <= 2, "{ch:?}");
+        // Two hulls first seen one look apart, 600 m from each other, are not a fast object: each return is
+        // followed by its own hull's next return, so neither track is left without one.
+        let mut pic = picture();
+        let (h1, h2) = (DVec3::new(0.0, 0.0, -6_000.0), DVec3::new(600.0, 0.0, -6_000.0));
+        for tick in (150..=(20 * 60u64)).step_by(150) {
+            let mut dets = vec![det(&mut rng, tick, sref(1), SensorKind::SearchRadar, from, eid(1), h1)];
+            if tick > 150 { dets.push(det(&mut rng, tick, sref(1), SensorKind::SearchRadar, from, eid(2), h2)); }
+            fuse_core(&mut pic, &dets, &[], tick, &tun, &mut ch);
+        }
+        let live: Vec<&Track> = pic.tracks.iter().filter(|t| t.is_live()).collect();
+        assert_eq!(live.len(), 2);
+        assert!(live.iter().all(|t| t.domain == Domain::Surface && t.vel.length() < 15.0), "{:?}", live.iter().map(|t| (t.domain, t.vel.length())).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn three_fixes_start_a_fast_track_only_from_one_sensor_at_its_look_period() {
+        // Three new contacts in a line, 700 m apart, each seen once: one object at 280 m/s if one radar saw
+        // them on three successive looks. Seen by two ships' radars in turn, or at uneven intervals, they are
+        // three contacts and stay three Surface tracks.
+        let tun = tun();
+        let from = DVec3::new(0.0, 20.0, 0.0);
+        let at = |k: u32| DVec3::new(-700.0 + 700.0 * k as f64, 0.0, -8_000.0);
+        let run = |ticks: [u64; 3], sensors: [u32; 3]| {
+            let mut pic = picture();
+            let mut ch = Vec::new();
+            for tick in (6..=900u64).step_by(6) {
+                let dets: Vec<Detection> = (0..3).filter(|&k| ticks[k] == tick).map(|k| exact(tick, sref(sensors[k]), SensorKind::SearchRadar, from, eid(10 + k as u32), at(k as u32))).collect();
+                fuse_core(&mut pic, &dets, &[], tick, &tun, &mut ch);
+            }
+            pic.tracks.iter().filter(|t| t.is_live()).map(|t| (t.id, t.domain)).collect::<Vec<_>>()
+        };
+        let three = vec![(TrackId(1), Domain::Surface), (TrackId(2), Domain::Surface), (TrackId(3), Domain::Surface)];
+        assert_eq!(run([150, 300, 450], [1, 1, 1]), vec![(TrackId(1), Domain::Air)], "one radar, three looks: one track at 280 m/s");
+        assert_eq!(run([150, 390, 630], [1, 1, 1]), vec![(TrackId(1), Domain::Air)], "a 15 rpm radar's looks are 4 s apart");
+        assert_eq!(run([150, 300, 450], [1, 2, 1]), three, "the middle fix was another ship's radar");
+        assert_eq!(run([150, 300, 450], [1, 1, 2]), three, "the third fix was another ship's radar");
+        assert_eq!(run([150, 300, 540], [1, 1, 1]), three, "gaps of 2.5 s and 4 s are not one radar's looks");
+        assert_eq!(run([150, 240, 330], [1, 1, 1]), three, "1.5 s apart is no rotating radar's look period");
+    }
+
+    #[test]
+    fn an_air_or_weapon_track_that_sits_on_a_hull_returns_to_surface() {
+        // A missile leaves its launcher: the fire-control radar's one fix of it, 20 m up beside the hull, starts
+        // a Weapon track there. The missile is gone; the search radar's fixes of the hull (no height, no hint)
+        // gate that track and it follows the hull. Hulls do 30 m/s at most: once the fixes show the object has
+        // not moved faster than that, the track is a Surface track again.
+        let tun = tun();
+        let from = DVec3::new(0.0, 20.0, 0.0);
+        for (seed, speed) in [(41u64, 0.0), (42, 6.0), (43, 15.0)] {
+            let mut rng = Rng(seed);
+            let mut pic = picture();
+            let mut ch = Vec::new();
+            let hull = |tick: u64| DVec3::new(1_000.0 + speed * (tick as f64 / 60.0), 0.0, -6_000.0);
+            let mut launch = det(&mut rng, 6, sref(1), SensorKind::FireControlRadar, from, eid(7), hull(6) + DVec3::new(0.0, 12.0, 0.0));
+            launch.domain_hint = Some(Domain::Weapon);
+            fuse_core(&mut pic, &[launch], &[], 6, &tun, &mut ch);
+            assert_eq!(pic.tracks[0].domain, Domain::Weapon);
+            let mut settled = None;
+            for tick in (12..=(90 * 60u64)).step_by(6) {
+                let dets: Vec<Detection> = if tick % 150 == 0 { vec![det(&mut rng, tick, sref(2), SensorKind::SearchRadar, from, eid(1), hull(tick))] } else { Vec::new() };
+                fuse_core(&mut pic, &dets, &[], tick, &tun, &mut ch);
+                let live: Vec<&Track> = pic.tracks.iter().filter(|t| t.is_live()).collect();
+                assert_eq!(live.len(), 1, "one track of the hull at {tick}: {:?}", live.iter().map(|t| (t.id, t.domain)).collect::<Vec<_>>());
+                if settled.is_none() && live[0].domain == Domain::Surface { settled = Some(tick); }
+                if settled.is_some() { assert_eq!(live[0].domain, Domain::Surface, "it stays Surface"); }
+            }
+            let settled = settled.unwrap_or_else(|| panic!("a hull at {speed} m/s held a Weapon track for 90 s"));
+            assert!(settled >= 6 + (DEMOTE_SPAN_S * 60.0) as u64 && settled <= 60 * 60, "settled at {} s", settled / 60);
+            let t = &pic.tracks[0];
+            assert!(t.id == TrackId(1) && t.truth == eid(1) && t.pos.y == 0.0 && t.vel.length() <= 30.0 && t.fit.is_some(), "{:?} {:?} {:?} {:.0}", t.id, t.truth, t.pos, t.vel.length());
+        }
+        // A 250 m/s sea-skimmer first locked 12 m up and then held by search radar alone stays a weapon track.
+        let mut rng = Rng(44);
+        let mut pic = picture();
+        let mut ch = Vec::new();
+        let at = |tick: u64| DVec3::new(-6_000.0 + 250.0 * (tick as f64 / 60.0), 12.0, -6_000.0);
+        let mut first = det(&mut rng, 6, sref(1), SensorKind::FireControlRadar, from, eid(7), at(6));
+        first.domain_hint = Some(Domain::Weapon);
+        fuse_core(&mut pic, &[first], &[], 6, &tun, &mut ch);
+        for tick in (12..=(40 * 60u64)).step_by(6) {
+            let dets: Vec<Detection> = if tick % 150 == 0 { vec![det(&mut rng, tick, sref(2), SensorKind::SearchRadar, from, eid(7), at(tick))] } else { Vec::new() };
+            fuse_core(&mut pic, &dets, &[], tick, &tun, &mut ch);
+            assert!(pic.tracks.iter().filter(|t| t.is_live() && t.last_update_tick + 600 > tick).all(|t| t.domain != Domain::Surface || t.created_tick + 600 > tick), "a missile's track went Surface at {tick}");
+        }
+        // A drone hovering 100 m up under a lookout's eye (who says Air twice a second) stays an Air track
+        // however slow it is.
+        let mut rng = Rng(45);
+        let mut pic = picture();
+        let hover = DVec3::new(500.0, 100.0, -3_000.0);
+        for tick in (6..=(120 * 60u64)).step_by(6) {
+            let mut dets = Vec::new();
+            if tick % 30 == 0 { let mut d = det(&mut rng, tick, sref(3), SensorKind::Visual, from, eid(8), hover); d.domain_hint = Some(Domain::Air); dets.push(d); }
+            if tick % 150 == 0 { dets.push(det(&mut rng, tick, sref(2), SensorKind::SearchRadar, from, eid(8), hover)); }
+            fuse_core(&mut pic, &dets, &[], tick, &tun, &mut ch);
+            assert!(pic.tracks.iter().filter(|t| t.is_live()).all(|t| t.domain == Domain::Air), "the drone's track left Air at {tick}");
+        }
+    }
+
+    #[test]
+    fn a_report_left_without_a_track_takes_the_one_its_neighbour_can_spare() {
+        // Two hulls 300 m apart across the line of sight, 5 km off, each with a track. One look reads the first
+        // hull 150 m away from the second and the second 160 m toward the first: the second report is the
+        // nearest to the first track, and the first report gates no other track. Nearest pair first alone gave
+        // the first track to the second report and started a third track for the first.
+        let tun = tun();
+        let mut pic = picture();
+        let from = DVec3::new(0.0, 20.0, 0.0);
+        let (h1, h2) = (DVec3::new(0.0, 0.0, -5_000.0), DVec3::new(300.0, 0.0, -5_000.0));
+        let mut ch = Vec::new();
+        for tick in (150..=1_500u64).step_by(150) {
+            fuse_core(&mut pic, &[exact(tick, sref(1), SensorKind::SearchRadar, from, eid(1), h1), exact(tick, sref(1), SensorKind::SearchRadar, from, eid(2), h2)], &[], tick, &tun, &mut ch);
+        }
+        let id_of = |pic: &SidePicture, e: EntityId| pic.tracks.iter().find(|t| t.is_live() && t.truth == e).map(|t| t.id);
+        let (a, b) = (id_of(&pic, eid(1)).expect("first track"), id_of(&pic, eid(2)).expect("second track"));
+        let (r1, r2) = (exact(1_650, sref(1), SensorKind::SearchRadar, from, eid(1), h1 + DVec3::new(-150.0, 0.0, 0.0)), exact(1_650, sref(1), SensorKind::SearchRadar, from, eid(2), h2 + DVec3::new(-160.0, 0.0, 0.0)));
+        let tt = &tun.tracks;
+        let d2 = |d: &Detection, id: TrackId| gate_d2(&Meas::new(d).expect("meas"), pic.get(id).expect("track"), tt, 9.2).filter(|d| *d <= 9.2);
+        assert!(d2(&r2, a) < d2(&r1, a) && d2(&r1, b).is_none() && d2(&r2, b).is_some(), "the geometry the exchange is for: {:?} {:?} {:?} {:?}", d2(&r1, a), d2(&r2, a), d2(&r1, b), d2(&r2, b));
+        ch.clear();
+        fuse_core(&mut pic, &[r1, r2], &[], 1_650, &tun, &mut ch);
+        assert!(ch.iter().all(|c| matches!(c, TrackChange::Grade(..))), "no track started, split or merged: {ch:?}");
+        assert_eq!((pic.get(a).map(|t| t.truth), pic.get(b).map(|t| t.truth)), (Some(eid(1)), Some(eid(2))));
+        assert!(pic.get(a).is_some_and(|t| t.pos.x < 0.0) && pic.get(b).is_some_and(|t| t.pos.x < 300.0), "each track took its own hull's report");
+    }
+
+    #[test]
+    fn a_missile_faster_than_any_aircraft_becomes_a_weapon_track_and_keeps_it() {
+        // A surface-to-air missile at 600 m/s climbing past 15 m reads as Air to the fire-control radar. An Air
+        // track's speed is limited to 400 m/s, so the track fell behind and every few returns started another.
+        let tun = tun();
+        let mut rng = Rng(33);
+        let mut pic = picture();
+        let from = DVec3::new(0.0, 20.0, 0.0);
+        let at = |tick: u64| DVec3::new(-4_000.0 + 600.0 * (tick as f64 / 60.0), 400.0, -8_000.0);
+        let mut ch = Vec::new();
+        for tick in (6..=(12 * 60u64)).step_by(6) {
+            let mut d = det(&mut rng, tick, sref(1), SensorKind::FireControlRadar, from, eid(7), at(tick));
+            d.domain_hint = Some(Domain::Air);
+            fuse_core(&mut pic, &[d], &[], tick, &tun, &mut ch);
+        }
+        let created = ch.iter().filter(|c| matches!(c, TrackChange::Created(_))).count();
+        let live: Vec<&Track> = pic.tracks.iter().filter(|t| t.is_live()).collect();
+        assert!(created <= 2, "{created} tracks started on one missile");
+        assert_eq!(live.len(), 1);
+        assert_eq!(live[0].domain, Domain::Weapon, "faster than any aircraft");
+        assert!((live[0].vel.length() - 600.0).abs() < 60.0, "{:.0} m/s", live[0].vel.length());
+        // An aircraft at 250 m/s stays an Air track.
+        let mut pic = picture();
+        let at = |tick: u64| DVec3::new(-4_000.0 + 250.0 * (tick as f64 / 60.0), 400.0, -8_000.0);
+        for tick in (6..=(12 * 60u64)).step_by(6) {
+            let mut d = det(&mut rng, tick, sref(1), SensorKind::FireControlRadar, from, eid(8), at(tick));
+            d.domain_hint = Some(Domain::Air);
+            fuse_core(&mut pic, &[d], &[], tick, &tun, &mut ch);
+        }
+        assert!(pic.tracks.iter().filter(|t| t.is_live()).all(|t| t.domain == Domain::Air));
+    }
+
+    /// A detection of `target` measured exactly at `at`, with the sensor kind's errors as its sigmas.
+    fn exact(tick: u64, sensor: SensorRef, kind: SensorKind, from: DVec3, target: EntityId, at: DVec3) -> Detection {
+        let me = measurement_error(kind);
+        let d = at - from;
+        let range = d.length();
+        Detection {
+            tick, sensor, side: SideId(0), kind, sensor_pos: from, target, measurement: Measurement::RangeBearing { range_m: range, bearing_rad: compass_bearing(d), height_m: None },
+            sigma_range_m: me.range_m.unwrap_or(0.0) + me.range_fraction.unwrap_or(0.0) * range, sigma_bearing_rad: me.bearing_deg.to_radians(),
+            evidence: Evidence::empty(), emitter: u16::MAX, rcs_m2: 150.0, domain_hint: None,
+        }
+    }
+
+    #[test]
+    fn a_coarse_sighting_does_not_rename_a_track() {
+        // Two hulls on one bearing, 500 m apart in range, each with a search-radar track. A lookout sights the
+        // far one; his range is good to 10% (700 m), and this time it reads short, on the near hull. The
+        // sighting joins the near hull's track, though it could as well have joined the far hull's (both lie
+        // inside its gate, within `RELABEL_MARGIN`). It used to make that track the far hull's, so
+        // identification followed the wrong hull and the far hull counted two tracks.
+        let tun = tun();
+        let mut pic = picture();
+        let from = DVec3::new(0.0, 20.0, 0.0);
+        let (near, far) = (DVec3::new(0.0, 0.0, -7_000.0), DVec3::new(0.0, 0.0, -7_500.0));
+        let mut ch = Vec::new();
+        for tick in (150..=1_500u64).step_by(150) {
+            let dets = [exact(tick, sref(1), SensorKind::SearchRadar, from, eid(1), near), exact(tick, sref(1), SensorKind::SearchRadar, from, eid(2), far)];
+            fuse_core(&mut pic, &dets, &[], tick, &tun, &mut ch);
+        }
+        let id_of = |pic: &SidePicture, e: EntityId| pic.tracks.iter().find(|t| t.is_live() && t.truth == e).map(|t| t.id);
+        let (a, b) = (id_of(&pic, eid(1)).expect("near track"), id_of(&pic, eid(2)).expect("far track"));
+        fuse_core(&mut pic, &[exact(1_530, sref(2), SensorKind::Visual, from, eid(2), near + DVec3::new(0.0, 0.0, -20.0))], &[], 1_530, &tun, &mut ch);
+        assert_eq!(pic.tracks.iter().filter(|t| t.is_live()).count(), 2);
+        assert!(pic.get(a).is_some_and(|t| t.sources.contains(SourceMask::VISUAL)), "the sighting joined the near track");
+        assert_eq!((pic.get(a).map(|t| t.truth), pic.get(b).map(|t| t.truth)), (Some(eid(1)), Some(eid(2))), "each track keeps its hull");
+        // A fix with one track to join does rename it: the radar's next look at the far hull alone, read on the
+        // near track, is positional evidence.
+        let mut solo = picture();
+        for tick in (150..=1_500u64).step_by(150) { fuse_core(&mut solo, &[exact(tick, sref(1), SensorKind::SearchRadar, from, eid(1), near)], &[], tick, &tun, &mut ch); }
+        fuse_core(&mut solo, &[exact(1_650, sref(1), SensorKind::SearchRadar, from, eid(2), near)], &[], 1_650, &tun, &mut ch);
+        assert_eq!(solo.tracks.iter().filter(|t| t.is_live()).map(|t| t.truth).collect::<Vec<_>>(), vec![eid(2)]);
+        // A sighting that does tell two hulls apart renames: the hulls are 400 m apart across the line of
+        // sight, where the lookout's bearing is good to a few tens of metres. The radar has (wrongly) left the
+        // second hull's label on the track that sits on the first; the first hull's sighting corrects it.
+        let mut pic = picture();
+        let (left, right) = (DVec3::new(-200.0, 0.0, -7_000.0), DVec3::new(200.0, 0.0, -7_000.0));
+        for tick in (150..=1_500u64).step_by(150) {
+            fuse_core(&mut pic, &[exact(tick, sref(1), SensorKind::SearchRadar, from, eid(1), left), exact(tick, sref(1), SensorKind::SearchRadar, from, eid(2), right)], &[], tick, &tun, &mut ch);
+        }
+        let on_left = id_of(&pic, eid(1)).expect("left track");
+        pic.get_mut(on_left).expect("left track").truth = eid(3);
+        fuse_core(&mut pic, &[exact(1_530, sref(2), SensorKind::Visual, from, eid(1), left)], &[], 1_530, &tun, &mut ch);
+        assert_eq!(pic.get(on_left).map(|t| t.truth), Some(eid(1)), "a sighting only this track could take names it");
+    }
+
+    #[test]
+    fn one_look_at_two_close_hulls_gives_each_track_its_nearest_report() {
+        // Two hulls 300 m apart across the line of sight, 5 km off, each with a track. In one look the radar
+        // reads the first hull 160 m toward the second (nearer the second's track than its own) and the second
+        // where it is. Taken one at a time in target order, the first report took the second hull's track and
+        // the second report took the first's: both tracks changed hulls and were dragged across. Taken
+        // together, nearest pair first, the second report keeps its track and the first falls to its own.
+        let tun = tun();
+        let mut pic = picture();
+        let from = DVec3::new(0.0, 20.0, 0.0);
+        let (h1, h2) = (DVec3::new(0.0, 0.0, -5_000.0), DVec3::new(300.0, 0.0, -5_000.0));
+        let mut ch = Vec::new();
+        for tick in (150..=1_500u64).step_by(150) {
+            fuse_core(&mut pic, &[exact(tick, sref(1), SensorKind::SearchRadar, from, eid(1), h1), exact(tick, sref(1), SensorKind::SearchRadar, from, eid(2), h2)], &[], tick, &tun, &mut ch);
+        }
+        let id_of = |pic: &SidePicture, e: EntityId| pic.tracks.iter().find(|t| t.is_live() && t.truth == e).map(|t| t.id);
+        let (a, b) = (id_of(&pic, eid(1)).expect("first track"), id_of(&pic, eid(2)).expect("second track"));
+        let before = (pic.get(a).map(|t| t.pos.x), pic.get(b).map(|t| t.pos.x));
+        let look = [exact(1_650, sref(1), SensorKind::SearchRadar, from, eid(1), h1 + DVec3::new(160.0, 0.0, 0.0)), exact(1_650, sref(1), SensorKind::SearchRadar, from, eid(2), h2)];
+        fuse_core(&mut pic, &look, &[], 1_650, &tun, &mut ch);
+        assert_eq!(pic.tracks.iter().filter(|t| t.is_live()).count(), 2, "no third track");
+        assert_eq!((pic.get(a).map(|t| t.truth), pic.get(b).map(|t| t.truth)), (Some(eid(1)), Some(eid(2))), "each track keeps its hull");
+        assert_eq!(pic.get(b).map(|t| t.pos.x), before.1, "the second track took the report that lay on it");
+        assert!(pic.get(a).is_some_and(|t| t.pos.x > before.0.unwrap_or(0.0)), "the first track took its own, offset, report");
+    }
+
+    #[test]
+    fn two_hulls_close_together_stay_two_tracks_and_one_hull_stays_one() {
+        // A guard that holds before and after the b1 changes: two real hulls close together stay two tracks.
+        // Two hulls 350 m apart in line abreast 7 km off, 12 kn. One search radar reports both each look, and a
+        // lookout sights each twice a second with a 10% range error (700 m).
+        let tun = tun();
+        let mut rng = Rng(12);
+        let mut pic = picture();
+        let from = DVec3::new(0.0, 20.0, 0.0);
+        let vel = DVec3::new(0.0, 0.0, 6.0);
+        let at = |k: u32, tick: u64| DVec3::new(-175.0 + 350.0 * k as f64, 0.0, -7_000.0) + vel * (tick as f64 / 60.0);
+        let mut owner: BTreeMap<TrackId, EntityId> = BTreeMap::new();
+        let (mut swaps, mut samples, mut not_two) = (0u32, 0u32, 0u32);
+        let mut dets = Vec::new();
+        for tick in 1..=(5 * 3_600u64) {
+            if tick % 150 == 0 { for k in 0..2 { dets.push(det(&mut rng, tick, sref(1), SensorKind::SearchRadar, from, eid(10 + k), at(k, tick))); } }
+            if tick % 30 == 0 { let k = (tick / 30 % 2) as u32; dets.push(det(&mut rng, tick, sref(2), SensorKind::Visual, from, eid(10 + k), at(k, tick))); }
+            if tick % 6 == 0 {
+                let mut ch = Vec::new();
+                fuse_core(&mut pic, &dets, &[], tick, &tun, &mut ch);
+                dets.clear();
+                if tick < 600 { continue; }
+                let live: Vec<&Track> = pic.tracks.iter().filter(|t| t.is_live()).collect();
+                samples += 1;
+                if live.len() != 2 || live[0].truth == live[1].truth { not_two += 1; }
+                for t in &live { if let Some(o) = owner.insert(t.id, t.truth) { if o != t.truth { swaps += 1; } } }
+            }
+        }
+        assert!(not_two * 50 <= samples, "the picture was not one track per hull in {not_two} of {samples} samples");
+        assert!(swaps <= 4, "{swaps} hull swaps in 5 minutes");
+        assert!(pic.next_id <= 8, "{} track numbers for two hulls", pic.next_id - 1);
+    }
+
+    #[test]
+    fn an_own_weapon_that_ends_leaves_no_mark() {
+        let tun = tun();
+        let mut pic = picture();
+        let mut ch = Vec::new();
+        let missile = (eid(40), Domain::Weapon, DVec3::new(0.0, 5.0, -2_000.0), DVec3::new(0.0, 0.0, -270.0));
+        let consort = (eid(41), Domain::Surface, DVec3::new(300.0, 0.0, 0.0), DVec3::ZERO);
+        fuse_core(&mut pic, &[], &[missile, consort], 6, &tun, &mut ch);
+        assert_eq!(pic.tracks.len(), 2);
+        ch.clear();
+        fuse_core(&mut pic, &[], &[], 12, &tun, &mut ch);
+        // The missile's flight ended over the link: its track goes. The consort's leaves a last-known mark.
+        assert_eq!(pic.tracks.len(), 1);
+        assert_eq!((pic.tracks[0].truth, pic.tracks[0].is_live()), (eid(41), false));
+        assert!(ch.contains(&TrackChange::Expired(TrackId(1))) && ch.contains(&TrackChange::Dropped(TrackId(2))), "{ch:?}");
+    }
+
+    #[test]
     fn drop_expire_and_numbers_never_reused() {
         let tun = tun();
         let mut rng = Rng(8);
@@ -1694,20 +2354,23 @@ mod tests {
         let from = DVec3::new(0.0, 20.0, 0.0);
         let truth = DVec3::new(0.0, 0.0, -10_000.0);
         let mut ch = Vec::new();
+        // Two looks of the search radar: a contact seen twice in one place is a surface contact.
         fuse_core(&mut pic, &[det(&mut rng, 6, sref(1), SensorKind::SearchRadar, from, eid(9), truth)], &[], 6, &tun, &mut ch);
+        fuse_core(&mut pic, &[det(&mut rng, 156, sref(1), SensorKind::SearchRadar, from, eid(9), truth)], &[], 156, &tun, &mut ch);
+        assert_eq!(pic.tracks.len(), 1);
         // 120 s without update: dropped (surface). The grade coarsens as it coasts.
         ch.clear();
-        fuse_core(&mut pic, &[], &[], 6 + 7_200, &tun, &mut ch);
+        fuse_core(&mut pic, &[], &[], 156 + 7_200, &tun, &mut ch);
         assert!(ch.iter().all(|c| matches!(c, TrackChange::Grade(..))), "{ch:?}");
         ch.clear();
-        fuse_core(&mut pic, &[], &[], 6 + 7_206, &tun, &mut ch);
+        fuse_core(&mut pic, &[], &[], 156 + 7_206, &tun, &mut ch);
         assert_eq!(ch, vec![TrackChange::Dropped(TrackId(1))]);
         assert!(!pic.tracks[0].is_live());
         // A last-known mark stays 10 minutes, then expires.
         ch.clear();
-        fuse_core(&mut pic, &[], &[], 7_212 + 36_000, &tun, &mut ch);
+        fuse_core(&mut pic, &[], &[], 7_362 + 36_000, &tun, &mut ch);
         assert!(ch.is_empty());
-        fuse_core(&mut pic, &[], &[], 7_218 + 36_000, &tun, &mut ch);
+        fuse_core(&mut pic, &[], &[], 7_368 + 36_000, &tun, &mut ch);
         assert_eq!(ch, vec![TrackChange::Expired(TrackId(1))]);
         assert!(pic.tracks.is_empty());
         // Seen again: a new number.

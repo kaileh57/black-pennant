@@ -558,6 +558,11 @@ struct Soak<'a> {
     backlog_marks: Vec<f64>,
     /// Synthetic tick cost in force now (dropped to 0 for the last third).
     synthetic_now: f32,
+    /// `BP_SOAK_CENSUS` is set: print the per-second series and the 10 s census (`print_census`).
+    census: bool,
+    /// Per meter, the counters at the last census second: bytes, deferred items, frames shedding poses, track
+    /// bytes, vessel bytes.
+    census_prev: Vec<Traffic>,
 }
 
 impl Soak<'_> {
@@ -682,9 +687,63 @@ impl Soak<'_> {
         }
     }
 
+    /// `BP_SOAK_CENSUS=1`, a measurement on stderr. Each second and client: the kbps sent in that second, the
+    /// adaptive cap, the items its frames deferred and the frames sent at the last shedding stage, so a second
+    /// held down by the cap can be told from one that sent all it had. Every 10 s: slot 0's snapshot tracks by
+    /// domain (live, last-known), its Surface tracks that are not Friend per hull afloat on the other sides,
+    /// and the world's live bodies by kind.
+    fn print_census(&mut self, now: Duration) {
+        let t = self.secs(now);
+        let panel = self.server.connection_panel();
+        for (i, m) in self.meters.iter().enumerate() {
+            let Some(slot) = m.slot else { continue };
+            if self.census_prev.len() <= i { self.census_prev.resize(i + 1, Traffic::default()); }
+            let (cur, prev) = (m.traffic, self.census_prev[i]);
+            self.census_prev[i] = cur;
+            let (d, q) = (&cur.detail, &prev.detail);
+            let cap = panel.players.iter().find(|p| p.slot == slot).map_or(0, |p| p.cap_kbps);
+            let kbps = |b: u64, a: u64| b.saturating_sub(a) as f64 * 8.0 / 1000.0;
+            let sent = kbps(d.channel_bytes.iter().sum::<u64>(), q.channel_bytes.iter().sum::<u64>());
+            // Channels in `Channel::id` order: session, events, entity, projectile, unreliable (frames), bulk.
+            let ch: Vec<String> = (0..6).map(|c| format!("{:.1}", kbps(d.channel_bytes[c], q.channel_bytes[c]))).collect();
+            // Frame parts: header without removals, removals, vessels, bodies and decoys, tracks, then sections
+            // in `Section::ALL` order (ship, allies, alerts, objectives, pacing, ship slow).
+            let header = kbps(d.frame_header_bytes.saturating_sub(d.removal_bytes), q.frame_header_bytes.saturating_sub(q.removal_bytes));
+            let sec: Vec<String> = (0..6).map(|c| format!("{:.1}", kbps(d.section_bytes[c], q.section_bytes[c]))).collect();
+            eprintln!("series t {t:.0} slot {} sent_kbps {sent:.1} cap_kbps {cap} tracks_kbps {:.1} vessels_kbps {:.1} deferred_items {} frames_shedding_poses {} | ch {} | frame hdr {header:.1} rem {:.1} ves {:.1} bod {:.1} trk {:.1} sec {} | items ves {} bod {} trk {} frames {} shed1 {}",
+                slot.0, kbps(d.track_bytes, q.track_bytes), kbps(cur.vessel_bytes, prev.vessel_bytes), d.deferred_items - q.deferred_items, d.shed_frames[2] - q.shed_frames[2],
+                ch.join(" "), kbps(d.removal_bytes, q.removal_bytes), kbps(cur.vessel_bytes, prev.vessel_bytes), kbps(d.body_bytes, q.body_bytes), kbps(d.track_bytes, q.track_bytes), sec.join(" "),
+                cur.vessel_updates - prev.vessel_updates, d.body_items - q.body_items, d.track_items - q.track_items, d.frames - q.frames, d.shed_frames[1] - q.shed_frames[1]);
+        }
+        if (t.round() as u64) % 10 != 0 { return; }
+        let Some(sim) = self.server.sim() else { return };
+        let snap = sim.snapshot(sim_systems::protocol::snapshot::Viewer::Player(PlayerSlot(0)));
+        let mut tracks: BTreeMap<String, u32> = BTreeMap::new();
+        for tr in &snap.tracks { *tracks.entry(format!("{:?} {}", tr.domain, if tr.last_known { "last-known" } else { "live" })).or_default() += 1; }
+        let mut by_rel: BTreeMap<String, u32> = BTreeMap::new();
+        for tr in &snap.tracks { *by_rel.entry(format!("{:?} {:?}", tr.domain, tr.relevance)).or_default() += 1; }
+        let mut ves_rel: BTreeMap<String, u32> = BTreeMap::new();
+        for v in &snap.vessels { *ves_rel.entry(format!("{:?}", v.relevance)).or_default() += 1; }
+        let mut body_rel: BTreeMap<String, u32> = BTreeMap::new();
+        for b in &snap.bodies { *body_rel.entry(format!("{:?}", b.relevance)).or_default() += 1; }
+        eprintln!("relevance t {t:.0} tracks {by_rel:?} | vessels {ves_rel:?} | bodies {body_rel:?} decoys {}", snap.decoys.len());
+        let side = sim.players().iter().find(|p| p.slot == PlayerSlot(0)).map(|p| p.side);
+        let hulls = sim.world().vessels().filter(|(_, v)| Some(v.side) != side && matches!(v.status, sim_core::vessel::VesselStatus::Active | sim_core::vessel::VesselStatus::Disabled)).count();
+        let surface = snap.tracks.iter().filter(|tr| !tr.last_known && tr.domain == content::enums::Domain::Surface && tr.stance != content::enums::Stance::Friend).count();
+        let b = sim.world().bodies();
+        let mut bodies: BTreeMap<String, u32> = BTreeMap::new();
+        for row in 0..b.len() {
+            if b.phase.get(row).copied() == Some(sim_core::munitions::BodyPhase::Dead) { continue; }
+            let name = self.data.catalogue.munitions.get_index(b.kind[row].index()).map(|(_, d)| format!("{:?}", d.kind)).unwrap_or_default();
+            *bodies.entry(name).or_default() += 1;
+        }
+        eprintln!("census t {t:.0} tracks {} {tracks:?} | surface tracks not Friend {surface} over {hulls} hulls = {:.2} per hull | bodies {bodies:?}", snap.tracks.len(), surface as f64 / hulls.max(1) as f64);
+    }
+
     /// Once a second: traffic, panel loss, and the connection log's warnings and ladder steps.
     fn each_second(&mut self, now: Duration) {
         self.refresh_traffic();
+        if self.census { self.print_census(now); }
         if self.t0.is_some() {
             let panel = self.server.connection_panel();
             let mut losses: Vec<f64> = panel.players.iter().filter(|p| p.held_s.is_none() && !p.host).map(|p| f64::from(p.loss)).filter(|l| l.is_finite()).collect();
@@ -787,7 +846,20 @@ fn run_once(args: &SoakArgs, make: &dyn Fn(u64) -> SortieConfig, data: &crate::r
     options.dedicated = true;
     options.upload_kbps = upload_for(n);
     options.synthetic_tick_ms = synthetic;
+    // Measurement only (`BP_SOAK_CAP_MAX_KBPS`): hold the adaptive cap at or under this figure, to tell demand
+    // from a risen cap being filled (L937). The gates are computed as always.
+    if let Some(k) = std::env::var("BP_SOAK_CAP_MAX_KBPS").ok().and_then(|v| v.parse::<u32>().ok()) {
+        options.quality.cap_max_kbps = k.max(options.quality.cap_min_kbps);
+        options.quality.cap_start_kbps = options.quality.cap_start_kbps.min(options.quality.cap_max_kbps);
+        eprintln!("soak: adaptive cap held at or under {} kbps (BP_SOAK_CAP_MAX_KBPS)", options.quality.cap_max_kbps);
+    }
+    // Measurement only (`BP_SOAK_CAP_START_KBPS`): start the cap here instead (768 shows uncapped demand).
+    if let Some(k) = std::env::var("BP_SOAK_CAP_START_KBPS").ok().and_then(|v| v.parse::<u32>().ok()) {
+        options.quality.cap_start_kbps = k.clamp(options.quality.cap_min_kbps, options.quality.cap_max_kbps);
+        eprintln!("soak: adaptive cap starts at {} kbps (BP_SOAK_CAP_START_KBPS)", options.quality.cap_start_kbps);
+    }
     let mut server = ServerSession::new(options, soak_lobby(args.seed), shared.clone(), pool.clone(), data.catalogue.clone(), Box::new(net::blueprints::MemoryStore::default()));
+    if std::env::var_os("BP_SOAK_CENSUS").is_some() { server.enable_event_census(); }
     let conditioning = |p: ConditionerProfile, k: u64| (!is_clean(&p)).then(|| Conditioning { profile: p, seed: link_seed(args.seed, k), clock: shared.clone() });
     let mut ends: Vec<Box<dyn ClientTransport>> = Vec::with_capacity(n as usize);
     let mut spares: Vec<Box<dyn ClientTransport>> = Vec::new();
@@ -825,7 +897,7 @@ fn run_once(args: &SoakArgs, make: &dyn Fn(u64) -> SortieConfig, data: &crate::r
     let report = SoakReport { game_version: version.into(), seed: args.seed, minutes: args.minutes, link: crate::args::link_name(args.link).into(), synthetic_tick_ms: synthetic, real_load, ..SoakReport::default() };
     let mut s = Soak {
         args, make, data, pool, clock, server, bots, meters, report, tick_ms: Vec::new(), t0: None, origin, loss: Vec::new(), backlog: Vec::new(),
-        ladder: (0, 0), rung0_at: None, backlog_marks: Vec::new(), synthetic_now: synthetic,
+        ladder: (0, 0), rung0_at: None, backlog_marks: Vec::new(), synthetic_now: synthetic, census: std::env::var_os("BP_SOAK_CENSUS").is_some(), census_prev: Vec::new(),
     };
 
     // Join: every bot welcomed, refused or gone, or the timeout.
@@ -895,6 +967,12 @@ fn run_once(args: &SoakArgs, make: &dyn Fn(u64) -> SortieConfig, data: &crate::r
     }
     let end = s.clock.now();
     s.each_second(end);
+    if s.census {
+        let secs = s.secs(end).max(1.0);
+        for ((slot, ch, name), (n, bytes)) in s.server.event_census() {
+            eprintln!("events slot {} channel {ch} {name}: {n} events, {bytes} lone bytes, {:.2} kbps", slot.0, bytes as f64 * 8.0 / 1000.0 / secs);
+        }
+    }
     s.close_sortie();
 
     // Results.

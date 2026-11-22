@@ -67,6 +67,21 @@ pub const MAX_UDP_CLIENTS: usize = 16;
 /// How often [`HostingHandle::poll`] re-reads the machine's interface addresses.
 pub const ADDRESS_REFRESH: Duration = Duration::from_secs(5);
 
+/// Interpolation tuning for remote vessels replicated at `vessel_hz` (DESIGN.md L914-916, L935): 30 Hz or
+/// more keeps the default 4 intervals at 30 Hz (133 ms); a slower rate uses 3 of its own intervals, which at
+/// 20 Hz is fallback 1's 3 x 50 ms = 150 ms. Delaying by 30 Hz intervals while vessels arrive at 20 Hz
+/// leaves 133 ms for 50 ms gaps, and a lost update runs the buffer dry, so remote ships stutter.
+pub fn interp_for_vessel_hz(vessel_hz: u32) -> InterpTuning {
+    if vessel_hz >= 30 { return InterpTuning::default(); }
+    InterpTuning { interval_s: 1.0 / vessel_hz.max(1) as f64, delay_intervals: 3.0, ..InterpTuning::default() }
+}
+
+/// The tuning for the vessel rate every host this build talks to sends: `ServerOptions::new`'s rates, which
+/// the in-process host, a hosted lobby and the dedicated server all use (fallback 1 of L935 is on: 20 Hz).
+pub fn session_interp() -> InterpTuning {
+    interp_for_vessel_hz(ServerOptions::new(env!("CARGO_PKG_VERSION"), content::enums::GameMode::Sandbox).rates.other_vessel_hz)
+}
+
 /// What every link built here needs.
 #[derive(Clone)]
 pub struct LinkOptions {
@@ -77,7 +92,7 @@ pub struct LinkOptions {
     pub game_version: String,
     /// `BuildKind::Steam` only in a build with the `steam` feature; `Dev` in debug builds.
     pub build: net::msg::BuildKind,
-    /// Interpolation delay and fallbacks; `InterpTuning::default()` unless a gate fallback is switched on.
+    /// Interpolation delay and fallbacks: [`session_interp`], from the vessel rate the host sends.
     pub interp: InterpTuning,
     /// `net::clock::SystemClock` in play. Benchmark and capture runs pass a `ManualClock` and advance it one
     /// tick per rendered frame (`session::host::SortieOptions::fixed_step`).
@@ -143,7 +158,9 @@ pub(crate) fn loopback_named(options: &LinkOptions, lobby_name: &str, setup: Lob
     server.record_replays = record_replays;
     server.upload_kbps = upload_kbps.max(1);
     server.lobby_name = clean_text(lobby_name);
-    let client = client_options(options);
+    let mut client = client_options(options);
+    // The own client interpolates at the rate this server sends other vessels, whatever the caller passed.
+    client.interp = interp_for_vessel_hz(server.rates.other_vessel_hz);
     let mut host_store: Box<dyn BlueprintStore> = Box::new(MemoryStore::default());
     let mut client_store = client_store(cache_dir);
     for bp in blueprints {

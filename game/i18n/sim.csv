@@ -21,6 +21,7 @@ sim.hold.permission_withheld,"Mount hold reason; a player, rule, node or script 
 sim.hold.player_control,Mount hold reason; the player holds the mount,Holding: you hold this mount
 sim.hold.emcon_silent,Mount hold reason; emission control keeps fire-control radar off,Holding: fire-control radar silent by EMCON
 sim.hold.no_solution,Mount hold reason,Holding: no fire-control solution
+sim.hold.shore_site,Mount hold reason; an anti-ship missile cannot home on a shore site,Holding: no seeker lock on a shore site
 sim.fire.doctrine,Mount fire reason,Firing: doctrine allows this target
 sim.fire.point_defence,Mount fire reason,"Firing: weapon inbound, point defence"
 sim.fire.self_defence,Mount fire reason,Firing: Suspect inside self-defence range
@@ -125,6 +126,7 @@ sim.emcon.burst_refresh_for_weapon,Sensors reason; a track with a weapon assigne
 sim.emcon.holding_lock_weapons_in_flight,Sensors reason,Holding lock: own weapons in flight
 sim.emcon.active_ordered,Sensors reason,Radiating by order
 sim.emcon.point_defence_exception,Sensors reason; Silent exception,Point-defence radar on: weapon inbound
+sim.emcon.self_defence,Sensors reason; Silent exception,Fire-control radar on: under fire
 sim.word.stance.friend,Glossary stance word,Friend
 sim.word.stance.neutral,Glossary stance word,Neutral
 sim.word.stance.suspect,Glossary stance word,Suspect

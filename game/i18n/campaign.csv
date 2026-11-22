@@ -45,6 +45,9 @@ campaign.save.suspend_failed,The suspend save could not be written,The suspend s
 campaign.save.not_allowed,Save refused; only at a cove between operations,Saving is possible at a cove between operations.
 campaign.save.copy_refused,Co-op save copy refused as older,The host's copy is older than yours and was not stored.
 campaign.save.unreadable,A save file could not be read,This save could not be read.
+campaign.save.other_build,Suspend slot refused; another build wrote its sortie,This sortie was suspended by another build and cannot be resumed here. The campaign continues from its last save.
+campaign.save.stale_suspend,Suspend slot refused; the campaign was saved after it,This suspended sortie is older than the campaign's last save and cannot be resumed.
+campaign.save.later_act,Save refused; its act is not in this build,This save is from a later act than this build plays.
 campaign.threat.unknown,Briefing threat entry of unknown class,Unknown contacts
 campaign.interrupt.arrived,Interrupt; {0} cove name,SEXTANT arrived at {0}.
 campaign.interrupt.refit_done,Interrupt,Refits complete.
@@ -55,7 +58,8 @@ campaign.interrupt.hunter_group_warning,Interrupt; {0} hours until it arrives,A 
 campaign.interrupt.card_arriving,"Interrupt; {0} doctrine card, {1} region, {2} hours",{0} reaches {1} in {2}.
 campaign.interrupt.clock_low,Interrupt; {0} theatre days left,{0} days left on the operation clock.
 campaign.interrupt.act_ended,Interrupt,The act has ended.
-campaign.interrupt.build_end,"Interrupt when the last act this build ships ends; {0} act number",Act {0} is the end of this build. The chart stays open to look over.
+campaign.interrupt.build_end,"Interrupt when the last act this build ships is won; {0} act number",Act {0} is the end of this build. The chart stays open to look over.
+campaign.interrupt.build_end_lost,"Interrupt when the clock runs out on the last act this build ships; {0} act number",Act {0} lost. It starts again in retreat with a new clock.
 campaign.interrupt.hull_ready,Interrupt; {0} player name,{0}'s hull is ready.
 campaign.interrupt.paused,Interrupt,Theatre time paused.
 campaign.event.hour_advanced,Theatre log; {0} theatre hour,Hour {0}.
@@ -160,3 +164,9 @@ campaign.ghost.no_hull_damage,Ghost condition,No hull damage.
 campaign.reward.intel,Ghost reward; {0} Intel,{0}
 campaign.reward.blueprint,Ghost reward; {0} part,Blueprint: {0}
 campaign.reward.salvage,Ghost reward; {0} Salvage,{0}
+campaign.end.objective_done,Why the sortie ended; the primary objective was completed,Objective completed
+campaign.end.objective_failed,Why the sortie ended; the primary objective can no longer be completed,Objective failed
+campaign.end.hulls_lost,Why the sortie ended; every player ship capsized or sank,Every ship was lost
+campaign.end.hulls_disabled,Why the sortie ended; every player ship was lost or dead in the water without a break; {0} duration,Every ship was sunk or dead in the water for {0}
+campaign.end.time_limit,Why the sortie ended; the sortie's time limit ran out,The time limit ran out
+campaign.end.withdrew,Why the sortie ended; the players withdrew from the area,Withdrew from the area

@@ -238,7 +238,7 @@ impl Vessel {
     }
 
     /// The sunk test (L537); submersibles use the reserve-buoyancy rule.
-    fn is_sunk(&self, water_height_at: &dyn Fn(f64, f64) -> f64) -> bool {
+    pub(crate) fn is_sunk(&self, water_height_at: &dyn Fn(f64, f64) -> f64) -> bool {
         if self.submersible {
             let cap = self.blocks.total_volume_m3() * crate::hydro::SEA_WATER_DENSITY;
             return self.mass.mass_kg.is_finite() && cap.is_finite() && self.mass.mass_kg > cap;

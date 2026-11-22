@@ -21,13 +21,21 @@ pub struct RateTuning {
     pub distant_hz: u32,
     pub distant_fast_hz: u32,
     pub guided_body_hz: u32,
-    /// Own ship status sections (`ShipStatus`); compartment views change at most at 2 Hz (L640).
+    /// Own ship status section (`Section::Ship`: speed, heading, power, mounts, held roles). The spec gives
+    /// it no rate; 5 Hz, half the track rate. Compartments and the other slow lists ride `Section::ShipSlow`
+    /// at `slow_section_hz` (they change at most at 2 Hz, L640).
     pub ship_status_hz: u32,
     /// Allies, alerts, objectives, pacing: sent on change, at most this often.
     pub slow_section_hz: u32,
+    /// Air and Surface tracks inside 10 km but beyond [`CLOSE_TRACK_M`] of the viewer's hull that are not
+    /// engaged (`Relevance::Near`): sent at most this often. The spec sets client rates only for distant
+    /// tracks (L1423); the sim's 10 Hz track rate (L1418) stays for close and engaged tracks.
+    #[serde(default = "near_track_hz_default")]
+    pub near_track_hz: u32,
 }
+fn near_track_hz_default() -> u32 { 5 }
 impl Default for RateTuning {
-    fn default() -> Self { Self { snapshot_hz: 30, other_vessel_hz: 30, distant_hz: 1, distant_fast_hz: 2, guided_body_hz: 5, ship_status_hz: 10, slow_section_hz: 2 } }
+    fn default() -> Self { Self { snapshot_hz: 30, other_vessel_hz: 30, distant_hz: 1, distant_fast_hz: 2, guided_body_hz: 5, ship_status_hz: 5, slow_section_hz: 2, near_track_hz: near_track_hz_default() } }
 }
 impl RateTuning {
     /// Fallback 1 of L935.
@@ -56,6 +64,10 @@ pub struct PriorityAccumulator {
 /// Tracks change at most at the sim's 10 Hz track rate (Rates table, L1418), so near and engaged tracks are
 /// due at 10 Hz rather than at the vessel rate.
 pub const TRACK_HZ: u32 = sim_core::time::TRACK_HZ;
+/// Range from the viewer's hull inside which a near (not engaged) Air or Surface track keeps the 10 Hz track
+/// rate; beyond it, out to the 10 km distant line, it takes `near_track_hz`. The figure is this module's
+/// choice: the spec sets the 10 Hz track rate in the sim (L1418) and client rates only beyond 10 km (L1423).
+pub const CLOSE_TRACK_M: f64 = 3_000.0;
 /// Accumulated priority at which an item is due (one interval of its own rate). The epsilon absorbs f32
 /// rounding of repeated `rate / snapshot_hz` sums, so a 10 Hz item is due exactly every third interval.
 const DUE: f32 = 1.0 - 1e-3;
@@ -76,16 +88,17 @@ impl PriorityAccumulator {
     /// (engaged and own-side items before near ones, near before distant), so an item that keeps missing
     /// rises until it goes first. Rate-0 items (untracked poses while shedding) are never due.
     pub fn order(&mut self, snap: &Snapshot) -> Vec<ItemKey> {
-        let items = items_of(snap, self.shedding);
+        let items = items_of(snap, self.shedding, &self.tuning);
         let hz = self.tuning.snapshot_hz.max(1) as f32;
         let mut own = Vec::new();
         let mut due: Vec<(f32, ItemKey)> = Vec::new();
         let mut seen = std::collections::BTreeSet::new();
-        for (key, rel, shed, weapon) in items {
+        for (key, rel, shed, cap) in items {
             if !seen.insert(key) { continue; }
             let mut rate = if shed { 0.0 } else { rate_hz(&key, rel, &self.tuning, self.shedding) };
-            // A weapon in flight is guided-missile state: 5 Hz (L926), never faster than its own body item.
-            if weapon { rate = rate.min(self.tuning.guided_body_hz as f32); }
+            // A weapon in flight is guided-missile state: 5 Hz (L926), never faster than its own body item; a
+            // near Air or Surface track beyond close range takes `near_track_hz`.
+            if let Some(cap) = cap { rate = rate.min(cap as f32); }
             let step = rate / hz;
             self.step.insert(key, step);
             if is_own(&key, rel) {
@@ -193,15 +206,40 @@ fn weight(key: &ItemKey, rel: Relevance) -> f32 {
 
 /// Every item of a snapshot with its relevance and whether its pose is shed. Decoys carry no relevance and
 /// rank as near items; sections rank by their own weights.
-/// The last flag marks tracks of weapons (`Domain::Weapon`), which take the guided-missile rate.
-fn items_of(snap: &Snapshot, shedding: Shedding) -> Vec<(ItemKey, Relevance, bool, bool)> {
+/// The last value caps a track's rate: tracks of weapons (`Domain::Weapon`) take the guided-missile rate, and
+/// near Air and Surface tracks beyond [`CLOSE_TRACK_M`] take `near_track_hz` ([`track_cap_hz`]).
+fn items_of(snap: &Snapshot, shedding: Shedding, tuning: &RateTuning) -> Vec<(ItemKey, Relevance, bool, Option<u32>)> {
     let mut out = Vec::with_capacity(snap.vessels.len() + snap.bodies.len() + snap.decoys.len() + snap.tracks.len() + 6);
-    out.extend(snap.vessels.iter().map(|v| (ItemKey::Vessel(v.entity), v.relevance, shed_pose(v, shedding), false)));
-    out.extend(snap.bodies.iter().map(|b| (ItemKey::Body(b.entity), b.relevance, false, false)));
-    out.extend(snap.decoys.iter().map(|d| (ItemKey::Decoy(d.entity), Relevance::Near, false, false)));
-    out.extend(snap.tracks.iter().map(|t| (ItemKey::Track(t.id), t.relevance, false, t.domain == content::enums::Domain::Weapon)));
-    for s in Section::ALL { out.push((ItemKey::Section(s), Relevance::OwnSide, false, false)); }
+    let own = snap.vessels.iter().find(|v| v.relevance == Relevance::Own).map(|v| v.kin.pose.pos);
+    out.extend(snap.vessels.iter().map(|v| (ItemKey::Vessel(v.entity), v.relevance, shed_pose(v, shedding), None)));
+    out.extend(snap.bodies.iter().map(|b| (ItemKey::Body(b.entity), b.relevance, false, None)));
+    out.extend(snap.decoys.iter().map(|d| (ItemKey::Decoy(d.entity), Relevance::Near, false, None)));
+    out.extend(snap.tracks.iter().map(|t| (ItemKey::Track(t.id), t.relevance, false, track_cap_hz(t, own, tuning))));
+    for s in Section::ALL { out.push((ItemKey::Section(s), Relevance::OwnSide, false, None)); }
     out
+}
+
+/// Rate cap of one track. Unit: `net-priority`.
+///
+/// - A weapon in flight: `guided_body_hz` (L926).
+/// - An Air or Surface track that is only `Relevance::Near` (not engaged, not own-side) and lies beyond
+///   [`CLOSE_TRACK_M`] of the viewer's own hull, horizontally: `near_track_hz`. With no own hull in the
+///   snapshot (a side viewer) nothing is close, so every near track is capped.
+/// - Anything else: none (the relevance rate stands). The cap never lowers a rate below the distant floor of
+///   L937 because a near track's distant rate is already lower.
+pub fn track_cap_hz(t: &sim_systems::protocol::snapshot::TrackView, own: Option<sim_core::math::DVec3>, tuning: &RateTuning) -> Option<u32> {
+    use content::enums::Domain;
+    match t.domain {
+        Domain::Weapon => Some(tuning.guided_body_hz),
+        Domain::Air | Domain::Surface if t.relevance == Relevance::Near => {
+            let close = own.is_some_and(|o| {
+                let (dx, dz) = (t.pos.x - o.x, t.pos.z - o.z);
+                dx.is_finite() && dz.is_finite() && dx * dx + dz * dz <= CLOSE_TRACK_M * CLOSE_TRACK_M
+            });
+            (!close).then_some(tuning.near_track_hz.max(tuning.distant_hz).max(1))
+        }
+        _ => None,
+    }
 }
 
 #[cfg(test)]
@@ -231,7 +269,7 @@ mod tests {
         assert_eq!(rate_hz(&tr, Relevance::DistantFast, &t, Shedding::DistantTracksSlow), 1.0);
         assert_eq!(rate_hz(&tr, Relevance::Engaged, &t, Shedding::None), 10.0);
         assert_eq!(rate_hz(&ItemKey::Body(EntityId::default()), Relevance::Engaged, &t, Shedding::None), 5.0);
-        assert_eq!(rate_hz(&ItemKey::Section(Section::Ship), Relevance::OwnSide, &t, Shedding::None), 10.0);
+        assert_eq!(rate_hz(&ItemKey::Section(Section::Ship), Relevance::OwnSide, &t, Shedding::None), 5.0);
         assert_eq!(rate_hz(&ItemKey::Section(Section::Pacing), Relevance::OwnSide, &t, Shedding::None), 2.0);
     }
 
@@ -251,7 +289,7 @@ mod tests {
         assert_eq!(counts[&ItemKey::Vessel(EntityId { index: 1, generation: 1 })], 300);
         assert_eq!(counts[&ItemKey::Track(TrackId(9))], 10);
         assert_eq!(counts[&ItemKey::Track(TrackId(10))], 100);
-        assert_eq!(counts[&ItemKey::Section(Section::Ship)], 100);
+        assert_eq!(counts[&ItemKey::Section(Section::Ship)], 50);
         assert_eq!(counts[&ItemKey::Section(Section::Alerts)], 20);
         let mut f = PriorityAccumulator::new(RateTuning::fallback_20hz());
         let mut n = 0;
@@ -309,6 +347,70 @@ mod tests {
         assert!(!o.contains(&ItemKey::Vessel(EntityId { index: 3, generation: 1 })));
         assert!(o.contains(&ItemKey::Vessel(EntityId { index: 1, generation: 1 })));
         assert!(o.contains(&ItemKey::Vessel(EntityId { index: 2, generation: 1 })));
+    }
+
+    #[test]
+    fn near_tracks_beyond_close_range_take_the_near_track_rate() {
+        use content::enums::Domain;
+        let mut p = PriorityAccumulator::new(RateTuning::fallback_20hz());
+        let mut s = snap();
+        let at = |id, domain, rel, x: f64| TrackView { domain, relevance: rel, pos: sim_core::math::DVec3::new(x, 0.0, 0.0), ..track(id) };
+        s.tracks = vec![
+            at(30, Domain::Surface, Relevance::Near, 5_000.0),
+            at(31, Domain::Air, Relevance::Near, 9_000.0),
+            at(32, Domain::Surface, Relevance::Near, 1_000.0),
+            at(33, Domain::Surface, Relevance::Engaged, 5_000.0),
+            at(34, Domain::Surface, Relevance::OwnSide, 5_000.0),
+            at(35, Domain::Subsurface, Relevance::Near, 5_000.0),
+            at(36, Domain::Weapon, Relevance::Near, 5_000.0),
+            at(37, Domain::Surface, Relevance::Distant, 20_000.0),
+        ];
+        let mut counts = std::collections::BTreeMap::<ItemKey, u32>::new();
+        for tick in 0..300u64 {
+            let o = p.order(&s);
+            for k in &o { *counts.entry(*k).or_default() += 1; }
+            p.sent(&o, tick);
+        }
+        let n = |id| counts[&ItemKey::Track(TrackId(id))];
+        // 10 s: near Air and Surface tracks beyond 3 km at 5 Hz; close, engaged, own-side and Subsurface
+        // tracks keep 10 Hz; weapons 5 Hz; distant 1 Hz.
+        assert_eq!((n(30), n(31), n(32), n(33), n(34), n(35), n(36), n(37)), (50, 50, 100, 100, 100, 100, 50, 10));
+        // No own hull in the snapshot (a side viewer): nothing is close.
+        let own = None;
+        assert_eq!(track_cap_hz(&at(32, Domain::Surface, Relevance::Near, 1_000.0), own, &RateTuning::default()), Some(5));
+    }
+
+    #[test]
+    fn every_track_keeps_the_distant_floor_under_every_shedding_stage() {
+        // L937: over the cap distant tracks drop to 1 Hz, and nothing replicated drops below that. With an
+        // unlimited budget, every track kind and relevance at every shedding stage is sent at least once a
+        // second, and a near-track rate configured below the floor is raised to it.
+        use content::enums::Domain;
+        let tuning = RateTuning { near_track_hz: 0, ..RateTuning::fallback_20hz() };
+        for stage in [Shedding::None, Shedding::DistantTracksSlow, Shedding::UntrackedPoses] {
+            let mut p = PriorityAccumulator::new(tuning);
+            p.set_shedding(stage);
+            let mut s = snap();
+            let mut id = 100;
+            for domain in [Domain::Surface, Domain::Subsurface, Domain::Air, Domain::Weapon] {
+                for rel in [Relevance::Distant, Relevance::DistantFast, Relevance::Near, Relevance::Engaged, Relevance::OwnSide] {
+                    for x in [500.0, 5_000.0, 20_000.0] {
+                        s.tracks.push(TrackView { domain, relevance: rel, pos: sim_core::math::DVec3::new(x, 0.0, 0.0), ..track(id) });
+                        id += 1;
+                    }
+                }
+            }
+            let mut counts = std::collections::BTreeMap::<ItemKey, u32>::new();
+            for tick in 0..300u64 {
+                let o = p.order(&s);
+                for k in &o { *counts.entry(*k).or_default() += 1; }
+                p.sent(&o, tick);
+            }
+            for t in &s.tracks {
+                let c = counts.get(&ItemKey::Track(t.id)).copied().unwrap_or(0);
+                assert!(c >= 10, "{stage:?} {:?} {:?} at {} m: {c} updates in 10 s", t.domain, t.relevance, t.pos.x);
+            }
+        }
     }
 
     fn track(id: u32) -> TrackView {

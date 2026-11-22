@@ -49,7 +49,8 @@ func _initialize() -> void:
 		var code := OS.execute(OS.get_executable_path(), args, out, true)
 		var seconds := (Time.get_ticks_msec() - start) / 1000.0
 		var text := "" if out.is_empty() else String(out[0])
-		var ok := code == 0
+		# A suite whose script fails to parse never runs, and Godot still exits 0 for it: count it failed.
+		var ok := code == 0 and not text.contains("Parse Error") and not text.contains("Failed to load script")
 		failed += 0 if ok else 1
 		results.append({"name": suite, "ok": ok, "code": code, "seconds": seconds, "text": text})
 		print("%s %s (%.1f s)" % ["pass" if ok else "FAIL", suite, seconds])

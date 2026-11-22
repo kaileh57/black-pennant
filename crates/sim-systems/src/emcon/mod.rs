@@ -26,6 +26,21 @@
 //! - "Passive source" means the track's sources include ESM, passive sonar, visual, camera, datalink or an
 //!   offboard sensor; tracks of the weapon domain trigger through `inbound_weapon_m` only.
 //! - The ESM warning ignores weapon-domain tracks (weapons carry no ESM receiver that reports back).
+//! - Shellfire is a weapon inbound (DECISION, s4, 22 November 2026, on the ruling that a ship under fire defends
+//!   itself with its guns at stock officer settings). L507 and L509 write the inbound-weapon rule for weapon
+//!   tracks, and a shell has no track. A hull is under fire while an enemy shell is about to pass within the
+//!   near-miss distance of it (`EmconIn::under_fire`, read by the stage runner) and for
+//!   [`SELF_DEFENCE_S`] after the last one (60 s, the "under fire" window of L2540).
+//!   - Burst: under fire is the weapon-inbound trigger, so bursts start and repeat at the engaged cadence. Before
+//!     this a hull in Burst with no passive contact (attackers that do not radiate, in visibility under their
+//!     range) never radiated and was shot to a stop with no track to fire at.
+//!   - Silent: under fire, every fire-control radar radiates, as the point-defence ones do for an inbound weapon.
+//!     This departs from L507, which names one exception; it is the `under_fire && e.kind == FireControlRadar`
+//!     condition in the Silent arm below, and removing it leaves the Burst trigger as it is. `EmitterInfo` does
+//!     not say which director serves which gun, so all of them light. Search and navigation radars, jammers
+//!     and active sonar stay off. Before this a Silent hull in fog or at night held only ESM bearings of the
+//!     hulls shelling it and its guns held on the grade to the end. Cost: a "no radar emissions" ghost
+//!     condition fails once the hull is shelled.
 use crate::prelude::*;
 use crate::protocol::snapshot::SourceMask;
 use crate::sensors::radar::horizon_m;
@@ -54,6 +69,13 @@ pub struct EmconState {
     /// Last tick each emitter radiated, ascending slot (the per-emitter reach of the ESM warning).
     #[serde(default)]
     pub last_radiated: Vec<(PartSlot, u64)>,
+    /// Last tick an enemy shell was inbound on this hull (the self-defence window).
+    #[serde(default)]
+    pub under_fire_tick: Option<u64>,
+    /// Silent, and only the under-fire window lit a radar this tick (no point-defence window): the Bridge
+    /// Board's reason is [`EmconReason::SelfDefenceUnderFire`].
+    #[serde(default)]
+    pub self_defence_only: bool,
 }
 
 pub struct EmconIn<'a> {
@@ -69,6 +91,9 @@ pub struct EmconIn<'a> {
     pub point_defence_engaging: bool,
     /// A track with a weapon assigned is graded below Lock.
     pub assigned_below_lock: bool,
+    /// An enemy shell is about to hit or near-miss this hull (the stage runner's reading of the shells in
+    /// flight; see the module notes).
+    pub under_fire: bool,
     pub esm_sites: &'a [[f64; 2]],
     pub tick: u64,
 }
@@ -84,13 +109,18 @@ pub struct EmconOut {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
-pub enum EmconReason { #[default] SilentOrdered, PassiveNoTrigger, BurstTrackInside { track: TrackId, range_m: f64 }, BurstWeaponInbound, BurstRefreshForWeapon, HoldingLockWeaponsInFlight, ActiveOrdered, PointDefenceException }
+pub enum EmconReason { #[default] SilentOrdered, PassiveNoTrigger, BurstTrackInside { track: TrackId, range_m: f64 }, BurstWeaponInbound, BurstRefreshForWeapon, HoldingLockWeaponsInFlight, ActiveOrdered, PointDefenceException,
+    /// Silent, under fire: the fire-control radars radiate for the guns (the under-fire window), and no
+    /// point-defence window is open.
+    SelfDefenceUnderFire }
 
 const HZ: f64 = sim_core::TICK_HZ as f64;
 /// Seconds per rotation when no rotating emitter is fitted (24 rpm, L412).
 const DEFAULT_ROTATION_S: f64 = 2.5;
 /// ESM warning memory: an emitter that radiated in the last 60 s (L510).
 const ESM_MEMORY_S: f64 = 60.0;
+/// A hull stays under fire this long after the last shell inbound on it (L2540: "under fire in the last 60 s").
+pub const SELF_DEFENCE_S: f64 = 60.0;
 
 fn ticks(s: f64) -> u64 { if s.is_finite() && s > 0.0 { (s * HZ).round().min(1.0e12) as u64 } else { 0 } }
 fn pos_or(x: f64, default: f64) -> f64 { if x.is_finite() && x > 0.0 { x } else { default } }
@@ -130,6 +160,9 @@ pub fn emission_controller(input: &EmconIn<'_>, state: &mut EmconState, tuning: 
         *state = EmconState { esm_warning: state.esm_warning, ..Default::default() };
     }
     state.last_radiated.retain(|&(_, t)| t <= tick);
+    if input.under_fire { state.under_fire_tick = Some(tick); }
+    if state.under_fire_tick.is_some_and(|t| t > tick) { state.under_fire_tick = None; }
+    let under_fire = state.under_fire_tick.is_some_and(|t| tick - t <= ticks(SELF_DEFENCE_S));
 
     let n = input.emitters.len();
     let mut radiate = vec![false; n];
@@ -146,14 +179,20 @@ pub fn emission_controller(input: &EmconIn<'_>, state: &mut EmconState, tuning: 
         }
         Emcon::Silent => {
             state.burst_end_tick = 0;
-            let mut any = false;
-            for (i, e) in input.emitters.iter().enumerate() { if pd_window && is_pd(e) { radiate[i] = true; any = true; } }
-            if any { (EmconPhase::PointDefenceOnly, EmconReason::PointDefenceException) } else { (EmconPhase::Quiet, EmconReason::SilentOrdered) }
+            let (mut pd_lit, mut fire_lit) = (false, false);
+            for (i, e) in input.emitters.iter().enumerate() {
+                if pd_window && is_pd(e) { radiate[i] = true; pd_lit = true; }
+                else if under_fire && e.kind == EmitterKind::FireControlRadar { radiate[i] = true; fire_lit = true; }
+            }
+            // The Bridge Board names the exception that lit the radar (DECISION, r4, from s4).
+            if pd_lit { (EmconPhase::PointDefenceOnly, EmconReason::PointDefenceException) }
+            else if fire_lit { (EmconPhase::PointDefenceOnly, EmconReason::SelfDefenceUnderFire) }
+            else { (EmconPhase::Quiet, EmconReason::SilentOrdered) }
         }
         Emcon::Burst => {
             let range = pos_or(input.trigger_range_m, pos_or(d.burst_trigger_m, 20_000.0));
             let near = trigger_track(input, range);
-            let weapon = inbound.is_some();
+            let weapon = inbound.is_some() || under_fire;
             let refresh = input.assigned_below_lock;
             let trigger = near.is_some() || weapon || refresh;
             let len = burst_len_ticks(input.emitters, tuning);
@@ -206,6 +245,7 @@ pub fn emission_controller(input: &EmconIn<'_>, state: &mut EmconState, tuning: 
     state.last_radiated.retain(|&(_, t)| tick - t <= memory);
     state.radiating = slots;
     state.phase = phase;
+    state.self_defence_only = reason == EmconReason::SelfDefenceUnderFire;
     let warn = esm_warning(input, state, tuning);
     state.esm_warning = warn;
     EmconOut { radiate, lights, esm_warning: warn, reason }
@@ -320,7 +360,42 @@ mod tests {
 
     fn input<'a>(setting: Emcon, ems: &'a [EmitterInfo], tracks: &'a [Track], tick: u64) -> EmconIn<'a> {
         EmconIn { setting, trigger_range_m: 20_000.0, own_pos: DVec3::ZERO, emitters: ems, tracks, inbound_weapon_m: None, own_weapons_in_flight: false,
-            point_defence_engaging: false, assigned_below_lock: false, esm_sites: &[], tick }
+            point_defence_engaging: false, assigned_below_lock: false, under_fire: false, esm_sites: &[], tick }
+    }
+
+    #[test]
+    fn a_hull_under_fire_lights_what_its_guns_need() {
+        let t = TuningTable::default();
+        // A search radar, a gun director and a point-defence director.
+        let ems = vec![em(3, EmitterKind::SearchRadar, false), em(4, EmitterKind::FireControlRadar, false), em(5, EmitterKind::FireControlRadar, true)];
+        let window = ticks(SELF_DEFENCE_S);
+        // Silent: the fire-control radars radiate from the first shell to 60 s after the last; nothing else does.
+        let mut s = EmconState::default();
+        assert_eq!(emission_controller(&input(Emcon::Silent, &ems, &[], 100), &mut s, &t).radiate, vec![false, false, false]);
+        let mut i = input(Emcon::Silent, &ems, &[], 101);
+        i.under_fire = true;
+        let out = emission_controller(&i, &mut s, &t);
+        assert_eq!((out.radiate, out.reason, out.lights, s.phase), (vec![false, true, true], EmconReason::SelfDefenceUnderFire, false, EmconPhase::PointDefenceOnly));
+        assert_eq!(s.radiating, vec![PartSlot(4), PartSlot(5)]);
+        assert_eq!(emission_controller(&input(Emcon::Silent, &ems, &[], 101 + window), &mut s, &t).radiate, vec![false, true, true], "still inside the window");
+        let out = emission_controller(&input(Emcon::Silent, &ems, &[], 102 + window), &mut s, &t);
+        assert_eq!((out.radiate, out.reason, s.phase), (vec![false, false, false], EmconReason::SilentOrdered, EmconPhase::Quiet));
+        // Burst with no contact at all: shellfire is the weapon-inbound trigger, at the engaged cadence.
+        let mut s = EmconState::default();
+        assert_eq!(emission_controller(&input(Emcon::Burst, &ems, &[], 100), &mut s, &t).reason, EmconReason::PassiveNoTrigger);
+        let mut i = input(Emcon::Burst, &ems, &[], 101);
+        i.under_fire = true;
+        let out = emission_controller(&i, &mut s, &t);
+        assert_eq!((out.radiate, out.reason, s.phase), (vec![true, true, true], EmconReason::BurstWeaponInbound, EmconPhase::Bursting));
+        let len = burst_len_ticks(&ems, &t);
+        assert_eq!(emission_controller(&input(Emcon::Burst, &ems, &[], 101 + len), &mut s, &t).radiate[0], false, "between bursts");
+        let again = 101 + ticks(t.doctrine.burst_repeat_engaged_s);
+        assert_eq!(emission_controller(&input(Emcon::Burst, &ems, &[], again), &mut s, &t).radiate[0], true, "the next burst, 10 s on");
+        assert_eq!(emission_controller(&input(Emcon::Burst, &ems, &[], 102 + window), &mut s, &t).reason, EmconReason::PassiveNoTrigger);
+        // A state restored ahead of the clock forgets the window.
+        let mut s = EmconState { under_fire_tick: Some(500), ..Default::default() };
+        assert_eq!(emission_controller(&input(Emcon::Silent, &ems, &[], 100), &mut s, &t).radiate, vec![false, false, false]);
+        assert_eq!(s.under_fire_tick, None);
     }
 
     #[test]

@@ -290,6 +290,29 @@ fn range_runs_out() {
 }
 
 #[test]
+fn a_ditched_weapon_ends_its_flight_without_a_burst() {
+    // Guidance with nothing left to steer by (a seeker that kept a decoy now gone) orders `Steer::Ditch`: the
+    // body ends at once as an expiry, with most of its range unflown and a hostile air body beside it unharmed.
+    let env = Env::new();
+    let mut b = Bodies::default();
+    let mut d = Decoys::default();
+    b.insert(eid(1), ASM, SideId(0), DVec3::new(0.0, 5.0, 0.0), DVec3::new(270.0, 0.0, 0.0), EntityId::NONE, PartSlot(0), 0, &env.cat);
+    b.insert(eid(2), DRONE, SideId(1), DVec3::new(3.0, 5.0, 0.0), DVec3::new(270.0, 0.0, 0.0), EntityId::NONE, PartSlot(0), 0, &env.cat);
+    for r in 0..2 { b.phase[r] = BodyPhase::Cruise; }
+    let mut tick = 0;
+    assert!(run(&mut b, &mut d, &env, &mut tick, &[], 30).is_empty(), "both fly on under Hold");
+    assert!(b.remaining[0] > 29_000.0);
+    b.steer[0] = Steer::Ditch;
+    let out = run(&mut b, &mut d, &env, &mut tick, &[], 1);
+    assert!(matches!(out.as_slice(), [BodyOutcome::Expired { body, shot_down: false, .. }] if *body == eid(1)), "{out:?}");
+    assert_eq!(b.phase[0], BodyPhase::Dead);
+    assert_ne!(b.phase[1], BodyPhase::Dead, "a ditch is not a burst");
+    // The row is gone at the next step and produces nothing more.
+    assert!(run(&mut b, &mut d, &env, &mut tick, &[], 5).is_empty());
+    assert_eq!(b.len(), 1);
+}
+
+#[test]
 fn drone_returns_at_bingo_and_is_recovered() {
     let env = Env::new();
     let mut b = Bodies::default();
@@ -478,4 +501,44 @@ fn rhib_starts_from_rest_holds_station_and_is_recovered() {
     b.steer[0] = Steer::Waypoint(DVec3::new(0.0, 0.0, 0.0));
     let out = run(&mut b, &mut d, &env, &mut tick, &[ship], 60 * 120);
     assert!(matches!(out.as_slice(), [BodyOutcome::Recovered { body, .. }] if *body == eid(6)), "{out:?}");
+}
+
+#[test]
+fn range_that_ends_short_of_a_hull_expires_and_range_that_reaches_it_hits() {
+    // L584: missile ranges are kinematic. A missile whose range ends 200 m short of a hull expires there with
+    // no hit; with 200 m to spare it hits. (Verifier kb1's probe.)
+    let env = Env::new();
+    let target = hull(2, DVec3::new(2_000.0, -3.0, 40.0), 0.0, DVec3::new(80.0, 14.0, 12.0));
+    for (left, want_hit) in [(1_800.0, false), (2_200.0, true)] {
+        let mut b = Bodies::default();
+        let mut d = Decoys::default();
+        b.insert(eid(10), ASM, SideId(0), DVec3::new(0.0, 6.0, 0.0), DVec3::new(270.0, 0.0, 0.0), EntityId::NONE, PartSlot(2), 0, &env.cat);
+        b.phase[0] = BodyPhase::Cruise;
+        b.remaining[0] = left;
+        let mut tick = 0;
+        let out = run(&mut b, &mut d, &env, &mut tick, &[target], 900);
+        assert_eq!(out.len(), 1, "{out:?}");
+        assert_eq!(matches!(out[0], BodyOutcome::HullHit { .. }), want_hit, "range left {left}: {out:?}");
+        if !want_hit { assert!(matches!(out[0], BodyOutcome::Expired { shot_down: false, .. }), "{out:?}"); }
+    }
+}
+
+#[test]
+fn a_torpedo_holding_its_course_past_a_decoy_strikes_the_hull_200_m_on() {
+    // Guidance holds a torpedo whose seeker is Lost on its course for 1,500 m before it orders `Steer::Ditch`
+    // (`guidance::missile::LOST_CARRY_M`). Under `Steer::Hold` the torpedo runs the 200 m from a towed decoy to
+    // the towing hull and strikes it; the same torpedo ordered to ditch at the decoy ends there with no hit.
+    let env = Env::new();
+    let target = hull(2, DVec3::new(200.0, -5.0, 30.0), 0.0, DVec3::new(80.0, 14.0, 12.0));
+    for (ditch, want_hit) in [(false, true), (true, false)] {
+        let mut b = Bodies::default();
+        let mut d = Decoys::default();
+        b.insert(eid(11), TORP, SideId(0), DVec3::new(0.0, -3.0, 0.0), DVec3::new(15.0, 0.0, 0.0), EntityId::NONE, PartSlot(0), 0, &env.cat);
+        b.phase[0] = BodyPhase::Cruise;
+        b.steer[0] = if ditch { Steer::Ditch } else { Steer::Hold };
+        let mut tick = 0;
+        let out = run(&mut b, &mut d, &env, &mut tick, &[target], 60 * 20);
+        assert_eq!(out.len(), 1, "{out:?}");
+        assert_eq!(matches!(out[0], BodyOutcome::HullHit { .. }), want_hit, "ditch {ditch}: {out:?}");
+    }
 }

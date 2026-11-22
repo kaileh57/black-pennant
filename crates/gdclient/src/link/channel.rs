@@ -228,6 +228,9 @@ const MIN_P95_STEPS: u64 = sim_core::TICK_HZ as u64;
 const PANEL_PERIOD: Duration = Duration::from_secs(1);
 /// Real ticks between snapshots: 30 Hz of wall time.
 const SNAPSHOT_EVERY: u64 = 2;
+/// The stand-in publishes whole snapshots every [`SNAPSHOT_EVERY`] real ticks (30 Hz), every vessel included,
+/// so it interpolates at that rate.
+pub(crate) fn channel_interp() -> InterpTuning { crate::link::net::interp_for_vessel_hz((sim_core::TICK_HZ as u64 / SNAPSHOT_EVERY) as u32) }
 /// The top of the adaptive cap range (L937); the in-process link has no cap, so it shows the largest.
 const IN_PROCESS_CAP_KBPS: u16 = 768;
 
@@ -338,7 +341,7 @@ fn pair_parts(slot: PlayerSlot, side: SideId, mode: content::enums::GameMode, cl
     };
     let link = ChannelLink {
         slot, mode, clock, shared, from_host, events: events_rx, snapshots: reader, to_host,
-        presenter: Presenter::new(InterpTuning::default(), catalogue), state: LinkState::Joined, welcomed: false, render_tick: 0, next_seq: 0, between_sorties: true,
+        presenter: Presenter::new(channel_interp(), catalogue), state: LinkState::Joined, welcomed: false, render_tick: 0, next_seq: 0, between_sorties: true,
     };
     (host, link)
 }
@@ -587,7 +590,7 @@ impl HostPort for ChannelHost {
 
 /// The summary a client may show, built from a host result when no `SortieEnded` event was seen.
 fn summary_of(r: &sim_systems::protocol::SortieResult) -> SortieSummary {
-    SortieSummary { outcome: r.outcome, winner: r.winner, duration_ticks: r.duration_ticks, objectives: Vec::new(), stats: r.stats.clone(), tip: None }
+    SortieSummary { outcome: r.outcome, winner: r.winner, duration_ticks: r.duration_ticks, objectives: Vec::new(), stats: r.stats.clone(), tip: None, end_reason: r.end_reason }
 }
 
 impl ClientLink for ChannelLink {

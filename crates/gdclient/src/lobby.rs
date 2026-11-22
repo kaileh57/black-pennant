@@ -529,7 +529,7 @@ impl BpLobby {
             identity: net::join::ClientIdentity { client_id, name: logic::clean_name(&services.settings.borrow().display_name) },
             game_version: env!("CARGO_PKG_VERSION").to_string(),
             build: if cfg!(feature = "steam") { net::msg::BuildKind::Steam } else if cfg!(debug_assertions) { net::msg::BuildKind::Dev } else { net::msg::BuildKind::GitHub },
-            interp: InterpTuning::default(),
+            interp: crate::link::net::session_interp(),
             clock: Arc::new(net::clock::SystemClock::new()),
             catalogue: services.catalogue(),
         }

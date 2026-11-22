@@ -58,21 +58,21 @@ func _pure() -> void:
 	# The tight dock (UI scale 200% on 1920 x 1080, rects from a 2x play-through): the card keeps off the 3D
 	# view, the beam handle and the Float gauge on the beam step, and off the view and the framed kit rows on
 	# the kits step, where only the full-width card fits (over the top bar and the gauge strip).
-	var screen := Rect2(0, 0, 960, 540)
+	var tight_screen := Rect2(0, 0, 960, 540)
 	var stage := Rect2(521, 300, 431, 240)
 	var float_cell := Rect2(0, 31, 120, 39)
 	var handle := Rect2(707, 372, 32, 32)
 	var beam_firm: Array[Rect2] = [stage, handle.grow(4.0), float_cell]
-	var beam: Array = Overlay.tight_spot(screen, Vector2(399, 219), beam_firm, Vector2(16, 117))
+	var beam: Array = Overlay.tight_spot(tight_screen, Vector2(399, 219), beam_firm, Vector2(16, 117))
 	var beam_card := Rect2(beam[0], Vector2(399, 219))
-	_check(beam[1] == 0.0 and not beam_card.intersects(stage) and not beam_card.intersects(float_cell) and screen.encloses(beam_card), "beam card clear of the view and the Float gauge: %s" % str(beam_card))
+	_check(beam[1] == 0.0 and not beam_card.intersects(stage) and not beam_card.intersects(float_cell) and tight_screen.encloses(beam_card), "beam card clear of the view and the Float gauge: %s" % str(beam_card))
 	var kit_stage := Rect2(400, 247, 552, 240)
 	var rows := Rect2(32, 388, 328, 152)
 	var kit_firm: Array[Rect2] = [kit_stage, rows.grow(4.0)]
-	_check(float(Overlay.tight_spot(screen, Vector2(520, 260), kit_firm, Vector2(16, 117))[1]) > 0.0, "a column-wide kits card has no clear spot")
-	var wide: Array = Overlay.tight_spot(screen, Vector2(928, 180), kit_firm, Vector2(16, 117))
+	_check(float(Overlay.tight_spot(tight_screen, Vector2(520, 260), kit_firm, Vector2(16, 117))[1]) > 0.0, "a column-wide kits card has no clear spot")
+	var wide: Array = Overlay.tight_spot(tight_screen, Vector2(928, 180), kit_firm, Vector2(16, 117))
 	var wide_card := Rect2(wide[0], Vector2(928, 180))
-	_check(wide[1] == 0.0 and not wide_card.intersects(kit_stage) and not wide_card.intersects(rows) and screen.encloses(wide_card), "the full-width kits card is clear: %s" % str(wide_card))
+	_check(wide[1] == 0.0 and not wide_card.intersects(kit_stage) and not wide_card.intersects(rows) and tight_screen.encloses(wide_card), "the full-width kits card is clear: %s" % str(wide_card))
 	# The beam demonstration: hold, narrow, hold, widen back, hold; ends exactly where it began.
 	var from := 5.8
 	var low := 4.0
@@ -189,6 +189,15 @@ func _check_first_step() -> void:
 	_check(progress == TranslationServer.translate(&"tutorial_overlay.progress").format(["1", "6"]), "the progress line counts 1 of 6: " + progress)
 	_check((_overlay.get_node("Card/Margin/Column/Footer/Continue") as Control).visible, "a text step offers Continue")
 	_check((_overlay.get_node("Card/Margin/Column/Footer/Skip") as Control).visible, "Skip is always offered")
+	# The card floats over docked panels: it must draw the popup look (surface.raised with a rule.divider
+	# frame), not the docked panel's surface.base with no edge, or its edge is lost over the Hull panel.
+	var docked := ThemeDB.get_project_theme().get_stylebox(&"panel", &"PanelContainer") as StyleBoxFlat
+	var raised := Color(root.get_node("Ui").call(&"colour", &"surface.raised"))
+	var rule := Color(root.get_node("Ui").call(&"colour", &"rule.divider"))
+	for path: String in ["Card", "Finish/Scroll/Center/Panel"]:
+		var sb := (_overlay.get_node(path) as Control).get_theme_stylebox(&"panel") as StyleBoxFlat
+		_check(sb != null and docked != null and sb.bg_color != docked.bg_color and sb.bg_color.is_equal_approx(raised), "%s draws surface.raised, not the docked panel's fill: %s %s %s" % [path, sb.bg_color.to_html(false) if sb else "-", docked.bg_color.to_html(false) if docked else "-", raised.to_html(false)])
+		_check(sb != null and sb.border_width_left >= 1 and sb.border_width_top >= 1 and sb.border_color.is_equal_approx(rule), "%s has a rule.divider frame" % path)
 	_check(not bool(_overlay.call(&"_allowed", "editor.tray.kit.gun")), "the text step keeps the tray inert")
 	_check(bool(_overlay.call(&"_allowed", "tutorial.continue")), "the text step allows Continue")
 

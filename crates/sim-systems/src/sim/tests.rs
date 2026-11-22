@@ -591,6 +591,62 @@ fn a_player_ship_without_a_hull_still_checkpoints_and_rewinds() {
     assert!(rejections(&sim.drain_events()).is_empty(), "a frame taken after the hull went restores");
 }
 
+/// An AI side's track whose truth entity is gone from the world (in a sortie, the chaff cloud it last took a
+/// fix from, expired) keeps the stance the briefing declared for it; before, the declaration fell to None and
+/// the track turned Suspect (u1, duel.auditor: the Arrears stood off from 630 to 1,990 s).
+#[test]
+fn an_ai_track_keeps_its_declared_stance_when_its_truth_is_gone() {
+    let mut sim = basin(SplashTarget::PatrolBoat);
+    let own = sim.ships().of_player(P0).expect("ship").vessel;
+    let boat = sim.world().vessels().map(|(_, v)| v.id).find(|e| *e != own).expect("the patrol boat");
+    let their = sim.world().vessel(boat).expect("hull").side;
+    let mut track = None;
+    for _ in 0..(120 * 60) {
+        sim.step();
+        track = sim.pictures().side(their).and_then(|p| p.track_of(own)).filter(|t| t.stance == Stance::Hostile && t.stance_reason == StanceReason::BriefingHostile).map(|t| t.id);
+        if track.is_some() { break; }
+    }
+    let track = track.expect("the patrol boat's side holds the player hull Hostile by its briefing");
+    // The truth entity leaves the world while the track lives on (surface tracks drop after 120 s).
+    sim.world.despawn(own);
+    for _ in 0..60 { sim.step(); }
+    let t = sim.pictures().side(their).and_then(|p| p.get(track)).filter(|t| t.is_live()).expect("the track is still live");
+    assert!(sim.world().locate(t.truth).is_none(), "its truth is gone");
+    assert_eq!((t.stance, t.stance_reason), (Stance::Hostile, StanceReason::BriefingHostile), "the declaration stands");
+    // The helper: a located truth on no known side, or no declaration before, gives none.
+    let def = sim.config().sides.iter().find(|d| d.id == their).expect("side").clone();
+    let mut fresh = t.clone();
+    fresh.stance = Stance::Suspect;
+    fresh.stance_reason = StanceReason::Default;
+    assert_eq!(step::ai_declared(&def, their, false, None, &fresh), None);
+    assert_eq!(step::ai_declared(&def, their, true, None, t), None);
+    assert_eq!(step::ai_declared(&def, their, false, None, t), Some(Stance::Hostile));
+}
+
+/// A side's call for reinforcements brings its scheduled waves forward, but an ace keeps the arrival her
+/// complication gave her (capstone seed 0: the Covenant, due at 900 s, was launching missiles from 570 s).
+#[test]
+fn a_call_for_reinforcements_leaves_the_ace_to_her_own_time() {
+    use crate::protocol::config::{GroupInit, VesselInit};
+    use sim_core::time::TICK_HZ;
+    let mut c = quiet_operation(content::campaign::MissionType::ConvoyRaid, "starters/fac22.bp.ron", true);
+    let hostile = c.vessels[1].clone();
+    let side = hostile.side;
+    let g = |id: u16, ace: Option<&str>| GroupInit { id: GroupId(id), side, kind: content::campaign::FleetKind::TaskGroup, formation: Default::default(), orders: crate::protocol::config::GroupOrders::Hunt, ace: ace.map(AceId::new), theatre_group: None, tag: String::new() };
+    c.groups = vec![g(50, None), g(51, Some("ace.bailiff"))];
+    let wave = VesselInit { group: Some(GroupId(50)), arrives_s: 600, ..hostile.clone() };
+    let ace = VesselInit { group: Some(GroupId(51)), arrives_s: 900, ..hostile.clone() };
+    let loose = VesselInit { group: None, arrives_s: 900, ..hostile };
+    c.vessels.extend([wave, ace, loose]);
+    let mut hastened = Vec::new();
+    let now = 26 * TICK_HZ as u64;
+    step::hasten_reinforcements(&c, &[2, 3, 4], &mut hastened, side, now);
+    let hz = TICK_HZ as u64;
+    assert_eq!(hastened, vec![(2, now + (600 * hz - now) / 2), (4, now + (900 * hz - now) / 2)], "the wave and the loose hull come at half their wait; the ace does not");
+    step::hasten_reinforcements(&c, &[2, 3, 4], &mut hastened, SideId(side.0 + 1), now);
+    assert_eq!(hastened.len(), 2, "another side's call moves nothing");
+}
+
 /// Ruling 1: when a hull strikes, a player's designation of it is cleared (once; the officers then leave it
 /// alone), other designations stay, and the track view carries the struck flag the track card shows.
 #[test]
@@ -656,4 +712,182 @@ fn the_defector_holds_until_the_rendezvous() {
     near.vessels[0].pos = DVec3::new(start.x + 1_000.0, 0.0, start.y);
     let (sim, _) = run(near, 2);
     assert!(matches!(orders(&sim), Some(GroupOrders::Flee { .. })), "{:?}", orders(&sim));
+}
+
+/// A shore site gets no anti-ship missile from the officers (coordinator ruling of 22 November 2026,
+/// `HoldReason::ShoreSite`): the track phase fills each ship's `shore_sites`. Depot strike seed 2 in the fast
+/// attack craft, before: the site, declared Hostile and held Exact at about 12 km, took the craft's missiles
+/// inside 5 s with nothing designated. Only the player hull and the site are kept, so no ship is a target.
+#[test]
+fn officers_hold_anti_ship_missiles_off_a_shore_site() {
+    use crate::protocol::config::VesselRole;
+    use crate::protocol::text::{EngageStatus, HoldReason};
+    use crate::theatre::bot::{op_starter, winnability_config};
+    use sim_core::PhysEvent;
+    let (catalogue, campaign) = data().clone();
+    let d = crate::theatre::TheatreData { campaign, catalogue };
+    let op = d.campaign.operations.values().find(|o| o.act == Act::Act1 && o.id.as_str() == "op.act1.depot_strike").expect("depot strike");
+    let starter = op_starter(op, Act::Act1, &d);
+    let mut c = winnability_config(&op.id, Act::Act1, 2, &starter, &d).expect("config");
+    let own = c.players[0].vessel.expect("a hull") as usize;
+    let keep: Vec<usize> = (0..c.vessels.len()).filter(|i| *i == own || c.vessels[*i].role == VesselRole::Site).collect();
+    assert!(keep.len() >= 2, "the operation fields a site");
+    let named: Vec<u16> = keep.iter().enumerate().filter(|(_, i)| c.intel.named.contains(&(**i as u16))).map(|(n, _)| n as u16).collect();
+    c.vessels = keep.iter().map(|i| c.vessels[*i].clone()).collect();
+    c.players[0].vessel = Some(keep.iter().position(|i| *i == own).unwrap() as u16);
+    c.intel.named = named;
+    c.groups.clear();
+    for v in &mut c.vessels { v.group = None; }
+    let mut sim = Sim::new(c, deps_with(&d)).expect("sim");
+    let me = sim.ships().of_player(P0).expect("ship").vessel;
+    let mut missiles = 0;
+    let mut held = false;
+    let mut site_tracks = false;
+    for _ in 0..(30 * 60) {
+        sim.step();
+        for e in sim.drain_events() {
+            if let SimEvent::Phys(PhysEvent::BodySpawned { kind, launcher, .. }) = &e.event {
+                let asm = d.catalogue.munitions.get_index(kind.index()).is_some_and(|(_, m)| m.kind == content::part::weapons::MunitionKind::AntiShipMissile);
+                if *launcher == me && asm { missiles += 1; }
+            }
+        }
+        let ship = sim.ships().of_player(P0).expect("ship");
+        site_tracks |= !ship.stages.engage.shore_sites.is_empty();
+        held |= ship.stages.engage.mounts.iter().any(|m| matches!(m.status, EngageStatus::Holding { reason: HoldReason::ShoreSite, .. }));
+    }
+    assert_eq!(missiles, 0, "the officers launched anti-ship missiles at the site");
+    assert!(site_tracks, "the site's track is listed as a shore site");
+    assert!(held, "a launcher holds for the shore site");
+    // A site that has lost its engines stays in the fight; one that strikes or is gone does not, nor any
+    // other hull dead in the water.
+    use sim_core::vessel::VesselStatus;
+    assert!(!step::out_of_action(false, VesselStatus::Disabled, true));
+    assert!(step::out_of_action(false, VesselStatus::Disabled, false));
+    assert!(step::out_of_action(true, VesselStatus::Disabled, true));
+    assert!(step::out_of_action(false, VesselStatus::Wreck, true));
+    assert!(!step::out_of_action(false, VesselStatus::Active, false));
+}
+
+/// An anchored prize lies still under fire (owner ruling of 22 November 2026: a hull at anchor makes no way).
+/// cutting_out seed 0 under the gate pilot: with orders of 0 kn and no route, the prize's Helm beamed inbound
+/// missiles on its own evasion stage and made 21.5 kn from 30 to 90 s.
+#[test]
+fn an_anchored_prize_is_not_got_under_way_by_its_helm() {
+    use crate::protocol::config::VesselRole;
+    use crate::theatre::abstract_combat::{prepare_config, Pilot};
+    use crate::theatre::bot::{op_starter, player_setup, winnability_config, Policy};
+    use crate::editor::trials::HeadlessPolicy;
+    let (catalogue, campaign) = data().clone();
+    let d = crate::theatre::TheatreData { campaign, catalogue };
+    let op = d.campaign.operations.values().find(|o| o.act == Act::Act1 && o.id.as_str() == "op.act1.cutting_out").expect("cutting out");
+    let starter = op_starter(op, Act::Act1, &d);
+    let config = winnability_config(&op.id, Act::Act1, 0, &starter, &d).expect("config");
+    let setup = player_setup(Policy::Mixed);
+    let prepared = prepare_config(&config, &setup);
+    let prize = prepared.vessels.iter().position(|v| v.role == VesselRole::Prize).expect("a prize") as u16;
+    let mut pilot = Pilot::new(&prepared, &setup, &d);
+    let mut sim = Sim::new(prepared, deps_with(&d)).expect("sim");
+    let mut commands = Vec::new();
+    let mut fastest: f64 = 0.0;
+    for _ in 0..(120 * 60) {
+        if sim.is_over() { break; }
+        commands.clear();
+        pilot.commands(&sim, &mut commands);
+        if !commands.is_empty() { sim.apply(&commands); }
+        sim.set_host_load(crate::lod::HostLoad::IDLE);
+        sim.step();
+        let e = sim.schedule.spawned.iter().find(|(i, _)| **i == prize).map(|(_, e)| *e);
+        if let Some(v) = e.and_then(|e| sim.world().vessel(e)) { fastest = fastest.max(v.forward_speed().abs() / sim_core::time::KN); }
+    }
+    assert!(fastest < 3.0, "the anchored prize made {fastest:.1} kn");
+}
+
+/// Probe (s2, items 5 and 6): one gate sortie of `BP_OPS` at `BP_SEED`, printing when each scheduled hull
+/// arrives and, for every missile an AI hull launches, the launcher's class and preset, the track its mount
+/// engaged (grade, rung, stance, bearing-only, age, sources) and the track's range against the truth's.
+/// `BP_OPS=op.act1.duel.bailiff BP_SEED=0 cargo test --release -p sim-systems --lib ai_launch_probe -- --ignored --nocapture`
+#[test]
+#[ignore = "full physics; prints for a reader"]
+fn ai_launch_probe() {
+    use crate::theatre::abstract_combat::{prepare_config, Pilot};
+    use crate::theatre::bot::{op_starter, player_setup, winnability_config, Policy};
+    use crate::protocol::text::EngageStatus;
+    use crate::editor::trials::HeadlessPolicy;
+    use sim_core::PhysEvent;
+    let (catalogue, campaign) = data().clone();
+    let d = crate::theatre::TheatreData { campaign, catalogue };
+    let filter = std::env::var("BP_OPS").unwrap_or_else(|_| "op.act1.duel.bailiff".into());
+    let seed: u32 = std::env::var("BP_SEED").ok().and_then(|s| s.parse().ok()).unwrap_or(0);
+    let minutes: u64 = std::env::var("BP_MIN").ok().and_then(|s| s.parse().ok()).unwrap_or(45);
+    let op = d.campaign.operations.values().filter(|o| o.act == Act::Act1 && o.id.as_str().contains(filter.as_str())).min_by(|a, b| a.id.cmp(&b.id)).expect("an operation");
+    let starter = op_starter(op, Act::Act1, &d);
+    let config = winnability_config(&op.id, Act::Act1, seed, &starter, &d).expect("config");
+    let setup = player_setup(Policy::Mixed);
+    let prepared = prepare_config(&config, &setup);
+    let mut pilot = Pilot::new(&prepared, &setup, &d);
+    for (i, v) in prepared.vessels.iter().enumerate() { eprintln!("  vessel {i}: side {} class {:?} tag {:?} group {:?} arrives {} s", v.side.0, v.class.as_ref().map(|c| c.as_str()), v.tag, v.group, v.arrives_s); }
+    for g in &prepared.groups { eprintln!("  group {:?} tag {:?} ace {:?} orders {:?}", g.id, g.tag, g.ace.as_ref().map(|a| a.as_str()), g.orders); }
+    let pool = rayon::ThreadPoolBuilder::new().num_threads(1).build().unwrap();
+    pool.install(|| {
+        let mut sim = Sim::new(prepared.clone(), deps_with(&d)).expect("sim");
+        let mut commands = Vec::new();
+        let mut seen: BTreeMap<u16, u64> = BTreeMap::new();
+        // Fastest speed through the water each AI hull made, knots, and its design top speed.
+        let mut fastest: BTreeMap<u32, (f64, f64, String)> = BTreeMap::new();
+        for i in 0..minutes * 3600 {
+            if i % 60 == 0 {
+                for s in sim.ships().ships.iter().filter(|s| s.player.is_none()) {
+                    let Some(v) = sim.world().vessel(s.vessel) else { continue };
+                    let e = fastest.entry(s.vessel.index).or_insert((0.0, s.design.turn.top_speed_mps / sim_core::time::KN, v.class.as_ref().map_or(String::new(), |c| c.as_str().to_string())));
+                    e.0 = e.0.max(v.forward_speed() / sim_core::time::KN);
+                }
+            }
+            if i % (300 * 60) == 0 && std::env::var("BP_SPEEDS").is_ok() {
+                for s in sim.ships().ships.iter().filter(|s| s.player.is_none()) {
+                    let Some(v) = sim.world().vessel(s.vessel) else { continue };
+                    eprintln!("    t={:.0}s e{} {:?} speed {:.1} kn top {:.1} kn ordered {:?} captain {:?} group {:?}", i as f64 / 60.0, s.vessel.index, v.class.as_ref().map(|c| c.as_str()), v.forward_speed() / sim_core::time::KN, s.design.turn.top_speed_mps / sim_core::time::KN, s.orders.speed_kn, s.captain.as_ref().map(|c| (c.behaviour, c.mode)), s.captain.as_ref().map(|c| c.directive.mode));
+                }
+            }
+            if sim.is_over() { eprintln!("over at {:.1} min: {:?}", i as f64 / 3600.0, sim.result().map(|r| (r.outcome, r.objective_done))); break; }
+            commands.clear();
+            pilot.commands(&sim, &mut commands);
+            if !commands.is_empty() { sim.apply(&commands); }
+            sim.set_host_load(crate::lod::HostLoad::IDLE);
+            sim.step();
+            for (k, e) in sim.schedule.spawned.iter() { if !seen.contains_key(k) { seen.insert(*k, i); eprintln!("  t={:.1}s config vessel {k} spawned as e{} (planned {} s)", i as f64 / 60.0, e.index, prepared.vessels.get(*k as usize).map_or(0, |v| v.arrives_s)); } }
+            for e in sim.drain_events() {
+                match &e.event {
+                    SimEvent::EnemyAlert { side, level } => eprintln!("  t={:.1}s side {} alert {level}", i as f64 / 60.0, side.0),
+                    SimEvent::Phys(PhysEvent::BodySpawned { body, kind, side, launcher, .. }) if sim.players().iter().all(|p| p.side != *side) => {
+                        let Some(ship) = sim.ships().get(*launcher) else { continue };
+                        let Some(v) = sim.world().vessel(*launcher) else { continue };
+                        let me = DVec2::new(v.kin.pose.pos.x, v.kin.pose.pos.z);
+                        let ace = ship.captain.as_ref().and_then(|c| c.ace.clone());
+                        let engaged: Vec<TrackId> = ship.stages.engage.mounts.iter().filter_map(|m| match m.status { EngageStatus::Engaging { track, .. } => Some(track), _ => None }).collect();
+                        let tid = engaged.first().copied().unwrap_or(ship.orders.designated);
+                        let pic = sim.pictures().side(*side);
+                        let line = pic.and_then(|p| p.get(tid)).map(|t| {
+                            let est = DVec2::new(t.pos.x, t.pos.z).distance(me);
+                            let truth = sim.world().vessel(t.truth).map(|tv| DVec2::new(tv.kin.pose.pos.x, tv.kin.pose.pos.z).distance(me));
+                            // A truth that is no hull: a body still in the world (its munition kind) or gone.
+                            let body = if truth.is_some() { String::new() } else {
+                                let b = sim.world().bodies();
+                                match b.row_of(t.truth) { Some(r) => format!(" body {:?}", b.kind.get(r)), None if sim.world().locate(t.truth).is_some() => " located".into(), None => " gone".into() }
+                            };
+                            format!("t{} domain {:?} grade {:?} rung {:?} stance {:?} reason {:?} bearing_only {} age {:.1} s sources {:?} est {:.0} m truth {:?} m{body} created {:.1} s", t.id.0, t.domain, t.grade, t.rung, t.stance, t.stance_reason, t.bearing_only.is_some(), (i.saturating_sub(t.last_update_tick)) as f64 / 60.0, t.sources, est, truth.map(|x| x.round()), t.created_tick as f64 / 60.0)
+                        }).unwrap_or_else(|| format!("track {} not in picture", tid.0));
+                        // Every engaged track, since the launching mount is not known here.
+                        let all: Vec<String> = engaged.iter().filter_map(|id| pic.and_then(|p| p.get(*id))).map(|t| format!("t{}:{:?}/{:?}/bo={}", t.id.0, t.domain, t.grade, t.bearing_only.is_some())).collect();
+                        eprintln!("  t={:.1}s e{} kind {:?} from e{} class {:?} ace {:?} preset {:?} designated {} engaging {:?} all {all:?} | {line}", i as f64 / 60.0, body.index, kind, launcher.index, v.class.as_ref().map(|c| c.as_str()), ace.as_ref().map(|a| a.as_str()), ship.settings.preset, ship.orders.designated.0, engaged.iter().map(|t| t.0).collect::<Vec<_>>());
+                    }
+                    _ => {}
+                }
+            }
+        }
+        for (e, (max, top, class)) in &fastest { eprintln!("  e{e} {class}: fastest {max:.1} kn, design top {top:.1} kn"); }
+    });
+}
+
+fn deps_with(d: &crate::theatre::TheatreData) -> SimDeps {
+    SimDeps { catalogue: d.catalogue.clone(), campaign: d.campaign.clone(), designs: Default::default(), scripts: Box::new(crate::script::NullScriptHost), guest_gate_passed: false, budgets: Default::default(), ladder: Default::default() }
 }

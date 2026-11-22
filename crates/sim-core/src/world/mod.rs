@@ -9,7 +9,7 @@
 //! `World::step` runs these phases in this order. Parallel phases fan out per vessel on the caller's rayon pool
 //! and merge serially in ascending vessel slot order. No phase reads wall-clock time; budgets are work units.
 //!  1. Apply queued spawns and despawns in ascending entity slot order (bodies enter Rapier in that order).
-//!  2. Advance time; refresh the wave set if weather changed.
+//!  2. Advance time; a weather turn in progress moves the wave set one tick on (`weather.rs`).
 //!  3. Parts and networks, per vessel: `networks::solve_tick`, then `parts::step_parts` (collects spawn requests).
 //!  4. Spawns from step 3 in (vessel id, mount id) order: shells into `projectiles`, munitions and decoys
 //!     into `munitions` (new entities), with `ProjectileSpawned` / `BodySpawned` events.
@@ -36,6 +36,7 @@ pub mod query;
 mod step;
 #[cfg(test)]
 mod tests;
+pub mod weather;
 
 use crate::entity::{Column, EntityId, EntityTable};
 use crate::events::PhysEvent;
@@ -61,7 +62,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 /// Version of the keyframe encoding; a build restores only its own version.
-pub const KEYFRAME_FORMAT: u32 = 1;
+pub const KEYFRAME_FORMAT: u32 = 2;
 
 /// Everything needed to create an empty world.
 #[derive(Clone, Debug)]
@@ -160,6 +161,8 @@ pub struct World {
     pub(crate) decoys: Decoys,
     pub(crate) physics: PhysicsWorld,
     pub(crate) waves: WaveSet,
+    /// The weather turn in progress, if any: `waves` moves from its old set to its new one (`weather.rs`).
+    pub(crate) wave_blend: Option<weather::WaveBlend>,
     pub(crate) weather: WeatherState,
     pub(crate) terrain: Terrain,
     pub(crate) events: Vec<PhysEvent>,
@@ -273,6 +276,7 @@ impl World {
             decoys: Decoys::default(),
             physics: PhysicsWorld::new(),
             waves,
+            wave_blend: None,
             weather: config.weather,
             terrain: Terrain::new(config.map.clone()),
             events: Vec::new(),
@@ -538,15 +542,18 @@ impl World {
     }
     /// Projectile live-cap rung 0..=2 selecting 2,000 / 1,500 / 1,000 (L557).
     pub fn set_projectile_cap_rung(&mut self, rung: u8) { self.projectile_cap = live_cap(&self.config.catalogue.tuning, rung); }
-    /// Change weather; regenerates the wave set and queues `WeatherChanged`.
+    /// Change weather; queues `WeatherChanged` and starts the sea's turn to the new wave set.
     ///
-    /// The wave seed stays the sortie's, so the sea changes state without becoming a different sea. Setting
-    /// the weather already in force does nothing.
+    /// The wave seed stays the sortie's, so the sea changes state without becoming a different sea. The new
+    /// set is reached over [`weather::WEATHER_BLEND_S`], starting from the set in force now, so the surface
+    /// never jumps under a hull (`weather.rs`); the next tick still runs on the set in force now. Setting the
+    /// weather already in force does nothing.
     pub fn set_weather(&mut self, weather: WeatherState) {
         if weather == self.weather { return; }
         self.weather = weather;
         let seed = wave_seed(self.config.seed);
-        self.waves = WaveSet::generate(seed, &self.weather, &self.config.catalogue.tuning.waves);
+        let to = WaveSet::generate(seed, &self.weather, &self.config.catalogue.tuning.waves);
+        self.wave_blend = Some(weather::WaveBlend { from: self.waves, to, start_tick: self.tick.0 });
         self.events.push(PhysEvent::WeatherChanged { weather, wave_seed: seed });
     }
     /// Move a vessel (rejoin teleport, scripted placement). Unit: `sim-core-world`.

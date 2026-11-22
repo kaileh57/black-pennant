@@ -283,7 +283,7 @@ pub(crate) mod tests {
     }
 
     pub fn result(kills: Vec<KillRecord>, sightings: u16, evidence: u16) -> SortieResult {
-        SortieResult { operation: None, region: Some(rid("r1")), seed: 1, outcome: Outcome::Victory, winner: None, duration_ticks: 0, objective_done: true, ghosts: vec![], kills, survivors: vec![], prizes: vec![], aces: vec![], players: vec![], sightings, evidence, photos: 0, survivors_recovered: 0, crew_captured: 0, passengers_delivered: 0, mines_laid: 0, site_destroyed: false, tender_lost: false, highest_rung: 0, belief: vec![], stats: SortieStats::default() }
+        SortieResult { operation: None, region: Some(rid("r1")), seed: 1, outcome: Outcome::Victory, winner: None, duration_ticks: 0, objective_done: true, ghosts: vec![], kills, survivors: vec![], prizes: vec![], aces: vec![], players: vec![], sightings, evidence, photos: 0, survivors_recovered: 0, crew_captured: 0, passengers_delivered: 0, mines_laid: 0, site_destroyed: false, tender_lost: false, highest_rung: 0, belief: vec![], stats: SortieStats::default(), end_reason: None }
     }
 
     fn alert(s: &TheatreState) -> f64 { s.regions[&rid("r1")].alert }

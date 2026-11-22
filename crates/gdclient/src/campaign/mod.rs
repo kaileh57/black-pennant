@@ -54,6 +54,7 @@ mod dicts;
 mod model;
 mod store;
 mod words;
+pub(crate) use words::end_reason_msg;
 #[cfg(test)]
 mod tests;
 
@@ -664,7 +665,7 @@ pub(crate) fn aborted_result(t: &Theatre) -> sim_systems::protocol::SortieResult
         outcome: Outcome::Aborted, winner: None, duration_ticks: 0, objective_done: false, ghosts: Vec::new(), kills: Vec::new(),
         survivors: Vec::new(), prizes: Vec::new(), aces: Vec::new(), players: Vec::new(), sightings: 0, evidence: 0, photos: 0, survivors_recovered: 0,
         crew_captured: 0, passengers_delivered: 0, mines_laid: 0, site_destroyed: false, tender_lost: false, highest_rung: 0, belief: Vec::new(),
-        stats: Default::default(),
+        stats: Default::default(), end_reason: None,
     }
 }
 
@@ -1007,10 +1008,17 @@ impl BpCampaign {
         }
         self.pump();
         self.run.sortie = None;
-        // A resumed sortie that never ran leaves its suspend save in the slot, to be resumed again.
-        self.run.resumed_from = None;
+        // A resumed sortie that never ran: the theatre now goes on from the suspend slot's state with the
+        // sortie aborted, so the slot must go, or the menu offers it again and a second resume rebuilds this
+        // older theatre over whatever is saved after it (DECISION, r4). The campaign is saved first where the
+        // gate allows, so a crash before the next save cannot lose the resumed state.
+        let resumed = self.run.resumed_from.take();
         self.reject(why);
         self.set_phase(CampaignPhase::Chart);
+        if let Some(path) = resumed {
+            self.maybe_autosave(true);
+            if !store::delete(&path) { godot_warn!("campaign: the suspend save of a failed resume could not be deleted: {}", path.display()); }
+        }
         self.coop_send_chart(None);
     }
 

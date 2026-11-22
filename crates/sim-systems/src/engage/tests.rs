@@ -328,3 +328,44 @@ fn gun_holds_with_a_neutral_or_friend_beside_the_target() {
     gone.dropped_tick = Some(0);
     assert!(matches!(fx.run(&[hostile, air, gone], 18, &[], &[])[0].status, EngageStatus::Engaging { .. }));
 }
+
+#[test]
+fn anti_ship_missiles_hold_on_a_shore_site() {
+    // A gun and a launcher; track 1 is the briefing's site (nearest, so it ranks first), track 2 a hostile ship.
+    let mounts = || vec![mount(2, WeaponClass::Gun, 8_000.0), mount(4, WeaponClass::AntiShipMissile, 24_000.0)];
+    let parts = || vec![gun_part(2), launcher_part(4, 4)];
+    let site = at(track(1, Stance::Hostile, IdRung::Exact, TrackGrade::Fine, Domain::Surface), DVec3::new(5_000.0, 0.0, 0.0), DVec3::ZERO);
+    let ship = at(track(2, Stance::Hostile, IdRung::Type, TrackGrade::Fine, Domain::Surface), DVec3::new(0.0, 0.0, 12_000.0), DVec3::ZERO);
+    // Without the list the launcher takes the site as it would any hostile hull (the fault: 2 missiles from the spawn).
+    let mut fx = Fx::new(mounts(), parts());
+    let a = fx.run(core::slice::from_ref(&site), 0, &[], &[]);
+    assert_eq!((a[1].launch, a[1].status), (1, EngageStatus::Engaging { track: TrackId(1), reason: FireReason::Doctrine }));
+    // Site only: the launcher holds with the reason and launches nothing; the gun engages the site.
+    let mut fx = Fx::new(mounts(), parts());
+    fx.state.shore_sites = vec![TrackId(1)];
+    let a = fx.run(core::slice::from_ref(&site), 0, &[], &[]);
+    assert_eq!(a[0].status, EngageStatus::Engaging { track: TrackId(1), reason: FireReason::Doctrine });
+    assert_eq!((a[1].launch, a[1].status), (0, EngageStatus::Holding { track: TrackId(1), reason: HoldReason::ShoreSite }));
+    assert_eq!(fx.state.weapons_in_flight, 0);
+    // Site and a ship: the launcher passes over the site and takes the ship; the gun stays on the site.
+    let a = fx.run(&[site.clone(), ship.clone()], 6, &[], &[]);
+    assert_eq!(a[0].status, EngageStatus::Engaging { track: TrackId(1), reason: FireReason::Doctrine });
+    assert_eq!((a[1].launch, a[1].status), (1, EngageStatus::Engaging { track: TrackId(2), reason: FireReason::Doctrine }));
+    // The player's designation does not lift the hold.
+    let mut fx = Fx::new(mounts(), parts());
+    fx.state.shore_sites = vec![TrackId(1)];
+    let tracks = [site.clone()];
+    let ranked = rank(&tracks, TrackId(1), &fx.doctrine, 0);
+    assert!(ranked[0].designated);
+    let input = AssignIn { own: own(), ranked: &ranked, tracks: &tracks, mounts: &fx.mounts, parts: &fx.parts, doctrine: &fx.doctrine, held: &[], permission: &[], tick: 0, gunnery: None };
+    let a = mount_assignment(&input, &mut fx.state, &TuningTable::default());
+    assert_eq!(a[0].status, EngageStatus::Engaging { track: TrackId(1), reason: FireReason::Designated });
+    assert_eq!((a[1].launch, a[1].status), (0, EngageStatus::Holding { track: TrackId(1), reason: HoldReason::ShoreSite }));
+    // Nor does fire permission written by a rule, a node or a script.
+    let input = AssignIn { own: own(), ranked: &ranked, tracks: &tracks, mounts: &fx.mounts, parts: &fx.parts, doctrine: &fx.doctrine, held: &[], permission: &[None, Some(true)], tick: 6, gunnery: None };
+    let a = mount_assignment(&input, &mut fx.state, &TuningTable::default());
+    assert_eq!((a[1].launch, a[1].status), (0, EngageStatus::Holding { track: TrackId(1), reason: HoldReason::ShoreSite }));
+    // The list survives a save.
+    let saved: EngageState = bincode::deserialize(&bincode::serialize(&fx.state).unwrap()).unwrap();
+    assert_eq!(saved.shore_sites, vec![TrackId(1)]);
+}

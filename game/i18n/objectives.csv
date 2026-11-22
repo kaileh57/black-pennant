@@ -1,7 +1,8 @@
 keys,?context,en
 objective.destroy_all,Primary objective,Sink or disable every enemy ship
 objective.destroy_group,"Primary objective; {0} is a percentage",Sink or disable {0} of the marked group's tonnage
-objective.destroy_site,Primary objective,Destroy the marked site
+objective.destroy_site,Primary objective; only gunfire counts toward a site,Destroy the marked site with gunfire
+objective.destroy_site.landing,"Primary objective where a landing party can also take the site; {0} distance, {1} duration","Destroy the marked site with gunfire, or hold within {0} of the landing for {1}"
 objective.extract.hold,"Primary objective; {0} distance, {1} duration",Hold within {0} of the landing for {1}
 objective.extract.passengers,"Primary objective; {0} count, {1} distance, {2} duration",Pick up {0} passengers: hold within {1} of the landing for {2}
 objective.extract.leave,Primary objective after the pickup,Leave the area by an exit

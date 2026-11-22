@@ -8,6 +8,9 @@
 //! data and behaviour, not new storage. AI submarines (Act 3) are cell vessels, not bodies.
 //!
 //! # Row lifetime
+//! A flight ends on a hull hit, a burst (fuse or [`Steer::Detonate`]), the sea or the land, the end of the
+//! type's range or endurance, recovery by the launcher, the loss of every hit point, or [`Steer::Ditch`] from
+//! guidance that has nothing left to steer by.
 //! A body that ends in a tick (hull hit, burst, expiry, recovery, or killed by another body's air burst) is
 //! marked [`BodyPhase::Dead`] with 0 hit points and stays in the arrays until the start of the next
 //! [`Bodies::step`], so the world can read its kind, launcher and position while resolving outcomes. Dead rows
@@ -65,6 +68,9 @@ pub enum Steer {
     Orbit { centre: DVec3, radius_m: f64 },
     /// Detonate now (command or seeker-decided proximity burst).
     Detonate,
+    /// End the flight now with no burst: a weapon with no guidance left drops into the sea. The body ends as
+    /// [`BodyOutcome::Expired`], the outcome of running out its range.
+    Ditch,
 }
 
 /// Structure-of-arrays storage; rows ascending by entity slot.
@@ -724,7 +730,7 @@ impl Sim<'_, '_> {
                     phase = match steer {
                         Steer::Accel(_) => BodyPhase::Terminal,
                         Steer::Orbit { .. } => BodyPhase::Loiter,
-                        Steer::Hold | Steer::Waypoint(_) | Steer::Detonate => if phase == BodyPhase::Terminal || phase == BodyPhase::Loiter { BodyPhase::Cruise } else { phase },
+                        Steer::Hold | Steer::Waypoint(_) | Steer::Detonate | Steer::Ditch => if phase == BodyPhase::Terminal || phase == BodyPhase::Loiter { BodyPhase::Cruise } else { phase },
                     };
                 }
 
@@ -784,7 +790,7 @@ impl Sim<'_, '_> {
                 };
                 let mut lateral = DVec3::ZERO;
                 match steer {
-                    Steer::Hold | Steer::Detonate => {}
+                    Steer::Hold | Steer::Detonate | Steer::Ditch => {}
                     Steer::Accel(a) => lateral = a,
                     Steer::Waypoint(p) => {
                         let mut d = p - pos;
@@ -876,6 +882,10 @@ impl Sim<'_, '_> {
         // Commanded burst.
         if sanitise(b.steer[r]) == Steer::Detonate {
             return Some(self.burst(b, r, def, prev, 1.0));
+        }
+        // Commanded end of flight: no burst, no fuse. Mines and depth charges are never guided and ignore it.
+        if b.steer[r] == Steer::Ditch && !matches!(m, Motion::Mine | Motion::Sinker) {
+            return Some(BodyOutcome::Expired { body: id, at: p, shot_down: false });
         }
         // Contact with a hull along the swept segment.
         let contact = matches!(def.fuse, Fuse::Penetrate { .. } | Fuse::Contact | Fuse::Proximity { .. });

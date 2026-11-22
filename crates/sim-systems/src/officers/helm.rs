@@ -447,8 +447,9 @@ fn is_torpedo(t: &Track) -> bool {
 /// Unit: `sys-officer-helm`.
 pub fn evasion(input: &HelmIn<'_>, state: &mut HelmState) -> Option<HelmOut> {
     let o = own(input);
-    let readiness = slider(input, SLIDER_EVASION, DEFAULT_EVASION);
     let ordered = input.orders.evade;
+    // A hull its captain has lying still (at anchor, struck) is not got under way by the Helm's own evasion.
+    let readiness = if input.orders.at_rest && !ordered { 0.0 } else { slider(input, SLIDER_EVASION, DEFAULT_EVASION) };
     let ttg_max = if ordered { f64::INFINITY } else { 20.0 + 100.0 * readiness };
     let threat = if ordered || readiness > 0.0 {
         let mut best: Option<(f64, u32, &Track)> = None;
@@ -721,6 +722,12 @@ mod tests {
         let o = evasion(&hull.input(&orders, &tm, &sliders, &missile, None), &mut st).unwrap();
         assert!((o.heading_rad - FRAC_PI_2).abs() < 1e-6 && o.mode == HelmMode::Evading);
         assert!((o.speed_kn - 15.0 / KN).abs() < 1e-6, "full speed");
+        // A hull its captain has lying still (an anchored prize, a struck hull) is not got under way for the
+        // missile at the default readiness; ordered evasion still moves it.
+        let still = ShipOrders { at_rest: true, speed_kn: Some(0.0), ..Default::default() };
+        assert!(evasion(&hull.input(&still, &tm, &sliders, &missile, None), &mut HelmState::default()).is_none());
+        let still_evade = ShipOrders { evade: true, ..still.clone() };
+        assert!(evasion(&hull.input(&still_evade, &tm, &sliders, &missile, None), &mut HelmState::default()).is_some());
         // Torpedo from the east running west: comb it bow-on with the smaller turn (from 080 to 090).
         let hull = Hull::new(DVec2::ZERO, 80f64.to_radians(), 8.0);
         let torp = [track(5, DVec3::new(1_500.0, -5.0, 0.0), DVec3::new(-25.0, 0.0, 0.0))];

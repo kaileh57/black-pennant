@@ -74,7 +74,7 @@ content.role.civilian,Enemy class role,Civilian vessel
 content.role.drone,Enemy class role,Drone boat
 content.mission.convoy_raid.desc,Skirmish template description; one sentence,Sink or disable a convoy's tonnage before it reaches port.
 content.mission.depot_strike.desc,Skirmish template description; one sentence,Destroy a Combine depot and cut the lanes it feeds.
-content.mission.radar_decapitation.desc,Skirmish template description; one sentence,"Knock out a radar site by gunfire, missiles or a landing party."
+content.mission.radar_decapitation.desc,Skirmish template description; one sentence,Knock out a radar site by gunfire or a landing party.
 content.mission.agent_extraction.desc,Skirmish template description; one sentence,Land a RHIB at a shore marker and bring the agents home.
 content.mission.minelaying.desc,Skirmish template description; one sentence,Lay a minefield across a lane without being seen.
 content.mission.prize_capture.desc,Skirmish template description; one sentence,"Disable a ship, board it and take it as a prize."

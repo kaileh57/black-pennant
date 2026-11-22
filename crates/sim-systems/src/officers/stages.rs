@@ -674,10 +674,53 @@ fn emission_controller(env: &StageEnv<'_>, st: &mut StageStates, inputs: &[PortV
         .any(|me| matches!(me.status, EngageStatus::Engaging { .. }));
     let input = EmconIn {
         setting, trigger_range_m: trigger, own_pos: own, emitters: env.emitters, tracks: &tracks, inbound_weapon_m,
-        own_weapons_in_flight: engage.weapons_in_flight > 0 || guns_firing, point_defence_engaging, assigned_below_lock, esm_sites: env.esm_sites, tick: env.tick,
+        own_weapons_in_flight: engage.weapons_in_flight > 0 || guns_firing, point_defence_engaging, assigned_below_lock,
+        under_fire: setting != Emcon::Active && shell_inbound(env), esm_sites: env.esm_sites, tick: env.tick,
     };
     let o = crate::emcon::emission_controller(&input, &mut st.emcon, &tuning);
     emission_outputs(env.emitters, &o.radiate, o.lights, o.esm_warning, out);
+}
+
+/// How far ahead a shell's path is run straight for the under-fire test, seconds: its last 3 s of flight, over
+/// which gravity bends it by 44 m, well inside the near-miss distance.
+pub(crate) const SHELL_HORIZON_S: f64 = 3.0;
+
+/// A shell at `rel` from the hull, moving at `w` relative to it, passes within `miss_m` of it inside
+/// [`SHELL_HORIZON_S`] (the inbound rule of L486 for a shell: closest approach on a straight path).
+pub(crate) fn shell_will_pass(rel: DVec3, w: DVec3, miss_m: f64) -> bool {
+    if !(rel.is_finite() && w.is_finite()) { return false; }
+    let w2 = w.length_squared();
+    let t = if w2 > 1e-9 { (-rel.dot(w) / w2).clamp(0.0, SHELL_HORIZON_S) } else { 0.0 };
+    (rel + w * t).length() <= miss_m
+}
+
+/// An enemy shell is about to hit or near-miss this hull: the Sensors officer's "under fire"
+/// (`crate::emcon`, module notes). Unit: `sys-officer-stages`.
+///
+/// Reads the shells in flight, as the crew sees and hears them arrive: a shell whose straight path passes
+/// within `sim::events::NEAR_MISS_M` (150 m, the distance at which a splash counts as fire on a hull) inside
+/// the next [`SHELL_HORIZON_S`]. Own shells, and those of a hull this side holds as a datalink Friend (own-side
+/// and co-op hulls, L498), never count. Test fixtures without a world read false.
+pub(crate) fn shell_inbound(env: &StageEnv<'_>) -> bool {
+    let Some(world) = env.world else { return false };
+    let shells = world.projectiles();
+    if shells.pos.is_empty() { return false; }
+    let (own, own_vel) = (env.pos(), env.vel());
+    let miss = crate::sim::events::NEAR_MISS_M;
+    // No shell flies faster than this, so one farther than it covers in the horizon cannot arrive in it.
+    let reach = miss + 2_000.0 * SHELL_HORIZON_S;
+    let friend = |e: EntityId| e == env.vessel_id || env.tracks.iter().any(|t| t.truth == e && t.is_live() && t.stance == Stance::Friend);
+    let mut cleared: Option<(EntityId, bool)> = None;
+    for i in 0..shells.pos.len().min(shells.vel.len()).min(shells.shooter.len()) {
+        let rel = shells.pos[i] - own;
+        if !(rel.length_squared() <= reach * reach) { continue; }
+        if !shell_will_pass(rel, shells.vel[i] - own_vel, miss) { continue; }
+        // Shells arrive in bursts from one mount: remember the last shooter's answer.
+        let shooter = shells.shooter[i];
+        let is_friend = match cleared { Some((e, f)) if e == shooter => f, _ => { let f = friend(shooter); cleared = Some((shooter, f)); f } };
+        if !is_friend { return true; }
+    }
+    false
 }
 
 /// One output per emitter class: true while any emitter of the class radiates.

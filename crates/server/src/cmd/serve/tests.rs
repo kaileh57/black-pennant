@@ -31,7 +31,12 @@ fn config_checks_and_lobby_setup() {
     let s = lobby_setup(&c, 7).unwrap();
     let opts = s.skirmish.expect("a skirmish lobby has options");
     assert!(SKIRMISH_TEMPLATES.contains(&opts.template));
-    assert_eq!(opts.act, Act::ALL.iter().copied().find(|a| c.ruleset.tonnage_cap_t <= a.hull_cap_t()).unwrap_or(Act::Act4));
+    let last = content::campaign::load::shipped_campaign().acts.iter().map(|a| a.act).max().unwrap_or(Act::Act1);
+    assert_eq!(opts.act, Act::ALL.iter().copied().find(|a| c.ruleset.tonnage_cap_t <= a.hull_cap_t()).unwrap_or(Act::Act4).min(last));
+    // A cap past every act's still fields no act this build does not ship.
+    let mut big = c.clone();
+    big.ruleset.tonnage_cap_t = 5_000.0;
+    assert_eq!(lobby_setup(&big, 7).unwrap().skirmish.expect("options").act, last);
     c.mode = GameMode::PvpElimination;
     c.ruleset.luau = true;
     assert!(!lobby_setup(&c, 7).unwrap().ruleset.luau, "Luau never runs in PvP");

@@ -3,11 +3,13 @@
 //! inputs, and the client-side surface queries. `gpu.rs` applies what this decides. Tests run headless.
 //!
 //! # The sea is the simulation's
-//! The simulation swaps its wave set in one tick when the weather changes (`World::set_weather`), so the
-//! renderer does too: a `WeatherChanged` is applied when playback reaches its tick, with the event's own
-//! seed and the catalogue's wave tuning, which gives the set `sim-core` floats ships on. Only what the
-//! simulation does not read is blended (the shader's sea-state number for whitecaps, rain roughness, cloud
-//! cover): those ease over [`LOOK_BLEND_S`] of simulation time. Phases are packed by
+//! When the weather changes the simulation turns its wave set from the set in force to the new weather's
+//! over `sim_core::world::weather::WEATHER_BLEND_S` (`World::set_weather`, `weather::blended_waves`), and
+//! the renderer does the same: a `WeatherChanged` is applied when playback reaches its tick, with the
+//! event's own seed and the catalogue's wave tuning, and the drawn set is the same blend at the rendered
+//! time, which is the set `sim-core` floats ships on (to within the tick between the event and the blend's
+//! first tick). What the simulation does not read (the shader's sea-state number for whitecaps, rain
+//! roughness, cloud cover) eases over [`LOOK_BLEND_S`] of simulation time. Phases are packed by
 //! `WaveSet::pack_uniforms` in f64 at the render origin and at `ViewFrame::sim_time_s`.
 //!
 //! # Nyquist fade (L1887)
@@ -103,6 +105,10 @@ pub(crate) struct OceanCore {
     pub spec: ClipmapSpec,
     pub waves: WaveSet,
     pub wave_seed: u64,
+    /// A weather turn in progress: the set it turns from, the set it turns to and the sim time it began.
+    wave_from: WaveSet,
+    wave_to: WaveSet,
+    wave_turn_s: Option<f64>,
     tuning: WaveTuning,
     weather: Option<WeatherState>,
     queue: Vec<Turn>,
@@ -162,7 +168,7 @@ pub(crate) fn spacing_under(spec: &ClipmapSpec, origins: &[[f64; 2]], at: [f64; 
 impl OceanCore {
     pub fn new(spec: ClipmapSpec, tuning: WaveTuning) -> Self {
         Self {
-            spec, waves: WaveSet::calm(), wave_seed: 0, tuning, weather: None, queue: Vec::new(),
+            spec, waves: WaveSet::calm(), wave_seed: 0, wave_from: WaveSet::calm(), wave_to: WaveSet::calm(), wave_turn_s: None, tuning, weather: None, queue: Vec::new(),
             look: Look::default(), look_from: Look::default(), look_to: Look::default(), look_start_s: 0.0,
             wind_base: [0.0; 2], wind_t0: 0.0, wind_vel: [0.0; 2], dock: None, fade: 1.0, fade_allowed: true, last_s: None,
         }
@@ -171,6 +177,9 @@ impl OceanCore {
     fn reset(&mut self) {
         self.waves = WaveSet::calm();
         self.wave_seed = 0;
+        self.wave_from = WaveSet::calm();
+        self.wave_to = WaveSet::calm();
+        self.wave_turn_s = None;
         self.weather = None;
         self.queue.clear();
         self.look = Look::default();
@@ -191,7 +200,19 @@ impl OceanCore {
 
     fn take(&mut self, turn: Turn, at_s: f64, first: bool) {
         let w = turn.weather;
-        self.waves = WaveSet::generate(turn.seed, &w, &self.tuning);
+        let to = WaveSet::generate(turn.seed, &w, &self.tuning);
+        if first {
+            self.waves = to;
+            self.wave_turn_s = None;
+        } else {
+            // A turn during a turn starts from the blend in force, as `World::set_weather` does.
+            self.wave_from = match self.wave_turn_s {
+                Some(t0) => sim_core::world::weather::blended_waves(&self.wave_from, &self.wave_to, at_s - t0, &self.tuning),
+                None => self.waves,
+            };
+            self.wave_to = to;
+            self.wave_turn_s = Some(at_s);
+        }
         self.wave_seed = turn.seed;
         let speed = if w.wind_speed_mps.is_finite() { w.wind_speed_mps.clamp(0.0, 80.0) } else { 0.0 };
         let dir = if w.wind_dir_rad.is_finite() { w.wind_dir_rad } else { 0.0 };
@@ -236,6 +257,11 @@ impl OceanCore {
             } else {
                 i += 1;
             }
+        }
+        if let Some(t0) = self.wave_turn_s {
+            let e = now - t0;
+            self.waves = sim_core::world::weather::blended_waves(&self.wave_from, &self.wave_to, e, &self.tuning);
+            if e >= sim_core::world::weather::WEATHER_BLEND_S { self.wave_turn_s = None; }
         }
         let blend = ((now - self.look_start_s) / LOOK_BLEND_S).clamp(0.0, 1.0);
         self.look = Look::lerp(self.look_from, self.look_to, smoothstep(0.0, 1.0, blend) as f32);
@@ -384,9 +410,18 @@ mod tests {
         assert_eq!(c.waves, WaveSet::generate(77, &weather(4), &tuning));
         c.step(&view(109.9, [0.0; 2]), &[], None, 0, 0.016);
         assert_eq!(c.waves, WaveSet::generate(77, &weather(4), &tuning));
+        // At the turn's tick the sea is still the old set, then turns over the simulation's blend time to the
+        // new one through the same blend the simulation floats ships on.
         c.step(&view(110.0, [0.0; 2]), &[], None, 0, 0.016);
-        assert_eq!(c.waves, WaveSet::generate(77, &weather(6), &tuning));
-        // The look eases; the waves did not.
+        let (from, to) = (WaveSet::generate(77, &weather(4), &tuning), WaveSet::generate(77, &weather(6), &tuning));
+        assert_eq!(c.waves, from);
+        let half = sim_core::world::weather::WEATHER_BLEND_S / 2.0;
+        c.step(&view(110.0 + half * 60.0, [0.0; 2]), &[], None, 0, 0.016);
+        assert_eq!(c.waves, sim_core::world::weather::blended_waves(&from, &to, half, &tuning));
+        assert!(c.waves != from && c.waves != to, "half way through the turn");
+        c.step(&view(110.0 + sim_core::world::weather::WEATHER_BLEND_S * 60.0, [0.0; 2]), &[], None, 0, 0.016);
+        assert_eq!(c.waves, to);
+        // The look eases.
         let f = c.step(&view(110.0 + 60.0 * 10.0, [0.0; 2]), &[], None, 0, 0.016);
         assert!(f.look.sea_state > 4.0 && f.look.sea_state < 6.0, "{}", f.look.sea_state);
         let f = c.step(&view(110.0 + 60.0 * 21.0, [0.0; 2]), &[], None, 0, 0.016);

@@ -1,13 +1,17 @@
 extends Control
 ## After-action report with the belief-map overlay.
 ## DESIGN.md L70. Unit: ui-after-action.
-## Reads and calls: Campaign.after_action, Campaign.close_after_action, BpPlotView.show_static.
+## Reads and calls: Campaign.after_action, Campaign.close_after_action, Hud.objectives, BpPlotView.show_static.
 ##
 ## A campaign base screen, opened by the router on the after-action phase (L70: recover, then read
 ## the report). It shows what the sortie earned and what the Combine learned about you at fleet
 ## level, never what one enemy remembers:
-## - Result: the outcome (title and the bound Meta line beside it), enemy tonnage disabled of the
-##   tonnage committed, kills by method, own cells lost and any hull lost.
+## - Result: the outcome (title and the bound Meta line beside it), how the sortie ended in plain words
+##   (`end_reason`, a MsgDict; every hull disabled for 5 minutes, objective done or failed, every hull
+##   lost, time limit, withdrawal), enemy tonnage disabled of the tonnage committed, kills by method, own
+##   cells lost and any hull lost. A report that does not say how it ended (the result does not carry the
+##   reason yet) shows the primary objective's last text from `Hud.objectives()` instead, which says so
+##   for a sortie lost to disabled hulls.
 ## - Payout: Salvage from wrecks and prizes, Intel, blueprints, fuel and ammunition taken (L811),
 ##   the repair bill per player and what Salvage is left after it.
 ## - Ghost conditions: each with Met or Not met as glyph and word, and what it paid.
@@ -68,6 +72,7 @@ var _report_data: Dictionary = {}
 var _players: Array[Dictionary] = []
 var _regions: Array[Dictionary] = []
 var _days_left := -1.0
+var _objectives: Array[Dictionary] = []
 var _live := false
 
 
@@ -102,7 +107,7 @@ func _ready() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED and is_node_ready():
-		show_report(_report_data, _players, _regions, _days_left)
+		show_report(_report_data, _players, _regions, _days_left, _objectives)
 
 
 func setup(_args: Dictionary) -> void:
@@ -127,18 +132,21 @@ func _unhandled_input(event: InputEvent) -> void:
 func refresh() -> void:
 	var regions := Kit.dicts(Kit.as_dict(Kit.call_on(&"Campaign", &"chart")).get("regions"))
 	var act := Kit.as_dict(Kit.call_on(&"Campaign", &"act_info"))
-	show_report(Kit.as_dict(Kit.call_on(&"Campaign", &"after_action")), Kit.dicts(Kit.call_on(&"Campaign", &"players")), regions, Kit.get_float(act, "clock_days_left", -1.0))
+	show_report(Kit.as_dict(Kit.call_on(&"Campaign", &"after_action")), Kit.dicts(Kit.call_on(&"Campaign", &"players")), regions, Kit.get_float(act, "clock_days_left", -1.0), Kit.dicts(Kit.call_on(&"Hud", &"objectives")))
 	_show_chart()
 
 
 ## Draw an `AfterActionDict` with the campaign's players (`Campaign.players()`) and regions
 ## (`RegionDict`s, for names). `days_left` is the act clock after the sortie, or below 0 for none.
+## `objectives` are the sortie's last `ObjectiveDict`s (`Hud.objectives()`), read only when the report
+## does not say how the sortie ended.
 ## Also the test and capture entry point: it calls no facade except Tx and Content for formatting.
-func show_report(report: Dictionary, players: Array[Dictionary], regions: Array[Dictionary], days_left: float = -1.0) -> void:
+func show_report(report: Dictionary, players: Array[Dictionary], regions: Array[Dictionary], days_left: float = -1.0, objectives: Array[Dictionary] = []) -> void:
 	_report_data = report
 	_players = players
 	_regions = regions
 	_days_left = days_left
+	_objectives = objectives
 	Kit.clear(_report)
 	Kit.clear(_doctrine)
 	Kit.clear(_log)
@@ -218,8 +226,24 @@ func _build_result(report: Dictionary) -> void:
 	_section(_report, &"after_action.section.result")
 	var stats := Kit.as_dict(report.get("stats"))
 	var rows: Array = [[tr(&"after_action.result.outcome"), _tx_str(&"word", [&"outcome", Kit.get_int(report, "outcome", NONE)])]]
+	rows.append_array(end_rows(report, _objectives))
 	rows.append_array(result_rows(stats, Kit.dicts(report.get("kills_by_method")), _lost_names(report)))
 	_facts(_report, rows)
+
+
+## How the sortie ended, as one `[term, value]` row: the report's `end_reason` sentence; without one,
+## the primary objective's last text (the first non-ghost `ObjectiveDict`); with neither, no row.
+static func end_rows(report: Dictionary, objectives: Array[Dictionary]) -> Array:
+	var why := _Text.resolve(report.get("end_reason"))
+	if not why.is_empty():
+		return [[String(TranslationServer.translate(&"after_action.result.ended")), why]]
+	for o: Dictionary in objectives:
+		if not Kit.get_bool(o, "ghost"):
+			var text := _Text.resolve(o.get("text"))
+			if not text.is_empty():
+				return [[String(TranslationServer.translate(&"after_action.result.objective")), text]]
+			break
+	return []
 
 
 ## Result rows `[term, value]`: tonnage disabled, kills by method, cells lost, hulls lost.

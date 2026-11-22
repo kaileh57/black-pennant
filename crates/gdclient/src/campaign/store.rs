@@ -150,9 +150,43 @@ fn suspend_files(root: &Path) -> Vec<PathBuf> {
     campaign_dirs(root).into_iter().map(|d| d.join(file_name(SUSPEND_STEM))).filter(|p| p.is_file()).collect()
 }
 
-/// The suspend slot, if one exists (the newest, should several have survived a crash).
+/// The suspend slot, if one exists (the newest, should several have survived a crash). A suspend no newer
+/// than its campaign's latest full save carries [`stale_suspend`]'s problem, so the menu does not offer it.
 pub(crate) fn find_suspend(root: &Path, cache: &mut SlotCache) -> Option<Arc<SlotInfo>> {
-    suspend_files(root).into_iter().map(|p| slot_info(root, &p, cache)).max_by_key(|s| s.modified_unix)
+    let found = suspend_files(root).into_iter().map(|p| slot_info(root, &p, cache)).max_by_key(|s| s.modified_unix)?;
+    match (&found.problem, &found.header) {
+        // The campaign's full saves through the slot cache: the menu asks each time it opens.
+        (None, Some(h)) => match stale_against(h, save_files(&campaign_dir(root, h.campaign_id)).into_iter().filter(|p| !is_suspend_path(p)).filter_map(|p| slot_info(root, &p, cache).header.as_ref().map(|s| s.sequence)).max()) {
+            Some(m) => Some(Arc::new(SlotInfo { problem: Some(m), ..(*found).clone() })),
+            None => Some(found),
+        },
+        _ => Some(found),
+    }
+}
+
+/// A suspend whose sortie keyframe another build wrote: the host refuses a keyframe of another protocol
+/// version (`Sim::from_checkpoint`), so resuming it could only fail. DECISION (r4): refused before the theatre
+/// is loaded, so a failed resume never forks the campaign from an old suspend slot.
+pub(crate) fn suspend_version_problem(s: &SuspendSave) -> Option<Msg> {
+    (s.sortie.keyframe_format != sim_systems::PROTOCOL_VERSION).then(|| Msg::new("campaign.save.other_build"))
+}
+
+/// A suspend no newer than the newest full save of its campaign: the campaign was played on after the
+/// sortie was suspended (a resume that failed and left the slot behind), so resuming it would rebuild an older
+/// theatre and overwrite the newer save at the next autosave.
+pub(crate) fn stale_suspend(root: &Path, header: &SaveHeader) -> Option<Msg> {
+    stale_against(header, latest_save(root, header.campaign_id).map(|s| s.header.sequence))
+}
+fn stale_against(header: &SaveHeader, latest_sequence: Option<u64>) -> Option<Msg> {
+    (header.sequence <= latest_sequence?).then(|| Msg::new("campaign.save.stale_suspend"))
+}
+
+/// A theatre this build cannot play: its act has no act row in the shipped data (a save from a later build,
+/// or one an earlier build carried past this build's last act). Open Theatre has no act clock and plays
+/// whatever its act. DECISION (r4): refused on load, with the reason, rather than restarted in an act with no
+/// story operations, no capstone and a clock that only restarts it.
+pub(crate) fn act_problem(theatre: &content::save::TheatreState, acts: &[content::campaign::ActDef]) -> Option<Msg> {
+    (!theatre.open_theatre && !acts.iter().any(|a| a.act == theatre.act)).then(|| Msg::new("campaign.save.later_act"))
 }
 
 /// The newest full save of one campaign by sequence (the co-op copy check, L843).
@@ -181,9 +215,10 @@ pub(crate) fn slot_info(root: &Path, path: &Path, cache: &mut SlotCache) -> Arc<
     let rel = path.strip_prefix(root).ok().map(|p| p.to_string_lossy().replace('\\', "/")).unwrap_or_default();
     let is_suspend = is_suspend_path(path);
     let mut info = SlotInfo { path: path.to_path_buf(), rel, header: None, act: None, hour: 0, players: Vec::new(), modified_unix: meta.as_ref().map_or(0, modified_unix), is_suspend, problem: None };
-    let decoded = if is_suspend { read_suspend(path).map(|s| (s.header, s.theatre)) } else { read_save(path).map(|s| (s.header, s.theatre)) };
+    let decoded = if is_suspend { read_suspend(path).map(|s| { let v = suspend_version_problem(&s); (s.header, s.theatre, v) }) } else { read_save(path).map(|s| (s.header, s.theatre, None)) };
     match decoded {
-        Ok((header, theatre)) => {
+        Ok((header, theatre, version)) => {
+            info.problem = version.or_else(|| act_problem(&theatre, &content::campaign::load::shipped_campaign().acts));
             info.act = Some(theatre.act);
             info.hour = theatre.hour;
             info.players = theatre.players.iter().map(|p| p.name.clone()).collect();

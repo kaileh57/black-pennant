@@ -269,10 +269,11 @@ impl ViewBuilder {
         out.shells.clear();
         out.shells.extend(shells.iter().filter(|s| finite3(s.pos)).map(|s| ShellView { id: s.id, pos: origin.to_render(s.pos), vel: f3(finite_or_zero(s.vel)) }));
 
-        // 4. Tracks carried forward from their last update to the render tick by their velocity.
+        // 4. Tracks carried by their velocity from the frame's tick, which their position already describes, to
+        //    the render tick.
         out.tracks.clear();
         out.tracks.extend(frame.tracks.iter().filter(|t| finite3(t.pos)).map(|t| {
-            let world = carried_track_pos(t.pos, t.vel, t.last_update_tick, render_tick, t.last_known);
+            let world = carried_track_pos(t.pos, t.vel, frame.tick, t.last_update_tick, render_tick, t.last_known);
             TrackPose { id: t.id, pos: origin.to_render(world), world_xz: [world.x, world.z] }
         }));
         out.snapshot = Some(frame);
@@ -306,11 +307,17 @@ fn finite_pose(p: &Pose) -> bool { p.pos.is_finite() && p.rot.is_finite() && p.r
 fn f3(v: DVec3) -> [f32; 3] { [v.x as f32, v.y as f32, v.z as f32] }
 
 /// A track's estimate at `render_tick`: dead reckoning from its last update, held at most
-/// [`TRACK_CARRY_MAX_S`]; last-known marks stay where they were dropped.
-pub fn carried_track_pos(pos: DVec3, vel: DVec3, last_update_tick: u64, render_tick: f64, last_known: bool) -> DVec3 {
+/// [`TRACK_CARRY_MAX_S`]; last-known marks stay where they were dropped. `pos` is the frame's view of a live
+/// track, which the simulation (`snapshot::track_view`, `Track::predict`) and the delta coder already carried
+/// from `last_update_tick` to `frame_tick`, so only the rest of the way is added. Before, the whole way from
+/// the last update was added again, and a fast weapon track ran ahead of its path by up to its speed times
+/// the gap between filter updates, then snapped back at the next update.
+pub fn carried_track_pos(pos: DVec3, vel: DVec3, frame_tick: u64, last_update_tick: u64, render_tick: f64, last_known: bool) -> DVec3 {
     if last_known || !vel.is_finite() { return pos; }
-    let dt = ((render_tick - last_update_tick as f64) / sim_core::TICK_HZ as f64).clamp(0.0, TRACK_CARRY_MAX_S);
-    pos + vel * dt
+    let hz = sim_core::TICK_HZ as f64;
+    let already = ((frame_tick as f64 - last_update_tick as f64) / hz).max(0.0);
+    let want = ((render_tick - last_update_tick as f64) / hz).clamp(0.0, TRACK_CARRY_MAX_S);
+    pos + vel * (want - already)
 }
 
 #[cfg(test)]
@@ -430,10 +437,33 @@ mod tests {
     fn tracks_carry_forward_and_stop() {
         let p = DVec3::new(100.0, 0.0, 0.0);
         let v = DVec3::new(10.0, 0.0, -5.0);
-        assert_eq!(carried_track_pos(p, v, 60, 120.0, false), DVec3::new(110.0, 0.0, -5.0));
-        assert_eq!(carried_track_pos(p, v, 60, 120.0, true), p);
-        // Never backwards, never past the carry limit.
-        assert_eq!(carried_track_pos(p, v, 600, 120.0, false), p);
-        assert_eq!(carried_track_pos(p, v, 0, 1.0e9, false), p + v * TRACK_CARRY_MAX_S);
+        // A frame at the track's own update tick: carried the whole way.
+        assert_eq!(carried_track_pos(p, v, 60, 60, 120.0, false), DVec3::new(110.0, 0.0, -5.0));
+        assert_eq!(carried_track_pos(p, v, 60, 60, 120.0, true), p);
+        // Never before the last update, never past the carry limit.
+        assert_eq!(carried_track_pos(p, v, 600, 600, 120.0, false), p);
+        assert_eq!(carried_track_pos(p, v, 0, 0, 1.0e9, false), p + v * TRACK_CARRY_MAX_S);
+        // A frame 60 ticks after the update: its position is already the track's prediction at the frame tick
+        // (`Track::predict`), so drawn at that tick it stays put, and a render tick 30 ticks on adds only those
+        // 30. Before, both added the 60 ticks again (pos + 10 m and + 15 m on x).
+        let lut = 60;
+        let at_frame = p + v * 1.0;
+        assert_eq!(carried_track_pos(at_frame, v, 120, lut, 120.0, false), at_frame);
+        assert_eq!(carried_track_pos(at_frame, v, 120, lut, 150.0, false), p + v * 1.5);
+        // A render tick behind the frame (the interpolation delay) draws where the track was then.
+        assert_eq!(carried_track_pos(at_frame, v, 120, lut, 90.0, false), p + v * 0.5);
+        // Through the simulation's own view of a missile track at 650 m/s, last updated 12 ticks before the
+        // frame: drawn at the frame's tick it is where the tracker predicts it, not 130 m ahead.
+        use sim_systems::prelude::{SideId, TrackId};
+        let mut t = sim_systems::tracks::blank_track(TrackId(4), SideId(0), sim_core::EntityId::NONE, sim_systems::prelude::Domain::Weapon, 100);
+        t.pos = DVec3::new(1_000.0, 20.0, -4_000.0);
+        t.vel = DVec3::new(0.0, 0.0, 650.0);
+        let frame_tick = 112;
+        let view = sim_systems::sim::snapshot::track_view(&t, None, frame_tick, &content::tuning::TrackTuning::default());
+        assert_eq!(view.pos, t.predict(frame_tick));
+        let drawn = carried_track_pos(view.pos, view.vel, frame_tick, view.last_update_tick, frame_tick as f64, view.last_known);
+        assert!((drawn - t.predict(frame_tick)).length() < 1e-9, "drawn {:.1} m from the prediction", (drawn - t.predict(frame_tick)).length());
+        let later = carried_track_pos(view.pos, view.vel, frame_tick, view.last_update_tick, 118.0, view.last_known);
+        assert!((later - t.predict(118)).length() < 1e-9);
     }
 }

@@ -85,6 +85,24 @@ impl Fx {
 fn ids(v: &PortValue) -> Vec<u32> { match v { PortValue::TrackList(l) => l.iter().map(|t| t.0).collect(), other => panic!("not a list: {other:?}") } }
 
 #[test]
+fn a_shell_that_will_hit_or_near_miss_is_inbound_and_one_passing_wide_is_not() {
+    let miss = crate::sim::events::NEAR_MISS_M;
+    // 1.5 km out, flying straight at the hull at 800 m/s: arrives in under 2 s.
+    assert!(shell_will_pass(DVec3::new(1_500.0, 30.0, 0.0), DVec3::new(-800.0, -16.0, 0.0), miss));
+    // The same shell aimed 100 m off the hull is a near miss; aimed 400 m off it is someone else's.
+    assert!(shell_will_pass(DVec3::new(1_500.0, 30.0, 100.0), DVec3::new(-800.0, -16.0, 0.0), miss));
+    assert!(!shell_will_pass(DVec3::new(1_500.0, 30.0, 400.0), DVec3::new(-800.0, -16.0, 0.0), miss));
+    // A shell still 4 km out has more than the horizon to fly; one going away never arrives.
+    assert!(!shell_will_pass(DVec3::new(4_000.0, 80.0, 0.0), DVec3::new(-800.0, -16.0, 0.0), miss));
+    assert!(!shell_will_pass(DVec3::new(1_500.0, 30.0, 0.0), DVec3::new(800.0, 16.0, 0.0), miss));
+    // Own speed counts: the path is taken relative to the hull. Bad data is never inbound.
+    assert!(shell_will_pass(DVec3::new(1_000.0, 0.0, 30.0), DVec3::new(-700.0, 0.0, 0.0) - DVec3::new(0.0, 0.0, 10.0), miss));
+    assert!(!shell_will_pass(DVec3::new(f64::NAN, 0.0, 0.0), DVec3::new(-800.0, 0.0, 0.0), miss));
+    // A fixture with no world reads no shells.
+    assert!(!shell_inbound(&Fx::new().env()));
+}
+
+#[test]
 fn slow_stages_run_once_per_period_and_after_a_rewind() {
     assert!(slow_due(None, 0));
     assert!(!slow_due(Some(0), 4), "same 100 ms period");

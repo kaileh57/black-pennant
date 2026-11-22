@@ -611,7 +611,7 @@ impl BpSession {
                     identity: net::join::ClientIdentity { client_id: local_client_id(), name: display_name(services) },
                     game_version: env!("CARGO_PKG_VERSION").to_string(),
                     build: if cfg!(debug_assertions) { net::msg::BuildKind::Dev } else { net::msg::BuildKind::GitHub },
-                    interp: InterpTuning::default(),
+                    interp: crate::link::net::session_interp(),
                     clock,
                     catalogue,
                 };
@@ -1389,7 +1389,7 @@ impl BpSession {
             identity: identity.clone(),
             game_version: env!("CARGO_PKG_VERSION").to_string(),
             build: if cfg!(debug_assertions) { net::msg::BuildKind::Dev } else { net::msg::BuildKind::GitHub },
-            interp: InterpTuning::default(),
+            interp: crate::link::net::session_interp(),
             clock: Arc::new(net::clock::SystemClock::new()),
             catalogue: services.catalogue(),
         };

@@ -253,7 +253,7 @@ fn deg(d: f64) -> f64 { d * PI / 180.0 }
 fn finite2(v: DVec2) -> bool { v.x.is_finite() && v.y.is_finite() }
 
 fn plan(mode: CaptainMode) -> Plan {
-    Plan { mode, course: Course::Keep, speed: Speed::Keep, designated: None, weapons_tight: None, evade: Some(false), keep_range_m: None, emcon: Some(Emcon::Silent), preset: None, strike: false }
+    Plan { mode, course: Course::Keep, speed: Speed::Keep, designated: None, weapons_tight: None, evade: Some(false), keep_range_m: None, emcon: Some(Emcon::Silent), preset: None, strike: false, at_rest: false }
 }
 
 fn side(c: &mut CaptainState, s: &SubSit<'_>) -> f64 {

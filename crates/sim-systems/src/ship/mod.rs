@@ -114,6 +114,13 @@ pub struct ShipOrders {
     pub launches: Vec<LaunchRequest>,
     /// Decoy launchers to fire once.
     pub decoys: Vec<PartSlot>,
+    /// An AI captain has this hull lie still (at anchor, struck, or stopped by its tree): the Helm's own
+    /// evasion stage does not get it under way for an inbound weapon; ordered evasion (`evade`) still does.
+    /// Player orders never set it, so a player's hull at all stop still beams a missile. DECISION (r4, from
+    /// s2): the anchored prize in cutting_out seed 0 had orders of 0 kn and no route yet made 21.5 kn from 30
+    /// to 90 s, beaming missiles on the `helm.evasion` slider's default.
+    #[serde(default)]
+    pub at_rest: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]

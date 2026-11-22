@@ -75,6 +75,10 @@ pub struct Guided {
     pub tested_decoys: Vec<EntityId>,
     /// Previous line-of-sight unit vector for the PN rate estimate.
     pub last_los: DVec3,
+    /// Where the body was when the seeker became `Lost` (the decoy it kept is gone); the body ditches
+    /// [`LOST_CARRY_M`] on from there.
+    #[serde(default)]
+    pub lost_at: Option<DVec3>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -103,7 +107,7 @@ impl GuidanceTable {
         let held = if track.is_none() { None } else { pictures.side(side).and_then(|p| p.get(track)).filter(|t| t.is_live()) };
         let (predicted, predicted_vel, phase) = match held { Some(t) => (t.predict(tick), t.vel, SeekerPhase::Midcourse), None => (DVec3::ZERO, DVec3::ZERO, SeekerPhase::Off) };
         let n = match pn_n { Some(n) if n.is_finite() && n > 0.0 => n.clamp(1.0, 10.0), _ => class_n(def, ctx.tuning) };
-        let g = Guided { body, side, launcher, kind, track, phase, lock: None, predicted, predicted_vel, last_update_tick: tick, pn_n: n, tested_decoys: Vec::new(), last_los: DVec3::ZERO };
+        let g = Guided { body, side, launcher, kind, track, phase, lock: None, predicted, predicted_vel, last_update_tick: tick, pn_n: n, tested_decoys: Vec::new(), last_los: DVec3::ZERO, lost_at: None };
         match self.guided.binary_search_by(|x| x.body.cmp(&body)) { Ok(i) => self.guided[i] = g, Err(i) => self.guided.insert(i, g) }
     }
     pub fn remove(&mut self, body: EntityId) {
@@ -173,6 +177,17 @@ const MISSILE_SEEKER_R_REF_M: f64 = 12_000.0;
 const IR_REF_MW: f64 = 1.0;
 /// Lowest terminal aim height on a surface hull, metres above the sea.
 const MIN_HULL_AIM_M: f64 = 1.0;
+/// A weapon whose seeker is `Lost` runs straight on for this far (1,500 m), then ends its flight
+/// (`Steer::Ditch`). DECISION, b1 and b2 (L522-524 say the seeker keeps a decoy it was seduced by, and nothing
+/// about the weapon once that decoy has gone): `Lost` is final, nothing can steer the body again, and without
+/// an end it flew out its kinematic range. In the reference scene 60 heavy anti-ship missiles (290 m/s, 70 km)
+/// flew straight for up to 241 s, 20 to 40 km past the battle, each a live body, a Friend track on its own side
+/// and a contact for every radar in reach. The carry is a distance, not a time, so that it means the same for
+/// every weapon: anything within 1,500 m behind the decoy is still struck by a weapon that would have struck
+/// it. b1's 5 s carried a 290 m/s missile 1,450 m but a 20.6 m/s torpedo 103 m, short of the 200 m a towed
+/// decoy trails behind its hull (`DecoyTuning::towed_distance_m`), so a torpedo that ran past the decoy ended
+/// before the towing hull.
+pub const LOST_CARRY_M: f64 = 1_500.0;
 
 fn is_guided(kind: MunitionKind) -> bool { matches!(kind, MunitionKind::AntiShipMissile | MunitionKind::Sam | MunitionKind::PdMissile | MunitionKind::Torpedo) }
 
@@ -480,6 +495,10 @@ fn step_body<E: SeekerEnv>(g: &mut Guided, def: &MunitionDef, pos: DVec3, vel: D
         (SeekerPhase::Midcourse | SeekerPhase::Searching, _) => {
             if passed(pos, vel, est) { Steer::Hold } else { let p = intercept(pos, speed, est, g.predicted_vel); aim = p; Steer::Waypoint(p) }
         }
+        (SeekerPhase::Lost, _) => {
+            let from = *g.lost_at.get_or_insert(pos);
+            if !from.is_finite() || (pos - from).length() >= LOST_CARRY_M { Steer::Ditch } else { Steer::Hold }
+        }
         _ => Steer::Hold,
     };
     let los = (aim - pos).normalize_or_zero();
@@ -556,7 +575,7 @@ mod tests {
     }
 
     fn guided(body: EntityId, track: TrackId, n: f64, predicted: DVec3, predicted_vel: DVec3) -> Guided {
-        Guided { body, side: SideId(0), launcher: id(1), kind: MunitionIdx(0), track, phase: SeekerPhase::Midcourse, lock: None, predicted, predicted_vel, last_update_tick: 0, pn_n: n, tested_decoys: vec![], last_los: DVec3::ZERO }
+        Guided { body, side: SideId(0), launcher: id(1), kind: MunitionIdx(0), track, phase: SeekerPhase::Midcourse, lock: None, predicted, predicted_vel, last_update_tick: 0, pn_n: n, tested_decoys: vec![], last_los: DVec3::ZERO, lost_at: None }
     }
 
     #[test]
@@ -772,6 +791,53 @@ mod tests {
         assert_eq!(out.phase, SeekerPhase::Lost);
         assert_eq!(out.lock, None);
         assert_eq!(out.steer, Steer::Hold);
+        // It runs straight on for 1,500 m, in case a hull stands behind the decoy, then ends its flight: it does
+        // not fly out the rest of its 40 km.
+        assert_eq!(g.lost_at, Some(pos));
+        let out = step_body(&mut g, &def, pos + DVec3::new(LOST_CARRY_M - 1.0, 0.0, 0.0), vel, &env);
+        assert_eq!((out.phase, out.steer), (SeekerPhase::Lost, Steer::Hold));
+        // Time alone does not end it (b1's rule was 5 s).
+        env.tick = 100_000;
+        let out = step_body(&mut g, &def, pos + DVec3::new(LOST_CARRY_M - 1.0, 0.0, 0.0), vel, &env);
+        assert_eq!((out.phase, out.steer), (SeekerPhase::Lost, Steer::Hold));
+        let out = step_body(&mut g, &def, pos + DVec3::new(LOST_CARRY_M, 0.0, 0.0), vel, &env);
+        assert_eq!((out.phase, out.steer), (SeekerPhase::Lost, Steer::Ditch), "a weapon with no guidance left ends its flight");
+    }
+
+    #[test]
+    fn a_torpedo_that_passes_a_towed_decoy_still_reaches_the_towing_hull() {
+        // A hull making 6 m/s tows a decoy 200 m astern (`DecoyTuning::towed_distance_m`). A 20.6 m/s torpedo
+        // from dead astern has been seduced by the decoy. It homes on the decoy, runs past it, and its seeker
+        // is Lost (the decoy is behind it, L522: the seeker keeps the result). It must run on: the hull is
+        // 200 m ahead, 13.7 s away at the closing speed, where b1's 5 s carry ended the run after 103 m.
+        let torp = MunitionDef { kind: MunitionKind::Torpedo, seeker: SeekerKind::ActiveAcoustic, seeker_r_ref_m: 1_500.0, speed_mps: 20.6, max_accel: 10.0, cruise_alt_m: -8.0, range_m: 10_000.0, ..ashm() };
+        let tow = TuningTable::default().decoys.towed_distance_m;
+        assert!(tow > 20.6 * 5.0 && tow < LOST_CARRY_M, "the towed distance {tow} m is past a 5 s run and inside the carry");
+        let hull_vel = DVec3::new(6.0, 0.0, 0.0);
+        let mut hull = DVec3::new(600.0, 0.0, 0.0);
+        let mut env = TestEnv { tick: 0, tuning: TuningTable::default(), sigs: vec![], track: None, ages: vec![], seed: 3 };
+        let mut g = guided(id(3), TrackId::NONE, 3.0, hull, hull_vel);
+        g.phase = SeekerPhase::Seduced;
+        g.lock = Some(id(30));
+        g.tested_decoys = vec![id(30)];
+        let (mut pos, mut vel) = (DVec3::new(0.0, -8.0, 0.0), DVec3::new(20.6, 0.0, 0.0));
+        let (mut lost_at, mut hull_miss, mut ditched_at) = (None, f64::INFINITY, None);
+        for tick in 0..(400.0 / DT) as u64 {
+            hull += hull_vel * DT;
+            let decoy = hull - DVec3::new(tow, 3.0, 0.0);
+            env.tick = tick;
+            env.sigs = vec![sig(id(20), 1, SigKind::Vessel, Domain::Surface, hull, hull_vel, 500.0, 8.0), sig(id(30), 1, SigKind::Decoy(DecoyKind::TowedDecoy), Domain::Subsurface, decoy, hull_vel, 0.0, 0.0)];
+            let out = step_body(&mut g, &torp, pos, vel, &env);
+            if out.phase == SeekerPhase::Lost && lost_at.is_none() { lost_at = Some(pos); }
+            if out.steer == Steer::Ditch { ditched_at = Some(pos); break; }
+            fly(&mut pos, &mut vel, out.steer, &torp);
+            hull_miss = hull_miss.min((pos - hull).length());
+        }
+        let lost_at = lost_at.expect("the seeker goes Lost when the torpedo passes the decoy");
+        assert!(hull_miss < 12.0, "the torpedo ran on to the towing hull: closest {hull_miss:.1} m");
+        // With no hull in the way (this harness has no contact), the run ends 1,500 m past the decoy.
+        let ditched_at = ditched_at.expect("a Lost torpedo ends its run");
+        assert!(((ditched_at - lost_at).length() - LOST_CARRY_M).abs() < 1.0, "ditched {:.0} m on", (ditched_at - lost_at).length());
     }
 
     #[test]

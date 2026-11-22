@@ -319,7 +319,10 @@ impl Theatre {
         // Interrupt candidates, most urgent first.
         let mut cands: Vec<Interrupt> = Vec::new();
         if let Some(f) = self.blocking_forced() { cands.push(Interrupt::ForcedOperation(f)); }
-        if ev.iter().any(|e| matches!(e, TheatreEvent::ActLost { .. } | TheatreEvent::ActWon { .. } | TheatreEvent::OpenTheatreOpened)) { cands.push(Interrupt::ActEnded); }
+        if ev.iter().any(|e| matches!(e, TheatreEvent::ActLost { .. } | TheatreEvent::ActWon { .. } | TheatreEvent::OpenTheatreOpened)) {
+            let won = !ev.iter().any(|e| matches!(e, TheatreEvent::ActLost { .. }));
+            cands.push(Interrupt::ActEnded { won });
+        }
         for e in &ev {
             if let TheatreEvent::HunterGroupSortied { arrives_hour, .. } = e { cands.push(Interrupt::HunterGroupWarning { hours: arrives_hour.saturating_sub(hour).min(u32::MAX as u64) as u32 }); }
         }
@@ -444,6 +447,7 @@ impl Theatre {
         let mut aa = AfterAction {
             operation: result.operation.clone(), outcome: result.outcome, stats: result.stats.clone(), payout: Payout::default(), tallies: Vec::new(), kills_by_method: Vec::new(), queued_cards: Vec::new(),
             alert_changes: Vec::new(), clock_pushback_days: 0.0, belief: result.belief.clone(), ghosts: Vec::new(), repair_cost: Vec::new(), hulls_lost: Vec::new(), events: Vec::new(),
+            end_reason: result.end_reason,
         };
         // An aborted sortie never happened: the theatre is back at the chart table, the offer still stands.
         if result.outcome == Outcome::Aborted { self.active = None; return aa; }

@@ -25,8 +25,8 @@ pub(crate) enum SmokePhase { Settling, Loading, Running, Done }
 #[derive(Clone, Debug)]
 pub(crate) struct SmokeSortie { pub phase: SmokePhase, pub started_real_s: f64, pub start_time_s: f64 }
 
-/// True when `--smoke-sortie` is on the command line.
-pub(crate) fn wanted() -> bool { std::env::args().any(|a| a == "--smoke-sortie") }
+/// True when `--smoke-sortie` is among the user arguments (`app::CommandLine`, beside `--smoke`).
+pub(crate) fn wanted() -> bool { crate::app::user_command_line().smoke_sortie }
 
 /// Lines of a log that are errors as the release workflow counts them.
 pub(crate) fn error_lines(log: &str) -> usize {

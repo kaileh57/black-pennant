@@ -76,6 +76,10 @@ pub enum HoldReason {
     /// Emission control keeps the needed fire-control radar silent (L507).
     EmconSilent,
     NoSolution,
+    /// An anti-ship missile offered a shore site: its seeker finds a ship against the sea, not a site against
+    /// the land behind it (coordinator ruling, 22 November 2026; L483 and L523 do not mention sites). Appended
+    /// last so the earlier variants keep their wire indices.
+    ShoreSite,
 }
 
 /// Why a mount is firing (every shot carries a reason, L353).

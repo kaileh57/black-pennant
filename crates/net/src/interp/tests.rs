@@ -419,3 +419,37 @@ fn drag_constants_come_from_the_catalogue_band_rows() {
         assert_eq!(k, cat.band(b).drag_k);
     }
 }
+
+/// A sampled snapshot's live tracks describe its own tick: the base frame's tracks are carried from the base
+/// frame's tick by their velocity (last-known marks stay). Before, they kept the base frame's positions under
+/// the sampled tick, so the client's carry from that tick fell short by up to a frame interval.
+#[test]
+fn sampled_tracks_describe_the_sampled_tick() {
+    use sim_systems::protocol::snapshot::TrackView;
+    let mut buf = SnapshotBuffer::new(InterpTuning::default());
+    buf.on_event(&reveal(eid(1), 0));
+    let pace = pacing(TimeRate::X1, false);
+    let mut t = sim_systems::tracks::blank_track(TrackId(3), SideId(0), EntityId::NONE, content::enums::Domain::Weapon, 900);
+    t.vel = DVec3::new(0.0, 0.0, 600.0);
+    let base = sim_systems::sim::snapshot::track_view(&t, None, 900, &content::tuning::TrackTuning::default());
+    let track = |pos: DVec3, last_known: bool| TrackView { pos, last_known, ..base.clone() };
+    for k in 1..60u64 {
+        let tick = 1000 + k * 2;
+        let at = DVec3::new(0.0, 0.0, 600.0 * (tick - 900) as f64 / 60.0);
+        let mut f = frame(k as u32, tick, pace.clone(), vec![vessel(eid(1), DVec3::ZERO, DVec3::ZERO, Relevance::Own)], vec![]);
+        f.snapshot.tracks = vec![track(at, false), TrackView { id: TrackId(4), ..track(DVec3::new(5.0, 0.0, 5.0), true) }];
+        buf.push(f, Duration::from_secs_f64(k as f64 / 30.0));
+    }
+    let mut odd = 0;
+    for i in 0..30 {
+        let Some(f) = buf.sample(Duration::from_secs_f64(1.5 + i as f64 / 97.0)) else { continue };
+        let tick = f.snapshot.tick;
+        if tick % 2 == 1 { odd += 1; }
+        let live = f.snapshot.tracks.iter().find(|t| t.id == TrackId(3)).expect("the live track");
+        let want = 600.0 * (tick - 900) as f64 / 60.0;
+        assert!((live.pos.z - want).abs() < 1e-6, "tick {tick}: track at {} m, its prediction {want} m", live.pos.z);
+        let mark = f.snapshot.tracks.iter().find(|t| t.id == TrackId(4)).expect("the mark");
+        assert_eq!(mark.pos, DVec3::new(5.0, 0.0, 5.0));
+    }
+    assert!(odd > 0, "some samples fall between frames");
+}

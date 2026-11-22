@@ -165,6 +165,17 @@ pub struct MotionFit {
     pub along_sum: f64,
     #[serde(default)]
     pub cross_sum: f64,
+    /// The sensor whose fix weighed most in the latest fused fix (the default until the track filter names one,
+    /// [`MotionFit::seen_by`]). The filter's initiation pass reads it: single-fix tracks are one object's only
+    /// when one sensor reported them all.
+    #[serde(default)]
+    pub sensor: SensorRef,
+    /// World (x, z) and per-axis variance of the first fix since the fit last restarted (at tick `since`). The
+    /// track filter compares the latest fix with it to tell how far the object has really moved in that time.
+    #[serde(default)]
+    pub first: DVec2,
+    #[serde(default)]
+    pub first_var: f64,
 }
 
 /// How one fix's error is shaped: the unit line of sight from its sensor (world x, z) and its variances along
@@ -208,10 +219,17 @@ impl MotionFit {
     /// A fit started from one fix.
     pub fn start(x: f64, z: f64, var: f64, tick: u64, shape: Option<FixShape>) -> Option<Self> {
         if !(x.is_finite() && z.is_finite() && var.is_finite() && var > 0.0) { return None; }
-        let mut f = MotionFit { tick, origin: DVec2::new(x, z), fixes: 1, since: tick, fits: [LineFit::default(); 2], check_from: 0, check_pos: DVec2::ZERO, check_vel: DVec2::ZERO, check_var: 0.0, accel2: MANOEUVRE_PRIOR_MPS2 * MANOEUVRE_PRIOR_MPS2, los_sum: DVec2::ZERO, along_sum: 0.0, cross_sum: 0.0 };
+        let mut f = MotionFit { tick, origin: DVec2::new(x, z), fixes: 1, since: tick, fits: [LineFit::default(); 2], check_from: 0, check_pos: DVec2::ZERO, check_vel: DVec2::ZERO, check_var: 0.0, accel2: MANOEUVRE_PRIOR_MPS2 * MANOEUVRE_PRIOR_MPS2, los_sum: DVec2::ZERO, along_sum: 0.0, cross_sum: 0.0, sensor: SensorRef::default(), first: DVec2::new(x, z), first_var: var };
         for l in &mut f.fits { l.add_at_origin(var); }
         f.add_shape(var, shape);
         Some(f)
+    }
+    /// The same fit with its latest fix credited to `sensor`.
+    pub fn seen_by(mut self, sensor: SensorRef) -> Self { self.sensor = sensor; self }
+    /// Seconds from the first fix since the last restart to the latest, the distance between the two, and the
+    /// 1-sigma error of that distance per axis given the latest fix's variance `var`.
+    pub fn moved(&self, var: f64) -> (f64, f64, f64) {
+        (self.tick.saturating_sub(self.since) as f64 * TICK_S, (self.origin - self.first).length(), libm::sqrt((self.first_var + var).max(0.0)))
     }
     /// Take one fused ranged fix at world (x, z) with per-axis variance `var` at `tick`. A fix older than the
     /// latest is ignored; a gap over [`FIT_RESET_GAP_S`] restarts the fit. Returns the updated fit (`None` for

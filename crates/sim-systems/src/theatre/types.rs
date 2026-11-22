@@ -54,7 +54,11 @@ pub struct OperationOffer { pub operation: OperationId, pub kind: OperationKind,
 
 /// Why theatre time stopped (L741: time runs in 1-hour steps until the next decision or interrupt).
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum Interrupt { Arrived(TheatreNodeId), RefitDone, WaitDone, OperationOffered(OperationId), ForcedOperation(OperationId), HunterGroupWarning { hours: u32 }, CardArriving { region: RegionId, card: CardId, hours: u32 }, ClockLow { days_left: f64 }, ActEnded, HullReady(PlayerSlot), Paused }
+pub enum Interrupt { Arrived(TheatreNodeId), RefitDone, WaitDone, OperationOffered(OperationId), ForcedOperation(OperationId), HunterGroupWarning { hours: u32 }, CardArriving { region: RegionId, card: CardId, hours: u32 }, ClockLow { days_left: f64 },
+    /// The act ended: `won` false when its clock ran out (`TheatreEvent::ActLost`), true for a win or the open
+    /// theatre opening. An act lost in this build's last act starts again in retreat, which the banner says.
+    ActEnded { won: bool },
+    HullReady(PlayerSlot), Paused }
 
 /// Why regional Alert moved (L749).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -195,6 +199,10 @@ pub struct AfterAction {
     pub repair_cost: Vec<(PlayerSlot, u32)>,
     pub hulls_lost: Vec<PlayerSlot>,
     pub events: Vec<TheatreEvent>,
+    /// Why the sortie ended ([`SortieResult::end_reason`](crate::protocol::config::SortieResult::end_reason)),
+    /// for the after-action report's Result table. Last field: co-op sends the report by bincode.
+    #[serde(default)]
+    pub end_reason: Option<crate::protocol::config::EndReason>,
 }
 
 /// One row of the local operation log (L80, L881): user data folder only, never sent.

@@ -207,17 +207,24 @@ fn engineer(b: &BoardIn<'_>) -> (Msg, Msg, Msg, Option<Msg>) {
 
 // ---- Sensors ----
 
+/// The hull is inside the emission controller's under-fire window (`crate::emcon`: shellfire is a weapon
+/// inbound, for [`crate::emcon::SELF_DEFENCE_S`] after the last shell).
+fn under_fire(e: &crate::emcon::EmconState, tick: u64) -> bool {
+    e.under_fire_tick.is_some_and(|t| t <= tick && (tick - t) as f64 <= crate::emcon::SELF_DEFENCE_S * sim_core::TICK_HZ as f64)
+}
+
 /// The emission reason, rebuilt from the phase, the setting and the picture.
 fn emcon_reason(b: &BoardIn<'_>) -> EmconReason {
     let e = &b.stages.emcon;
     match (b.settings.emcon, e.phase) {
+        (Emcon::Silent, EmconPhase::PointDefenceOnly) if e.self_defence_only && under_fire(e, b.tick) => EmconReason::SelfDefenceUnderFire,
         (_, EmconPhase::PointDefenceOnly) => EmconReason::PointDefenceException,
         (Emcon::Silent, _) => EmconReason::SilentOrdered,
         (Emcon::Active, _) => EmconReason::ActiveOrdered,
         (Emcon::Burst, EmconPhase::Quiet) => EmconReason::PassiveNoTrigger,
         (Emcon::Burst, EmconPhase::Continuous) => EmconReason::HoldingLockWeaponsInFlight,
         (Emcon::Burst, EmconPhase::Bursting) => {
-            if inbound_threat(b.tracks, b.own_pos).is_some() { return EmconReason::BurstWeaponInbound; }
+            if inbound_threat(b.tracks, b.own_pos).is_some() || under_fire(e, b.tick) { return EmconReason::BurstWeaponInbound; }
             let near = b.tracks.iter().filter(|t| t.is_live() && t.domain != Domain::Weapon && t.stance >= Stance::Suspect)
                 .map(|t| (t, finite((t.pos - b.own_pos).length()))).filter(|(_, r)| *r <= b.trigger_range_m)
                 .min_by(|a, b| a.1.total_cmp(&b.1).then(a.0.id.cmp(&b.0.id)));

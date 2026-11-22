@@ -245,20 +245,25 @@ func _apply_spacing() -> void:
 		return
 	_set_card_tight(false)
 	Ui.set_separation(_footer, 2)
-	Ui.set_margins(_finish_margin, 4)
+	# 32 px inside the panel's own 8: the 40 the finish panel had as a docked panel.
+	Ui.set_margins(_finish_margin, 5)
 	Ui.set_separation(_finish_column, 3)
 	Ui.set_separation(_actions, 2)
 	Ui.set_separation(_actions_row, 2)
 	Ui.set_separation(_log_row, 3)
 
 
-## The card's padding: the normal 16 px margins and 12 px between its lines, or 8 and 8 where the compact
-## dock leaves it only a short band between the gauges and the view.
+## The card's padding: 24 px margins inside the panel's own 8 (32 in all) and 12 px between its lines, or
+## 16 and 8 (24 in all) where the compact dock leaves it only a short band between the gauges and the view.
+## The card and the finish panel are `TooltipPanel`s, the theme's popup look (surface.raised with a 1 px
+## rule.divider frame), so they stand off the docked panels (surface.base) they float over. The engine
+## ignores `PopupPanel` as a variation of a PanelContainer (an engine class, not a declared variation),
+## which drew both as docked panels with no edge.
 func _set_card_tight(tight: bool) -> void:
 	if Kit.autoload(&"Ui") == null or tight == _card_tight and _card_margin.has_theme_constant_override(&"margin_left"):
 		return
 	_card_tight = tight
-	Ui.set_margins(_card_margin, 1 if tight else 3)
+	Ui.set_margins(_card_margin, 3 if tight else 4)
 	Ui.set_separation(_card_column, 1 if tight else 2)
 
 

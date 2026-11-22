@@ -230,6 +230,7 @@ pub fn summary_dict(summary: &SortieSummary) -> VarDictionary {
         "objectives" => objectives,
         "stats" => stats_dict(&summary.stats),
         "tip" => summary.tip.as_ref().map_or_else(empty_msg, msg_dict),
+        "end_reason" => crate::campaign::end_reason_msg(summary.end_reason).as_ref().map_or_else(empty_msg, msg_dict),
     }
 }
 

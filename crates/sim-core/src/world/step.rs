@@ -127,6 +127,11 @@ pub(super) fn step(w: &mut World) {
     for id in doomed { w.free_entity(id); }
 
     // ---- 2. Time and the sea of this tick ----
+    if let Some(blend) = w.wave_blend {
+        let (set, done) = blend.at(tick.0, &tuning.waves);
+        w.waves = set;
+        if done { w.wave_blend = None; }
+    }
     // The context owns nothing of the world: waves and weather are copies and the terrain is lent for the tick.
     let waves = w.waves;
     let weather = w.weather;

@@ -263,7 +263,7 @@ pub(crate) fn interrupt_dict(i: &Interrupt, n: &Names) -> VarDictionary {
         Interrupt::CardArriving { region, card, hours } => (none(), none(), *hours as i64, -1, sn(region.as_str()), sn(card.as_str())),
         Interrupt::ClockLow { days_left } => (none(), none(), (f(*days_left).max(0.0) * 24.0).round() as i64, -1, none(), none()),
         Interrupt::HullReady(p) => (none(), none(), 0, p.0 as i64, none(), none()),
-        Interrupt::RefitDone | Interrupt::WaitDone | Interrupt::ActEnded | Interrupt::Paused => (none(), none(), 0, -1, none(), none()),
+        Interrupt::RefitDone | Interrupt::WaitDone | Interrupt::ActEnded { .. } | Interrupt::Paused => (none(), none(), 0, -1, none(), none()),
     };
     d! {
         "kind" => words::interrupt_kind(i),
@@ -345,6 +345,7 @@ pub(crate) fn after_action_dict(a: &AfterAction, start_hour: u64, n: &Names) -> 
         "repair_cost" => arr(a.repair_cost.iter().map(|(p, s)| d! { "player" => p.0 as i64, "salvage" => *s as i64 })),
         "hulls_lost" => lost,
         "events" => events,
+        "end_reason" => words::end_reason_msg(a.end_reason).as_ref().map_or_else(crate::convert::empty_msg, msg_dict),
     }
 }
 

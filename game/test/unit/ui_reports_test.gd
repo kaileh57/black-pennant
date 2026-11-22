@@ -438,6 +438,17 @@ func _test_after_action() -> void:
 	_check(rows.size() == 4, "wrecks, prizes, repairs, net: %d" % rows.size())
 	_check(String(rows[-1][1]).contains("60") and String(rows[-1][1]).ends_with(TranslationServer.translate(&"after_action.payout.net_loss").get_slice("}", 1)), "net shortfall after repairs: " + String(rows[-1][1]))
 	_check(AfterAction.operation_title(&"op.act1.prize_capture") == "Prize capture", "operation title from its name key")
+	# How the sortie ended: the report's reason; without one, the primary objective's last text; else no row.
+	var ended := TranslationServer.translate(&"after_action.result.ended")
+	var objective_term := TranslationServer.translate(&"after_action.result.objective")
+	var last: Array[Dictionary] = [{"id": 1, "ghost": true, "text": {"key": &"objective.ghost.no_kills", "args": []}}, {"id": 0, "ghost": false, "text": {"key": &"objective.end.hulls_disabled", "args": []}}]
+	var why_rows: Array = AfterAction.end_rows({"end_reason": {"key": &"campaign.end.withdrew", "args": []}}, last)
+	_check(why_rows.size() == 1 and why_rows[0][0] == ended and why_rows[0][1] == TranslationServer.translate(&"campaign.end.withdrew"), "the report's reason is the row: %s" % [why_rows])
+	why_rows = AfterAction.end_rows({}, last)
+	_check(why_rows.size() == 1 and why_rows[0][0] == objective_term and String(why_rows[0][1]).begins_with("Every ship was sunk or dead in the water"), "without a reason the primary objective's last text stands in: %s" % [why_rows])
+	_check(AfterAction.end_rows({}, Kit_dicts([])).is_empty() and AfterAction.end_rows({"end_reason": {}}, Kit_dicts([])).is_empty(), "neither: no row")
+	for key: StringName in [&"campaign.end.objective_done", &"campaign.end.objective_failed", &"campaign.end.hulls_lost", &"campaign.end.hulls_disabled", &"campaign.end.time_limit", &"campaign.end.withdrew"]:
+		_check(TranslationServer.translate(key) != key, "%s has English" % key)
 	_check(AfterAction.operation_title(&"op.unknown") == TranslationServer.translate(&"after_action.title.plain"), "unknown operation gets the plain title")
 	_check(AfterAction.operation_title(&"") == TranslationServer.translate(&"after_action.title.plain"), "no operation gets the plain title")
 	var screen: Control = (load("res://ui/screens/after_action.tscn") as PackedScene).instantiate()
@@ -488,6 +499,9 @@ func _test_sortie_end() -> void:
 			never = r[1] == TranslationServer.translate(&"sortie_end.stat.never")
 	_check(never, "no detection reads never")
 	_check(SortieEnd.lead_text({}) == TranslationServer.translate(&"sortie_end.lead.no_enemy"), "no enemy tonnage")
+	var end_rows: Array = SortieEnd.end_rows({"end_reason": {"key": &"campaign.end.time_limit", "args": []}})
+	_check(end_rows.size() == 1 and end_rows[0][0] == TranslationServer.translate(&"sortie_end.ended") and end_rows[0][1] == TranslationServer.translate(&"campaign.end.time_limit"), "the summary says how the sortie ended: %s" % [end_rows])
+	_check(SortieEnd.end_rows({}).is_empty(), "no reason, no row")
 	_check(SortieEnd.lead_text({"enemy_tonnage_total_t": 100.0, "enemy_tonnage_disabled_t": 250.0}).contains("100%"), "disabled clamps to the total")
 	var screen: Control = (load("res://ui/screens/sortie_end.tscn") as PackedScene).instantiate()
 	root.add_child(screen)

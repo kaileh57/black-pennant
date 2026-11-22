@@ -263,6 +263,9 @@ pub struct ServerSession {
     pub(crate) over_reported: bool,
     /// Simulation steps run since `start_sortie` (the tick-p95 warm-up guard, see [`MIN_P95_STEPS`]).
     pub(crate) sortie_steps: u64,
+    /// Measurement only ([`ServerSession::enable_event_census`]): per recipient slot, channel id and event
+    /// variant, the events routed and the bytes each would cost alone in a batch.
+    pub(crate) event_census: Option<BTreeMap<(PlayerSlot, u8, String), (u64, u64)>>,
 }
 
 /// What one client message asks for.
@@ -282,7 +285,7 @@ impl ServerSession {
             entitlements: Entitlements::default(), load, saturation: SaturationDetector::new(), log: ConnectionLog::default(), replay: None, last_update: now,
             tick_accumulator: 0.0, last_snapshot: now, last_panel: now, pending_host: Vec::new(), held_events: Vec::new(), accepted: BTreeMap::new(),
             exterior_of: BTreeMap::new(), seq_base: BTreeMap::new(), shut_down: false, last_quality: now, lobby_dirty: true, last_lobby_sent: now,
-            last_lobby_check: now, panel_dirty: true, can_start_prev: false, lobby_print: None, pause_acc: 0.0, synthetic_debt_s: 0.0, backlog: 0, over_reported: false, sortie_steps: 0,
+            last_lobby_check: now, panel_dirty: true, can_start_prev: false, lobby_print: None, pause_acc: 0.0, synthetic_debt_s: 0.0, backlog: 0, over_reported: false, sortie_steps: 0, event_census: None,
         }
     }
     /// Add a backend (in-memory for the host's own client; UDP when the player hosts). Returns its index.
@@ -870,6 +873,16 @@ impl ServerSession {
             for ch in [Channel::Events, Channel::Entity, Channel::Projectile] {
                 let Some(batch) = r.batch(ch) else { continue };
                 if batch.events.is_empty() { continue; }
+                if let (Some(census), Some(slot)) = (self.event_census.as_mut(), self.peers.get(&conn).and_then(|p| p.slot)) {
+                    for e in &batch.events {
+                        let name = format!("{:?}", e.event);
+                        let name = name.split(|c: char| !c.is_alphanumeric()).next().unwrap_or_default().to_string();
+                        let n = codec::encode_events(&EventBatch { events: vec![e.clone()] }).len() as u64;
+                        let c = census.entry((slot, ch.id(), name)).or_default();
+                        c.0 += 1;
+                        c.1 += n;
+                    }
+                }
                 for bytes in split_batches(&batch.events) {
                     if let Some(p) = self.peers.get_mut(&conn) { if let Some(c) = p.capture.as_mut() { c.push(tick, ch, &bytes); } }
                     self.queue(conn, ch, bytes);
@@ -1252,7 +1265,7 @@ impl ServerSession {
         let sim = self.sim.take()?;
         let summary = match sim.result() {
             Some(result) => sim_systems::objectives::summary(result, sim.config()),
-            None => sim_systems::protocol::config::SortieSummary { outcome: Outcome::Aborted, winner: None, duration_ticks: sim.tick().0, objectives: Vec::new(), stats: Default::default(), tip: None },
+            None => sim_systems::protocol::config::SortieSummary { outcome: Outcome::Aborted, winner: None, duration_ticks: sim.tick().0, objectives: Vec::new(), stats: Default::default(), tip: None, end_reason: None },
         };
         self.broadcast(ServerMsg::SortieClosed { summary: Box::new(summary) });
         for p in self.peers.values_mut() { p.loaded = false; p.loading_since = None; p.loaded_report = false; }
@@ -1323,6 +1336,12 @@ impl ServerSession {
     }
     pub fn connection_panel(&self) -> ConnectionPanel { self.panel_at(self.clock.now()) }
     pub fn log_mut(&mut self) -> &mut ConnectionLog { &mut self.log }
+    /// Measurement only: count routed events by recipient, channel and variant from now on.
+    pub fn enable_event_census(&mut self) { self.event_census.get_or_insert_with(BTreeMap::new); }
+    /// The event census so far (empty unless enabled): (slot, channel id, variant) to (events, lone bytes).
+    pub fn event_census(&self) -> Vec<((PlayerSlot, u8, String), (u64, u64))> {
+        self.event_census.as_ref().map(|c| c.iter().map(|(k, v)| (k.clone(), *v)).collect()).unwrap_or_default()
+    }
     /// Gate counters: bytes sent per client by channel and frame stats since start. Unit: `net-server-session`.
     pub fn traffic(&self) -> Vec<(PlayerSlot, crate::session::server::Traffic)> {
         let mut out: Vec<(PlayerSlot, Traffic)> = self.peers.values().filter_map(|p| {

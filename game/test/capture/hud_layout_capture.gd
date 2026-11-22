@@ -175,9 +175,10 @@ func _course_ahead() -> void:
 ## Put the HUD into a state from a clean bridge view.
 func _enter(hud: Node, state: String) -> void:
 	hud.call(&"close_station")
+	# Any state ending in _s2 is taken at UI scale 200%, in every mode.
+	Ui.call(&"_apply_scale", 2.0 if state.ends_with("_s2") else _scale)
+	state = state.trim_suffix("_s2")
 	if _mode == "splash":
-		Ui.call(&"_apply_scale", 2.0 if state.ends_with("_s2") else _scale)
-		state = state.trim_suffix("_s2")
 		var tune := _dock.get(&"_tune") as Button
 		var bar := _dock.get_node_or_null(^"SplashUi/Bar/Panel") as Control
 		if tune != null and (bar == null or not bar.is_ancestor_of(tune)):

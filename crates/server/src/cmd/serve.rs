@@ -137,7 +137,10 @@ pub fn lobby_setup(config: &ServerConfig, seed: u64) -> Result<LobbySetup, CliEr
     if pvp { ruleset.luau = false; }
     let skirmish = (config.mode == GameMode::Skirmish).then(|| {
         let cap = if ruleset.tonnage_cap_t.is_finite() { ruleset.tonnage_cap_t } else { f64::INFINITY };
-        let act = Act::ALL.iter().copied().find(|a| cap <= a.hull_cap_t()).unwrap_or(Act::Act4);
+        // The act whose hull cap fits the ruleset, but never past the last act this build ships, whose enemy
+        // classes and starters are the only ones the build plays (DECISION, r4, from c4).
+        let last = content::campaign::load::shipped_campaign().acts.iter().map(|a| a.act).max().unwrap_or(Act::Act1);
+        let act = Act::ALL.iter().copied().find(|a| cap <= a.hull_cap_t()).unwrap_or(Act::Act4).min(last);
         sim_systems::modes::SkirmishOptions { template: pick(seed, 3, &SKIRMISH_TEMPLATES), act, enemy_per_player: 1, difficulty: config.settings.difficulty }
     });
     Ok(LobbySetup {

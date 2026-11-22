@@ -9,6 +9,7 @@ use content::enums::Act;
 use content::ids::{AceId, CardId, ClassId, OperationId, PartId, PlayerSlot, RegionId, TextKey, TheatreNodeId};
 use content::part::PartTag;
 use content::save::{IntelSpend, TheatreAction};
+use sim_systems::objectives::{EndReason, PLAYER_DISABLED_DEFEAT_S};
 use sim_systems::protocol::{Msg, MsgArg, Unit};
 use sim_systems::theatre::{AlertCause, Interrupt, TheatreEvent, TheatreReject};
 
@@ -98,8 +99,10 @@ pub(crate) fn interrupt_msg(i: &Interrupt, n: &Names) -> Msg {
         Interrupt::HunterGroupWarning { hours: h } => m("campaign.interrupt.hunter_group_warning").arg(hours(*h as u64)),
         Interrupt::CardArriving { region, card, hours: h } => m("campaign.interrupt.card_arriving").arg(n.card(card)).arg(n.region(region)).arg(hours(*h as u64)),
         Interrupt::ClockLow { days_left } => m("campaign.interrupt.clock_low").num(finite(*days_left).max(0.0), Unit::None),
-        Interrupt::ActEnded => match n.act.filter(|a| last_shipped_act(n.campaign, *a)) {
-            Some(a) => m("campaign.interrupt.build_end").arg(act_number(a)),
+        // The last act this build ships: a win stops the clock, a loss starts it again in retreat (DECISION, r4).
+        Interrupt::ActEnded { won } => match n.act.filter(|a| last_shipped_act(n.campaign, *a)) {
+            Some(a) if *won => m("campaign.interrupt.build_end").arg(act_number(a)),
+            Some(a) => m("campaign.interrupt.build_end_lost").arg(act_number(a)),
             None => m("campaign.interrupt.act_ended"),
         },
         Interrupt::HullReady(p) => m("campaign.interrupt.hull_ready").arg(n.player(*p)),
@@ -118,7 +121,7 @@ pub(crate) fn interrupt_kind(i: &Interrupt) -> i64 {
         Interrupt::HunterGroupWarning { .. } => 5,
         Interrupt::CardArriving { .. } => 6,
         Interrupt::ClockLow { .. } => 7,
-        Interrupt::ActEnded => 8,
+        Interrupt::ActEnded { .. } => 8,
         Interrupt::HullReady(_) => 9,
         Interrupt::Paused => 10,
     }
@@ -382,6 +385,28 @@ pub(crate) fn reward_msg(r: &Reward, n: &Names) -> Msg {
     }
 }
 
+/// Why a sortie ended, in plain words, for the after-action Result table and the sortie-end summary. Every
+/// `EndReason` has its own sentence: the match has no catch-all, so a new reason fails to build until it is
+/// worded. `None` (a mode without end rules, or a sortie ended from outside) has no sentence.
+///
+/// The dictionaries do not show it yet: `SortieResult`, `SortieSummary` and `AfterAction` do not carry the
+/// reason (those fields and their initialisers are outside this unit's files). Once they do, the
+/// after-action and summary dictionaries put this under `end_reason`, which both screens already draw.
+pub(crate) fn end_reason_msg(r: Option<EndReason>) -> Option<Msg> {
+    let r = r?;
+    Some(match r {
+        EndReason::ObjectiveDone => m("campaign.end.objective_done"),
+        EndReason::ObjectiveFailed => m("campaign.end.objective_failed"),
+        EndReason::PlayerHullsLost => m("campaign.end.hulls_lost"),
+        EndReason::PlayerHullsDisabled => m("campaign.end.hulls_disabled").num(PLAYER_DISABLED_DEFEAT_S, Unit::Seconds),
+        EndReason::TimeLimit => m("campaign.end.time_limit"),
+        EndReason::Withdrew => m("campaign.end.withdrew"),
+    })
+}
+
+/// Every `EndReason`, for the coverage tests.
+pub(crate) const END_REASONS: [EndReason; 6] = [EndReason::ObjectiveDone, EndReason::ObjectiveFailed, EndReason::PlayerHullsLost, EndReason::PlayerHullsDisabled, EndReason::TimeLimit, EndReason::Withdrew];
+
 // ---- Keys ----
 
 /// Keys of messages composed in the facade itself (transit preview, saves, new campaign, sorties).
@@ -395,7 +420,7 @@ pub(crate) const FACADE_KEYS: &[&str] = &[
     "campaign.new.bad_difficulty", "campaign.new.bad_starter", "campaign.new.busy", "campaign.new.save_failed",
     "campaign.save.write_failed", "campaign.save.not_found", "campaign.save.outside", "campaign.save.forked",
     "campaign.save.other_campaign", "campaign.save.suspend_failed", "campaign.save.not_allowed", "campaign.save.copy_refused",
-    "campaign.save.unreadable", "campaign.threat.unknown",
+    "campaign.save.unreadable", "campaign.save.other_build", "campaign.save.stale_suspend", "campaign.save.later_act", "campaign.threat.unknown",
 ];
 
 /// Every `campaign.*` key this unit emits.
@@ -404,7 +429,7 @@ pub(crate) fn text_keys() -> Vec<String> {
     for r in [TheatreReject::NotHost, TheatreReject::NotEnoughSalvage, TheatreReject::NotEnoughIntel, TheatreReject::NotAtCove, TheatreReject::HullNotReady, TheatreReject::OperationNotOffered, TheatreReject::ForcedOperationPending, TheatreReject::IronmanLocked, TheatreReject::OverTonnageCap, TheatreReject::InvalidBlueprint, TheatreReject::NoSuchProposal, TheatreReject::UnknownTarget, TheatreReject::CampaignOver] {
         keys.push(reject_msg(r).key.as_str().to_string());
     }
-    for k in ["arrived", "refit_done", "wait_done", "operation_offered", "forced_operation", "hunter_group_warning", "card_arriving", "clock_low", "act_ended", "build_end", "hull_ready", "paused"] {
+    for k in ["arrived", "refit_done", "wait_done", "operation_offered", "forced_operation", "hunter_group_warning", "card_arriving", "clock_low", "act_ended", "build_end", "build_end_lost", "hull_ready", "paused"] {
         keys.push(format!("campaign.interrupt.{k}"));
     }
     for k in EVENT_KINDS { keys.push(format!("campaign.event.{k}")); }
@@ -417,5 +442,6 @@ pub(crate) fn text_keys() -> Vec<String> {
     for k in ["draft_limit", "rcs_limit", "range", "passengers", "requires", "min_speed"] { keys.push(format!("campaign.tag.{k}")); }
     for k in ["no_radar_emissions", "no_losses", "never_detected", "capture_the_ace", "no_kills", "under_time", "no_hull_damage"] { keys.push(format!("campaign.ghost.{k}")); }
     for k in ["intel", "blueprint", "salvage"] { keys.push(format!("campaign.reward.{k}")); }
+    for r in END_REASONS { if let Some(msg) = end_reason_msg(Some(r)) { keys.push(msg.key.as_str().to_string()); } }
     keys
 }

@@ -515,3 +515,29 @@ fn a_resumed_sortie_shows_its_own_hull_takes_commands_and_suspends_again() {
         assert!(sim.command_seq_floor(PlayerSlot(0)) >= 1 + 2 * round as u32, "the restored Sim remembers the old numbers");
     }
 }
+
+#[test]
+fn the_interpolation_delay_follows_the_vessel_rate() {
+    let delay = |t: InterpTuning| t.interval_s * t.delay_intervals;
+    // 30 Hz keeps L914's 4 intervals (133 ms); fallback 1's 20 Hz is 3 x 50 ms = 150 ms (L935).
+    assert_eq!(interp_for_vessel_hz(30), InterpTuning::default());
+    assert_eq!(interp_for_vessel_hz(60), InterpTuning::default());
+    assert_eq!(interp_for_vessel_hz(20), InterpTuning::fallback_20hz());
+    assert!((delay(interp_for_vessel_hz(20)) - 0.150).abs() < 1e-9);
+    assert!((delay(interp_for_vessel_hz(10)) - 0.300).abs() < 1e-9);
+    assert_eq!(interp_for_vessel_hz(0).interval_s, 1.0);
+    // The host sends other vessels at 20 Hz, so every link built for it waits 150 ms, not 30 Hz's 133 ms.
+    let rates = ServerOptions::new("0.0.0-test", GameMode::Sandbox).rates;
+    assert_eq!(rates.other_vessel_hz, 20);
+    assert!((delay(session_interp()) - 0.150).abs() < 1e-9);
+    assert!(session_interp().interval_s * rates.other_vessel_hz as f64 - 1.0 < 1e-9);
+}
+
+#[test]
+fn a_local_session_interpolates_at_the_hosts_vessel_rate() {
+    let clock = ManualClock::new();
+    // The caller's tuning is the 30 Hz default; the loopback follows its own server's 20 Hz vessels.
+    let opts = options(&clock, 0x41, "Solo");
+    let (_host, link) = loopback(&opts, sandbox_setup(), 1_000, false, testkit::pool(), temp_dir("interp"), &[packed_starter()]);
+    assert_eq!(*link.session.buffer().tuning(), InterpTuning::fallback_20hz());
+}

@@ -64,9 +64,9 @@ const CRASH_FLUSH_MAX: std::time::Duration = std::time::Duration::from_secs(2);
 
 /// Parsed user arguments (after `--` on the command line).
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct CommandLine { pub smoke: bool, pub benchmark: bool, pub replay: String, pub join: String, pub scripted: String, pub capture: String, pub safe_mode: bool }
+pub struct CommandLine { pub smoke: bool, pub smoke_sortie: bool, pub benchmark: bool, pub replay: String, pub join: String, pub scripted: String, pub capture: String, pub safe_mode: bool }
 
-/// `--smoke`, `--benchmark`, `--safe-mode`, and `--replay`, `--join`, `--scripted`, `--capture` with a value
+/// `--smoke`, `--smoke-sortie`, `--benchmark`, `--safe-mode`, and `--replay`, `--join`, `--scripted`, `--capture` with a value
 /// given as `--name=value` or `--name value`. Unknown arguments are ignored.
 pub fn parse_command_line(args: &[String]) -> CommandLine {
     let mut c = CommandLine::default();
@@ -84,6 +84,7 @@ pub fn parse_command_line(args: &[String]) -> CommandLine {
         } else { String::new() };
         match name {
             "--smoke" => c.smoke = true,
+            "--smoke-sortie" => c.smoke_sortie = true,
             "--benchmark" => c.benchmark = true,
             "--safe-mode" | "--safe_mode" => c.safe_mode = true,
             "--replay" => c.replay = value,
@@ -95,6 +96,12 @@ pub fn parse_command_line(args: &[String]) -> CommandLine {
         i += 1;
     }
     c
+}
+
+/// This process's user arguments (after `--`), parsed. Main thread only (it reads `Os`).
+pub(crate) fn user_command_line() -> CommandLine {
+    let args: Vec<String> = godot::classes::Os::singleton().get_cmdline_user_args().as_slice().iter().map(|s| s.to_string()).collect();
+    parse_command_line(&args)
 }
 
 /// What the renderer started as (L1270).
@@ -637,14 +644,13 @@ impl BpApp {
             "luau" => cfg!(feature = "luau"),
         }
     }
-    /// Parsed command-line user arguments: `{ "smoke": bool, "benchmark": bool, "replay": String,
+    /// Parsed command-line user arguments: `{ "smoke": bool, "smoke_sortie": bool, "benchmark": bool, "replay": String,
     /// "join": String (join code), "scripted": String, "capture": String, "safe_mode": bool }`.
     #[func]
     fn command_line(&self) -> VarDictionary {
-        let args: Vec<String> = Os::singleton().get_cmdline_user_args().as_slice().iter().map(|s| s.to_string()).collect();
-        let c = parse_command_line(&args);
+        let c = user_command_line();
         crate::convert::d! {
-            "smoke" => c.smoke, "benchmark" => c.benchmark, "replay" => GString::from(c.replay.as_str()), "join" => GString::from(c.join.as_str()),
+            "smoke" => c.smoke, "smoke_sortie" => c.smoke_sortie, "benchmark" => c.benchmark, "replay" => GString::from(c.replay.as_str()), "join" => GString::from(c.join.as_str()),
             "scripted" => GString::from(c.scripted.as_str()), "capture" => GString::from(c.capture.as_str()), "safe_mode" => c.safe_mode,
         }
     }
@@ -885,6 +891,8 @@ mod tests {
     fn command_line_flags_and_values() {
         let a = |v: &[&str]| parse_command_line(&v.iter().map(|s| s.to_string()).collect::<Vec<_>>());
         assert_eq!(a(&["--smoke"]), CommandLine { smoke: true, ..Default::default() });
+        // --smoke-sortie is its own flag, not --smoke.
+        assert_eq!(a(&["--smoke-sortie"]), CommandLine { smoke_sortie: true, ..Default::default() });
         let c = a(&["--replay=user://replays/a.bpr", "--join", "ABCD-1234", "--benchmark", "--safe-mode", "--capture", "--scripted=coop"]);
         assert_eq!((c.replay.as_str(), c.join.as_str(), c.benchmark, c.safe_mode, c.capture.as_str(), c.scripted.as_str()), ("user://replays/a.bpr", "ABCD-1234", true, true, "", "coop"));
         assert_eq!(a(&["--nonsense", "x"]), CommandLine::default());

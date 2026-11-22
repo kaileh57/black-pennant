@@ -52,6 +52,7 @@ pub fn hold_reason(reason: &HoldReason) -> Msg {
         HoldReason::PlayerControl => m("sim.hold.player_control"),
         HoldReason::EmconSilent => m("sim.hold.emcon_silent"),
         HoldReason::NoSolution => m("sim.hold.no_solution"),
+        HoldReason::ShoreSite => m("sim.hold.shore_site"),
     }
 }
 
@@ -210,6 +211,7 @@ pub fn emcon_reason(reason: &crate::emcon::EmconReason) -> Msg {
         R::HoldingLockWeaponsInFlight => m("sim.emcon.holding_lock_weapons_in_flight"),
         R::ActiveOrdered => m("sim.emcon.active_ordered"),
         R::PointDefenceException => m("sim.emcon.point_defence_exception"),
+        R::SelfDefenceUnderFire => m("sim.emcon.self_defence"),
     }
 }
 
@@ -242,7 +244,7 @@ const KEYS: &[&str] = &[
     "sim.hold.suspect_outside_self_defence", "sim.hold.neutral_in_seeker_basket", "sim.hold.train_limit",
     "sim.hold.elevation_limit", "sim.hold.masked", "sim.hold.slewing", "sim.hold.reloading", "sim.hold.no_ammunition",
     "sim.hold.unpowered", "sim.hold.shed", "sim.hold.damaged", "sim.hold.friend_in_line", "sim.hold.salvo_in_flight",
-    "sim.hold.permission_withheld", "sim.hold.player_control", "sim.hold.emcon_silent", "sim.hold.no_solution",
+    "sim.hold.permission_withheld", "sim.hold.player_control", "sim.hold.emcon_silent", "sim.hold.no_solution", "sim.hold.shore_site",
     "sim.fire.doctrine", "sim.fire.point_defence", "sim.fire.self_defence", "sim.fire.designated", "sim.fire.rule",
     "sim.fire.manual", "sim.fire.graph", "sim.fire.local_control",
     "sim.rung.none", "sim.rung.altitude_measured", "sim.rung.depth_measured", "sim.rung.emitter_match",
@@ -274,7 +276,7 @@ const KEYS: &[&str] = &[
     "sim.script.error", "sim.script.memory", "sim.script.budget", "sim.script.backstop",
     "sim.emcon.silent_ordered", "sim.emcon.passive_no_trigger", "sim.emcon.burst_track_inside",
     "sim.emcon.burst_weapon_inbound", "sim.emcon.burst_refresh_for_weapon", "sim.emcon.holding_lock_weapons_in_flight",
-    "sim.emcon.active_ordered", "sim.emcon.point_defence_exception",
+    "sim.emcon.active_ordered", "sim.emcon.point_defence_exception", "sim.emcon.self_defence",
     "sim.word.stance.friend", "sim.word.stance.neutral", "sim.word.stance.suspect", "sim.word.stance.hostile",
     "sim.word.rung.unknown", "sim.word.rung.domain", "sim.word.rung.type", "sim.word.rung.class", "sim.word.rung.exact",
     "sim.word.grade.bearing", "sim.word.grade.coarse", "sim.word.grade.fine", "sim.word.grade.lock",

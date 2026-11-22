@@ -14,6 +14,8 @@ after_action.section.doctrine,"Panel title of the Combine's win-method tallies a
 after_action.section.log,Panel title of the theatre events the sortie caused,Theatre log
 after_action.belief.note,Explains the belief map,Shading marks where Combine task groups now believe you operate. It follows you into the next operations in this region.
 after_action.result.outcome,"Result table term; victory, defeat, withdrawn, aborted or draw",Outcome
+after_action.result.ended,Result table term; why the sortie ended,How it ended
+after_action.result.objective,Result table term; the primary objective's last text when the report does not say why the sortie ended,Objective
 after_action.result.tonnage,Result table term,Disabled
 after_action.result.tonnage_value,"Result value; {0} enemy tonnage disabled, {1} enemy tonnage present, {2} percent","{0} of {1} ({2})"
 after_action.result.kills,Result table term; kills by method,Kills
@@ -60,6 +62,7 @@ sortie_end.meta,"Mode and sortie length beside the summary title; {0} mode word,
 sortie_end.lead.tonnage,"Summary lead; {0} enemy tonnage disabled, {1} enemy tonnage present, {2} percent",Disabled {0} of the {1} of enemy hulls present ({2}).
 sortie_end.lead.no_enemy,Summary lead when no enemy hulls took part,No enemy hulls took part.
 sortie_end.objective,Objective with no text; {0} its number,Objective {0}
+sortie_end.ended,Summary table term; why the sortie ended,How it ended
 sortie_end.met,Objective verdict word,Met
 sortie_end.missed,Objective verdict word,Not met
 sortie_end.stat.guns,Summary table term; gun rounds,Gun hits

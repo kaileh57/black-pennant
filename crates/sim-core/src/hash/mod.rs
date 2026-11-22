@@ -125,6 +125,8 @@ pub fn subsystem_hashes(world: &World) -> SubsystemHashes {
     environment.write_u64(world.config.seed);
     environment.write_serde(&world.weather);
     environment.write_serde(&world.waves);
+    // A weather turn in progress: two worlds that share this tick's set but not the turn diverge next tick.
+    environment.write_serde(&world.wave_blend);
     environment.write_serde(&world.terrain.map);
 
     let [e, b, c, k, n, p, m, w, v] = h.map(|x| x.finish());

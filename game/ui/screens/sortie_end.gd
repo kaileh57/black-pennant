@@ -6,6 +6,8 @@ extends Control
 ## Pushed over the ended sortie by the router (`Screens`: a non-campaign sortie that ends). The plain
 ## loop outside the campaign (L73) has no payout or theatre, so this is the summary alone:
 ## - The outcome as the title, with the mode and sortie length beside it (the bound Meta line).
+## - How the sortie ended in plain words (`end_reason`, a MsgDict), first in the numbers table; left
+##   out when the summary does not say.
 ## - Enemy tonnage disabled of the tonnage present, then each objective with Met or Not met as
 ##   glyph and word (texts from `Hud.objectives()`, which keeps the last sortie's list).
 ## - The numbers a designer iterates on (L73: build, splash, fight, iterate): gunnery and missile
@@ -130,7 +132,7 @@ func show_summary(summary: Dictionary, kind: int, objectives: Array[Dictionary])
 	var stats := Kit.as_dict(summary.get("stats"))
 	_lead.text = lead_text(stats)
 	_build_objectives(Kit.dicts(summary.get("objectives")), objectives)
-	_facts(_stats, stat_rows(stats))
+	_facts(_stats, end_rows(summary) + stat_rows(stats))
 	var tip := _Text.resolve(summary.get("tip"))
 	_tip.text = tip
 	_tip.visible = not tip.is_empty()
@@ -185,6 +187,12 @@ func _build_objectives(done: Array[Dictionary], named: Array[Dictionary]) -> voi
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(l)
 		_objectives.add_child(row)
+
+
+## How the sortie ended, as one `[term, value]` row, or none when the summary does not say.
+static func end_rows(summary: Dictionary) -> Array:
+	var why := _Text.resolve(summary.get("end_reason"))
+	return [[String(TranslationServer.translate(&"sortie_end.ended")), why]] if not why.is_empty() else []
 
 
 ## Rows `[term, value]` of a `StatsDict`; a weapon nobody used is left out.

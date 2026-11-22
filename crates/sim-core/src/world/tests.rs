@@ -553,7 +553,8 @@ fn fidelity_changes_keep_a_hull_where_it_is_and_inputs_reach_the_stores() {
     w.set_weather(sea(SeaState::BEAUFORT_7));
     let events = w.drain_events();
     assert_eq!(events.iter().filter(|e| matches!(e, PhysEvent::WeatherChanged { .. })).count(), 1);
-    assert!(w.waves().significant_height() > 2.0 * calm);
+    // The next tick still runs on the old sea; the new one arrives over the blend (weather.rs).
+    assert!(w.wave_blend.is_some() && w.waves().significant_height() == calm);
     // Despawn: gone at once, with one event; stale ids and other kinds are ignored.
     w.despawn(slow);
     w.despawn(slow);
@@ -938,4 +939,124 @@ fn a_keyframe_restores_on_every_sea_from_calm_to_beaufort_12() {
     let bytes = w.save_keyframe();
     let r = World::restore_keyframe(WorldConfig { seed: 0, weather: sea(SeaState::CALM), map: w.config.map.clone(), catalogue: cat.clone() }, &bytes, &|_| None).expect("restores");
     assert_eq!(r.weather().visibility_m, f64::INFINITY);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Weather turns (weather.rs): the sea changes state without a step under the hulls.
+
+fn storm_turning_to_rain(wind: f64) -> (WeatherState, WeatherState) {
+    use content::weather::WeatherKind;
+    let storm = WeatherState { kind: WeatherKind::Storm, sea_state: SeaState(7), wind_dir_rad: wind, wind_speed_mps: 20.0, ..WeatherState::default() };
+    let rain = WeatherState { kind: WeatherKind::Rain, sea_state: SeaState(6), wind_dir_rad: wind, wind_speed_mps: 16.0, ..WeatherState::default() };
+    (storm, rain)
+}
+
+/// Sample points: a 2 km square on a 50 m lattice.
+fn lattice() -> Vec<(f64, f64)> { (0..41).flat_map(|i| (0..41).map(move |j| (i as f64 * 50.0 - 1_000.0, j as f64 * 50.0 - 1_000.0))).collect() }
+
+#[test]
+fn a_weather_turn_moves_the_sea_without_a_step() {
+    let cat = catalogue();
+    let (storm, rain) = storm_turning_to_rain(0.4);
+    let mut w = World::new(WorldConfig { seed: 1042, weather: storm, map: MapDef { size_m: [20_000.0, 20_000.0], depth_m: 200.0, ..MapDef::default() }, catalogue: cat.clone() });
+    for _ in 0..600 { w.step(); }
+    let pts = lattice();
+    let heights = |w: &World| -> Vec<f64> { pts.iter().map(|&(x, z)| w.water_height(x, z)).collect() };
+    let worst_step = |a: &[f64], b: &[f64]| a.iter().zip(b).map(|(p, q)| (p - q).abs()).fold(0.0, f64::max);
+    // The surface's own motion in one tick on the storm sea, for scale.
+    let mut prev = heights(&w);
+    let mut natural = 0.0f64;
+    for _ in 0..120 { w.step(); let h = heights(&w); natural = natural.max(worst_step(&prev, &h)); prev = h; }
+    // What a one-tick swap would do here: the step the old code put under every hull.
+    let target = crate::waves::WaveSet::generate(wave_seed(1042), &rain, &cat.tuning.waves);
+    let t = w.time_s();
+    let swap = pts.iter().map(|&(x, z)| (target.height_at(x, z, t) - w.waves.height_at(x, z, t)).abs()).fold(0.0, f64::max);
+    assert!(swap > 3.0, "a one-tick swap would step the sea {swap} m");
+    w.set_weather(rain);
+    let mut during = 0.0f64;
+    for k in 0..crate::world::weather::WEATHER_BLEND_TICKS + 60 {
+        w.step();
+        let h = heights(&w);
+        during = during.max(worst_step(&prev, &h));
+        prev = h;
+        if k + 1 == crate::world::weather::WEATHER_BLEND_TICKS / 2 { assert!(w.wave_blend.is_some(), "still turning at half time"); }
+    }
+    // Through the turn no point of the sea moves in one tick by more than its own motion allows, plus a little
+    // for the fading components.
+    assert!(during < natural + 0.05 && during < 0.25, "the sea stepped {during} m in one tick (its own motion {natural} m, a swap {swap} m)");
+    // Once the turn is over the sea is exactly the new weather's.
+    assert!(w.wave_blend.is_none());
+    assert_eq!(w.waves, target);
+}
+
+#[test]
+fn a_keyframe_taken_during_a_weather_turn_restores_the_turn() {
+    let cat = catalogue();
+    let (storm, rain) = storm_turning_to_rain(1.1);
+    let config = || WorldConfig { seed: 77, weather: storm, map: MapDef { size_m: [20_000.0, 20_000.0], depth_m: 200.0, ..MapDef::default() }, catalogue: cat.clone() };
+    let mut w = World::new(config());
+    for _ in 0..30 { w.step(); }
+    w.set_weather(rain);
+    for _ in 0..600 { w.step(); }
+    let bytes = w.save_keyframe();
+    let none = |_: ContentHash| -> Option<Arc<VesselPrefab>> { None };
+    let mut r = World::restore_keyframe(config(), &bytes, &none).expect("restores");
+    assert_eq!((r.wave_blend, r.waves), (w.wave_blend, w.waves));
+    for _ in 0..crate::world::weather::WEATHER_BLEND_TICKS { w.step(); r.step(); }
+    assert_eq!(r.waves, w.waves);
+    assert!(r.wave_blend.is_none());
+}
+
+/// Minelaying seed 2 (round 2 of the gate) in miniature: the stock fast attack craft at full power in a storm
+/// that turns to rain. Before the turn blended, this hull, dry and undamaged, was lost as sunk on the tick of
+/// the turn: the new sea stood 3.7 m higher under it.
+#[test]
+fn a_dry_hull_rides_out_a_weather_turn() {
+    let cat = catalogue();
+    let (p, text) = content::data::stock_blueprint_files().find(|(p, _)| p.ends_with("starters/fac22.bp.ron")).expect("the stock fast attack craft");
+    let prefab = Arc::new(build_prefab(&content::blueprint::io::load_blueprint(text, p).expect("loads").blueprint, &cat));
+    let (storm, rain) = storm_turning_to_rain((42.0 * 0.7) % core::f64::consts::TAU);
+    let mut w = World::new(WorldConfig { seed: 1042, weather: storm, map: MapDef { size_m: [40_000.0, 40_000.0], depth_m: 500.0, ..MapDef::default() }, catalogue: cat.clone() });
+    let id = w.spawn_vessel(&VesselSpawn { speed_mps: 9.0, ..spawn_at(&prefab, 0, 0.0, 0.0, 94f64.to_radians()) });
+    w.set_controls(id, VesselControls { throttle: 1.0, ..Default::default() });
+    for _ in 0..3600 { w.step(); }
+    assert_eq!(w.vessel(id).unwrap().status, VesselStatus::Active);
+    w.set_weather(rain);
+    let mut deck_under = 0u32;
+    for _ in 0..crate::world::weather::WEATHER_BLEND_TICKS + 600 {
+        w.step();
+        let v = w.vessel(id).expect("still afloat");
+        assert_eq!(v.status, VesselStatus::Active, "at {:.2} s", w.time_s());
+        let t = w.time_s() - DT;
+        if v.is_sunk(&|x, z| w.waves.height_at(x, z, t)) { deck_under += 1; }
+    }
+    let v = w.vessel(id).unwrap();
+    assert_eq!(deck_under, 0);
+    assert!(v.compartments.compartments.iter().all(|c| c.water_m3 == 0.0) && v.grid.solid_count == v.grid.original_count);
+}
+
+/// The blend does not hide a real loss: a hull whose whole deck is under the sea in the middle of a weather
+/// turn is declared sunk on that tick, as on a steady sea.
+#[test]
+fn a_hull_under_the_sea_during_a_weather_turn_is_sunk_on_that_tick() {
+    let cat = catalogue();
+    let prefab = gunboat(&cat);
+    let (storm, rain) = storm_turning_to_rain(0.9);
+    for turning in [false, true] {
+        let mut w = World::new(WorldConfig { seed: 5, weather: storm, map: MapDef { size_m: [20_000.0, 20_000.0], depth_m: 200.0, ..MapDef::default() }, catalogue: cat.clone() });
+        let id = w.spawn_vessel(&spawn_at(&prefab, 0, 0.0, 0.0, 0.5));
+        for _ in 0..120 { w.step(); }
+        if turning { w.set_weather(rain); for _ in 0..crate::world::weather::WEATHER_BLEND_TICKS / 2 { w.step(); } }
+        assert_eq!(w.wave_blend.is_some(), turning);
+        let v = w.vessel(id).unwrap();
+        assert!(matches!(v.status, VesselStatus::Active | VesselStatus::Disabled), "{:?}", v.status);
+        // Held 25 m down, far below any trough of this sea, at rest.
+        let mut kin = v.kin;
+        kin.pose.pos.y = -25.0;
+        kin.lin_vel = DVec3::ZERO;
+        kin.ang_vel = DVec3::ZERO;
+        w.teleport(id, &kin);
+        w.step();
+        assert_eq!(w.vessel(id).unwrap().status, VesselStatus::Lost(crate::vessel::LossCause::Sunk), "turning {turning}");
+    }
 }

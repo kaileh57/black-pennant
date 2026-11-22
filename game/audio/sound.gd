@@ -99,6 +99,12 @@ const MUTE_BELOW := 0.005
 ## Buses whose true loops start at a random point of the file.
 const RANDOM_START_BUSES: Array[StringName] = [&"Sfx", &"Ambience", &"Radio"]
 const GEN_DIR := "res://audio/gen/"
+## At exit, how long the main thread waits after stopping voices that were playing. A stopped playback
+## stays registered with the AudioServer until its mixer thread has faded it out and dropped it, and no
+## frame runs after `_exit_tree`; quitting sooner leaves the voices' AudioStreamWAV and
+## AudioStreamPlaybackWAV alive ("ERROR: N resources still in use at exit"). 50 ms was not always enough
+## on the headless dummy driver; 100 to 300 ms always were.
+const EXIT_DRAIN_MS := 200
 ## Session states whose delayed one-shots may still sound.
 const SORTIE_STATES: Array[int] = [Bp.SESSION_LOADING, Bp.SESSION_IN_SORTIE, Bp.SESSION_ENDED, Bp.SESSION_REPLAY]
 
@@ -202,11 +208,11 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
-	# Quitting with voices playing would leave their playbacks registered with the AudioServer.
-	for child: Node in get_children():
-		if child is AudioStreamPlayer or child is AudioStreamPlayer3D:
-			child.call(&"stop")
-			child.set(&"stream", null)
+	# Quitting with voices playing would leave their playbacks registered with the AudioServer: stop
+	# them, then give the mixer thread time to drop them (EXIT_DRAIN_MS).
+	var was_playing := stop_all_voices()
+	if was_playing:
+		OS.delay_msec(EXIT_DRAIN_MS)
 	# Collect loads still in flight, or their loader tokens outlive the engine.
 	for stem: StringName in _loading:
 		ResourceLoader.load_threaded_get(_loading[stem])
@@ -217,6 +223,20 @@ func _exit_tree() -> void:
 	_flat.clear()
 	_positional.clear()
 	_spare_loop_players.clear()
+
+
+## Stop every voice and drop its stream. True when any voice still held a stream: it was playing, or
+## stopped so recently (a loop that just faded out) that its playback may still be registered with the
+## AudioServer until the mixer thread lets it go.
+func stop_all_voices() -> bool:
+	var was_playing := false
+	for child: Node in get_children():
+		if child is AudioStreamPlayer or child is AudioStreamPlayer3D:
+			if child.get(&"playing") == true or child.get(&"stream") != null:
+				was_playing = true
+			child.call(&"stop")
+			child.set(&"stream", null)
+	return was_playing
 
 
 func _process(delta: float) -> void:

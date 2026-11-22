@@ -191,6 +191,12 @@ pub struct EngageState {
     pub open_fire_range: Option<f64>,
     /// Guided salvos launched and not yet resolved, ascending launch order.
     pub(crate) salvos: Vec<Salvo>,
+    /// Tracks of this side's picture that are shore sites (a site objective's hulls, `VesselRole::Site`). An
+    /// anti-ship missile is never assigned to one: [`HoldReason::ShoreSite`]. `AssignIn` carries no such
+    /// list, so, as with `open_fire_range`, whoever runs the stage writes it before [`mount_assignment`];
+    /// empty = no track is a site.
+    #[serde(default)]
+    pub shore_sites: Vec<TrackId>,
 }
 
 /// One guided salvo in flight: the target is not offered to another salvo of the same weapon class until the
@@ -249,7 +255,9 @@ pub struct Assignment { pub slot: PartSlot, pub status: EngageStatus, /// Guided
 ///    doctrine entry for its category ([`crate::doctrine::check`], with the open-fire fraction applied to
 ///    non-point-defence ranges and designation lifting Suspect to Hostile), then for guns the training and
 ///    line-of-sight elevation limits, masking by another gun mount and own-side units near the line of fire;
-///    for anti-ship missiles a Neutral (or Friend) track inside the seeker basket; for guided weapons a salvo
+///    for anti-ship missiles a shore site (`EngageState::shore_sites`: held whatever the stance, a designation
+///    or a written permission says, and the mount goes on to the next ranked threat) and a Neutral (or Friend)
+///    track inside the seeker basket; for guided weapons a salvo
 ///    of the same class already in flight at, or assigned this tick to, that track. A salvo whose launcher
 ///    stopped short of its size (emptied, reloading, destroyed, retargeted) stays open: the next launcher of
 ///    the class that passes the checks launches the remainder. Inbound-weapon category threats must be inbound
@@ -428,6 +436,8 @@ struct AssignCtx<'a> {
     /// Live Neutral surface tracks and Friend surface tracks of `friends`, predicted at the tick: the gun hold
     /// near a target ([`GUN_CLEAR_OF_NEUTRAL_M`]).
     surface_clear: Vec<(Stance, TrackId, DVec3)>,
+    /// `EngageState::shore_sites` at the tick.
+    shore_sites: Vec<TrackId>,
 }
 
 impl<'a> AssignCtx<'a> {
@@ -451,7 +461,7 @@ impl<'a> AssignCtx<'a> {
         let surface_clear = input.tracks.iter()
             .filter(|t| usable(t) && t.domain == Domain::Surface && (t.stance == Stance::Neutral || (t.stance == Stance::Friend && friend_ids.contains(&t.id))))
             .map(|t| (t.stance, t.id, t.predict(input.tick))).filter(|b| b.2.is_finite()).collect();
-        Self { input, tuning, open_fire, fov_half_rad, friends, friend_ids, unranked_suspects, basket, surface_clear }
+        Self { input, tuning, open_fire, fov_half_rad, friends, friend_ids, unranked_suspects, basket, surface_clear, shore_sites: state.shore_sites.clone() }
     }
 
     /// Best target for one mount, or the hold (track, reason) to report.
@@ -478,6 +488,10 @@ impl<'a> AssignCtx<'a> {
     #[allow(clippy::too_many_arguments)]
     fn evaluate(&self, m: &MountInfo, me: &MountEngage, others: &[MountEngage], entry: &ResolvedEntry, t: &Track, designated: bool, salvos: &[Salvo], taken: &[(WeaponClass, TrackId)], forced: bool) -> Result<Pick, HoldReason> {
         let input = self.input;
+        // DECISION (coordinator ruling, 22 November 2026; L483 and L523 speak of ships and are silent on
+        // sites): an anti-ship missile's seeker finds a ship against the sea, not a site against the land, so
+        // the officer never gives one a shore site, designated or with fire permission written or not.
+        if m.weapon == WeaponClass::AntiShipMissile && self.shore_sites.contains(&t.id) { return Err(HoldReason::ShoreSite); }
         let muzzle = finite_or(input.own.pose.to_world(m.pos_local), finite_or(input.own.pose.pos, DVec3::ZERO));
         let tp = t.predict(input.tick);
         let range = (tp - muzzle).length();

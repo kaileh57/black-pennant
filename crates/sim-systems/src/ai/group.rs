@@ -68,6 +68,10 @@ pub struct Directive {
     pub keep_range_m: Option<f64>,
     pub weapons_tight: bool,
     pub emcon: Option<Emcon>,
+    /// The group's orders are `Anchor`: its hulls lie at anchor, make no way and do not flee (owner ruling of
+    /// 22 November 2026).
+    #[serde(default)]
+    pub anchored: bool,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -656,7 +660,9 @@ pub(crate) fn update_core(state: &mut GroupState, members: &[Member], env: &Env<
         _ if convoy => 0.75,
         _ => 0.6,
     };
-    let speed_kn = if !slowest.is_finite() { 0.0 } else if holding && !charge_led { HOLD_KN } else { slowest * factor / KN };
+    // An anchored group lies at anchor and makes no way (owner ruling of 22 November 2026); a group that only
+    // holds station keeps its creep speed.
+    let speed_kn = if !slowest.is_finite() || anchored { 0.0 } else if holding && !charge_led { HOLD_KN } else { slowest * factor / KN };
     let speed_kn = (speed_kn * 10.0).round() / 10.0;
 
     // Formation.
@@ -682,6 +688,7 @@ pub(crate) fn update_core(state: &mut GroupState, members: &[Member], env: &Env<
         keep_range_m: None,
         weapons_tight,
         emcon,
+        anchored,
     };
     // A scattering convoy fans out: each hull runs the route shifted sideways by its place in the line,
     // instead of every hull steering for the same points (they rammed each other).
@@ -1166,7 +1173,9 @@ mod tests {
     #[test]
     fn anchored_convoy_holds_its_anchorage() {
         // A prize or a defector at anchor (convoy kind, Anchor orders) with a Hostile contact at 5 km and a
-        // captain under fire: it stays Standing on a one-point route at its anchorage.
+        // captain under fire: it stays Standing on a one-point route at its anchorage. Owner ruling of 22
+        // November 2026: a hull whose group orders are Anchor is at anchor and makes no way, so the directive
+        // carries no speed and says so (cutting_out seed 0: the prize crept north at the 1 kn hold speed).
         let t = open();
         let mods = DoctrineMods::default();
         let mut c = new_group(&init(GroupOrders::Anchor, FleetKind::Convoy), vec![EntityId::from_u64(1)]);
@@ -1177,9 +1186,14 @@ mod tests {
         let d = run(&mut c, &[m], &env(&p, &t, &mods, 600), &mut planner);
         assert_eq!(c.mode, GroupMode::Standing);
         assert_eq!(c.mem.scatter_until_tick, 0);
-        assert!(d[0].1.route.len() == 1 && d[0].1.route[0].distance(DVec2::new(100.0, 0.0)) < 1.0 && d[0].1.speed_kn == HOLD_KN, "{:?}", d[0].1);
+        assert!(d[0].1.route.len() == 1 && d[0].1.route[0].distance(DVec2::new(100.0, 0.0)) < 1.0 && d[0].1.speed_kn == 0.0 && d[0].1.anchored, "{:?}", d[0].1);
         let d = run(&mut c, &[m], &env(&p, &t, &mods, 1_200), &mut planner);
         assert_eq!((c.mode, d[0].1.mode), (GroupMode::Standing, GroupMode::Standing));
+        // A group that only holds station (a transit at its end, here a convoy with nowhere to go) keeps its
+        // creep speed and is not at anchor.
+        let mut h = new_group(&init(GroupOrders::Transit { from: "a".into(), to: "b".into() }, FleetKind::Convoy), vec![EntityId::from_u64(1)]);
+        let d = run(&mut h, &[member(1, 100.0, 0.0)], &env(&pic(vec![]), &t, &mods, 600), &mut planner);
+        assert!(d[0].1.route.len() == 1 && d[0].1.speed_kn == HOLD_KN && !d[0].1.anchored, "{:?}", d[0].1);
     }
 
     #[test]

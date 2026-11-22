@@ -293,7 +293,7 @@ impl HoldTip {
             HoldReason::EmconSilent => Self::Emcon,
             HoldReason::NoSolution => Self::NoSolution,
             HoldReason::Stance { .. } | HoldReason::Id { .. } | HoldReason::Grade { .. } | HoldReason::SuspectOutsideSelfDefence { .. } => Self::Identification,
-            HoldReason::NoTarget | HoldReason::NeutralInSeekerBasket { .. } | HoldReason::FriendInLine { .. } | HoldReason::SalvoInFlight | HoldReason::PermissionWithheld | HoldReason::PlayerControl => return None,
+            HoldReason::NoTarget | HoldReason::NeutralInSeekerBasket { .. } | HoldReason::FriendInLine { .. } | HoldReason::SalvoInFlight | HoldReason::PermissionWithheld | HoldReason::PlayerControl | HoldReason::ShoreSite => return None,
         })
     }
     pub fn key(self) -> &'static str {

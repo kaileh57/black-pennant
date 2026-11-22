@@ -17,10 +17,12 @@ pub struct Data { pub catalogue: Arc<Catalogue>, pub campaign: Arc<CampaignData>
 /// Load the catalogue and campaign data embedded in the binary. Unit: `server-runtime`.
 ///
 /// Fresh loads, not the process-wide `content::catalogue::catalogue()`, so bad embedded data comes back as a
-/// [`CliError::Content`] naming the problem instead of a panic.
+/// [`CliError::Content`] naming the problem instead of a panic. The campaign keeps only the act rows this
+/// build ships (`content::campaign::load::shipped`, Act 1 in 0.1.0, L2283), as the game client reads it.
 pub fn load_data() -> Result<Data, CliError> {
     let catalogue = Catalogue::load_embedded().map_err(|e| CliError::Content(format!("catalogue: {e}")))?;
-    let campaign = content::campaign::load::load_embedded(&catalogue).map_err(|e| CliError::Content(format!("campaign data: {e}")))?;
+    let all = content::campaign::load::load_embedded(&catalogue).map_err(|e| CliError::Content(format!("campaign data: {e}")))?;
+    let campaign = content::campaign::load::shipped(&all);
     Ok(Data { catalogue: Arc::new(catalogue), campaign: Arc::new(campaign) })
 }
 
@@ -150,6 +152,14 @@ mod tests {
         std::fs::write(&path, "not a blueprint").unwrap();
         assert!(matches!(read_blueprint(&path), Err(CliError::Config(_))));
         let _ = std::fs::remove_dir_all(path.parent().unwrap());
+    }
+
+    #[test]
+    fn the_server_plays_only_the_shipped_acts() {
+        let data = load_data().unwrap();
+        let acts = |c: &CampaignData| c.acts.iter().map(|a| a.act).collect::<Vec<_>>();
+        assert_eq!(acts(&data.campaign), acts(content::campaign::load::shipped_campaign()));
+        assert!(!data.campaign.acts.is_empty() && data.campaign.acts.iter().all(content::campaign::load::act_ships));
     }
 
     #[test]

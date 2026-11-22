@@ -65,7 +65,7 @@ fn victory(op: &OperationId, region: &RegionId) -> SortieResult {
         operation: Some(op.clone()), region: Some(region.clone()), seed: 1, outcome: Outcome::Victory, winner: None, duration_ticks: 0, objective_done: true,
         ghosts: vec![], kills: vec![], survivors: vec![], prizes: vec![], aces: vec![], players: vec![], sightings: 0, evidence: 0, photos: 0,
         survivors_recovered: 0, crew_captured: 0, passengers_delivered: 0, mines_laid: 0, site_destroyed: true, tender_lost: false, highest_rung: 0,
-        belief: vec![], stats: SortieStats::default(),
+        belief: vec![], stats: SortieStats::default(), end_reason: None,
     }
 }
 

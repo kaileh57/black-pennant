@@ -16,6 +16,8 @@ extends Node
 ## 6. Shader warm-up behind the precompile screen (L1833, L1358).
 ## 7. Hand over to `Screens` routing and open the main menu, or what a flag asks for: `--benchmark`
 ##    opens the benchmark, `--replay <file>` plays a replay, `--join <code>` joins a lobby.
+##    `--smoke-sortie` skips the consent screen, the flotilla, the warm-up and the menu: Session plays
+##    its skirmish and quits.
 ## 8. If the previous run crashed (`App.previous_run_crashed`), a message names the logs folder.
 ## A headless run (CI, a dedicated test) skips every screen that needs a player or a GPU.
 ## The flow runs only when this scene is the main scene; the compile check instantiates it inert.
@@ -75,7 +77,10 @@ func _run() -> void:
 			DisplayServer.accessibility_should_increase_contrast() == 1)
 		Ui.refresh()
 	var headless := DisplayServer.get_name() == "headless"
-	var automated := not String(cmd.get("scripted", "")).is_empty() or not String(cmd.get("capture", "")).is_empty()
+	# `--smoke-sortie` (release CI) plays an offline skirmish from Session with no player: no consent,
+	# no flotilla, no warm-up, no main menu.
+	var smoke_sortie := bool(cmd.get("smoke_sortie", false))
+	var automated := not String(cmd.get("scripted", "")).is_empty() or not String(cmd.get("capture", "")).is_empty() or smoke_sortie
 	var privacy := _number(Settings.get_value(&"privacy.crash_reports"), PRIVACY_NOT_ASKED)
 	if privacy == PRIVACY_NOT_ASKED and not headless and not automated:
 		await _ask_consent()
@@ -85,10 +90,11 @@ func _run() -> void:
 	if privacy == PRIVACY_SEND or _number(Settings.get_value(&"privacy.crash_reports"), PRIVACY_NOT_ASKED) == PRIVACY_SEND:
 		# The tier is known only now; tag it in both SDKs (L1334 lists it in every report).
 		App.crash_reports_set_tag("tier", str(_number(Quality.profile().get("tier", NONE), NONE)))
-	if not headless:
+	if not headless and not smoke_sortie:
 		await _warm_shaders()
 	Screens.start_routing()
-	_route(cmd)
+	if not smoke_sortie:
+		_route(cmd)
 	if not headless and not automated:
 		_tell_about_crash()
 	queue_free()

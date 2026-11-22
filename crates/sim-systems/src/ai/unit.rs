@@ -133,6 +133,10 @@ pub(crate) struct CaptainMemory {
     pub(crate) strike_since: Option<u64>,
     /// Surrender rule: no check before this tick (the rule runs at a fixed one-second cadence).
     pub(crate) next_strike_check: u64,
+    /// Collision avoidance took the speed of a plan that keeps its speed: (the ordered speed before, knots or
+    /// cruise, and the speed avoidance wrote), so the next clear decision puts it back ([`steer_clear`]).
+    #[serde(default)]
+    pub(crate) avoid_speed: Option<(Option<f64>, f64)>,
 }
 
 /// Create a captain for a class (or a `Proxy` for a player hull). Unit: `sys-ai-unit`.
@@ -191,7 +195,8 @@ pub fn decide(captain: &mut CaptainState, ship: &Ship, world: &World, picture: &
     let depth = |p: DVec2| terrain.depth_at(p.x, p.y);
     let sit = Situation { own: &own, threats: &threats, inbound: &inbound, mods, now, draws, depth: &depth };
     let mut plan = think(captain, &sit);
-    avoid_collisions(&mut plan, vessel, world, picture, &own, followers);
+    let near = near_hulls(&plan, vessel, world, picture, &own, followers);
+    steer_clear(captain, &mut plan, &vessel.kin, &near, &own, ship.orders.speed_kn, cruise_kn(ship, &own), world.terrain());
     let out = build_out(&plan, &ship.orders, ship.settings.emcon, ship.settings.preset, &own, &depth);
     finish_decision(captain, now, reaction, draw(1));
     out
@@ -210,11 +215,13 @@ const AVOID_LOOK_M: f64 = 4_000.0;
 /// hull more than 112.5 degrees abaft its beam (the overtaking hull keeps clear) and for a hull keeping
 /// station on it. When both acted, a convoy lead and the escort stationed ahead of it swerved off each other
 /// for twenty minutes and the convoy never left its entry point. Unit: q5 fix.
-fn avoid_collisions(plan: &mut Plan, vessel: &Vessel, world: &World, picture: &SidePicture, own: &OwnState, followers: &[EntityId]) {
-    if matches!(plan.course, Course::Stop | Course::Station(..)) || own.status != OwnStatus::Active { return; }
-    let me = vessel.kin;
-    let p = xz(me.pose.pos);
+/// Hulls a captain checks for a collision course: own-side hulls within [`AVOID_LOOK_M`] (not its followers)
+/// and the side picture's ranged surface contacts, as kinematics. Empty when the plan holds a station or stops,
+/// or the hull cannot steer.
+fn near_hulls(plan: &Plan, vessel: &Vessel, world: &World, picture: &SidePicture, own: &OwnState, followers: &[EntityId]) -> Vec<Kinematics> {
     let mut near: Vec<Kinematics> = Vec::new();
+    if matches!(plan.course, Course::Stop | Course::Station(..)) || own.status != OwnStatus::Active { return near; }
+    let p = xz(vessel.kin.pose.pos);
     for (_, v) in world.vessels() {
         if v.id == vessel.id || v.side != vessel.side || followers.contains(&v.id) || !matches!(v.status, VesselStatus::Active | VesselStatus::Disabled) { continue; }
         if xz(v.kin.pose.pos).distance(p) <= AVOID_LOOK_M { near.push(v.kin); }
@@ -224,10 +231,49 @@ fn avoid_collisions(plan: &mut Plan, vessel: &Vessel, world: &World, picture: &S
         let h = if xz(t.vel).length() > 0.5 { bearing(DVec2::ZERO, xz(t.vel)) } else { 0.0 };
         near.push(Kinematics { pose: Pose::from_heading(DVec3::new(t.pos.x, 0.0, t.pos.z), h), lin_vel: DVec3::new(t.vel.x, 0.0, t.vel.z), ang_vel: DVec3::ZERO });
     }
+    near
+}
+
+/// The hull's cruise speed when no speed is ordered, knots: the Helm's `helm.cruise` slider share of top speed
+/// (0.7 when unset, as `officers::helm`).
+fn cruise_kn(ship: &Ship, own: &OwnState) -> f64 {
+    let s = &ship.settings.sliders;
+    let f = s.get(crate::officers::helm::SLIDER_CRUISE).or_else(|| s.get("helm.cruise_speed")).copied().filter(|f| f.is_finite() && *f > 0.0 && *f <= 1.0).unwrap_or(0.7);
+    own.top_speed_mps * f / KN
+}
+
+/// Collision avoidance around one decision, keeping the plan's speed honest. A plan that keeps its speed
+/// (`Speed::Keep`: the proxy captain of a prize, a dropped player's hull or a bot keeps the speed its owner
+/// ordered) gets back the speed it had before avoidance took it, once the way is clear, unless someone else
+/// ordered a speed since (the orders no longer hold what avoidance wrote).
+///
+/// DECISION, s2: avoidance scales the speed the plan asks for (the ordered speed for `Keep`, the cruise speed
+/// for `Cruise`), never the speed over ground. Scaling the speed over ground ratcheted down decision by
+/// decision, and a `Keep` plan never wrote a speed again: a prize taken and ordered home in cutting_out
+/// (`BP_DROP=all`) kept 1.02 kn in seed 1 (it never got home), 0.19 kn in bursars_berth seed 2 and 8.13 kn in
+/// cutting_out seed 3, whatever it had when the boarding hull last lay alongside.
+fn steer_clear(c: &mut CaptainState, plan: &mut Plan, me: &Kinematics, near: &[Kinematics], own: &OwnState, ordered_kn: Option<f64>, cruise_kn: f64, terrain: &sim_core::terrain::Terrain) {
+    let keeps = plan.speed == Speed::Keep;
+    let mut before = ordered_kn;
+    match c.mem.avoid_speed.take() {
+        Some((was, wrote)) if keeps && ordered_kn == Some(wrote) => { before = was; plan.speed = was.map_or(Speed::Cruise, Speed::Knots); }
+        _ => {}
+    }
+    let Some(kn) = avoid_collisions(plan, me, near, own, before.unwrap_or(cruise_kn), cruise_kn, terrain) else { return };
+    if keeps { c.mem.avoid_speed = Some((before, kn)); }
+}
+
+/// The geometry of collision avoidance: when a hull in `near` will pass inside the safe distance in the next
+/// 90 s, or is already inside the separation radius, steer the flocking rules' heading and speed instead of the
+/// plan's course. `kept_kn` is what a `Keep` speed means (the ordered speed), `cruise_kn` what `Cruise` means.
+/// Returns the speed written, knots, when it acted.
+fn avoid_collisions(plan: &mut Plan, me: &Kinematics, near: &[Kinematics], own: &OwnState, kept_kn: f64, cruise_kn: f64, terrain: &sim_core::terrain::Terrain) -> Option<f64> {
+    if matches!(plan.course, Course::Stop | Course::Station(..)) || own.status != OwnStatus::Active { return None; }
+    let p = xz(me.pose.pos);
     // Hulls abaft the beam by more than 112.5 degrees are overtaking: they keep clear.
     let fwd = dir(own.heading);
-    near.retain(|n| { let d = xz(n.pose.pos) - p; d.length() < 1.0 || d.normalize().dot(fwd) > libm::cos(deg(112.5)) });
-    if near.is_empty() { return; }
+    let near: Vec<Kinematics> = near.iter().copied().filter(|n| { let d = xz(n.pose.pos) - p; d.length() < 1.0 || d.normalize().dot(fwd) > libm::cos(deg(112.5)) }).collect();
+    if near.is_empty() { return None; }
     // The same radii as the flocking rules.
     let r = if own.turn_radius_m.is_finite() && own.turn_radius_m >= 10.0 { own.turn_radius_m.min(5_000.0) } else { 200.0 };
     let r_sep = (0.75 * r).clamp(80.0, 500.0);
@@ -242,16 +288,20 @@ fn avoid_collisions(plan: &mut Plan, vessel: &Vessel, world: &World, picture: &S
         let tcpa = -rel.dot(w) / w2;
         tcpa > 0.0 && tcpa < 90.0 && (rel + w * tcpa).length() < d_safe
     });
-    if !risk { return; }
-    let (dh, sf) = super::group::flock_adjust(&me, p, &near, own.turn_radius_m, world.terrain());
+    if !risk { return None; }
+    let (dh, sf) = super::group::flock_adjust(me, p, &near, own.turn_radius_m, terrain);
     let ordered_kn = match plan.speed {
         Speed::Knots(k) => k,
         Speed::Fraction(f) => own.top_speed_mps * f / KN,
         Speed::Flank => own.top_speed_mps / KN,
-        Speed::Keep | Speed::Cruise => xz(me.lin_vel).length() / KN,
+        Speed::Keep => kept_kn,
+        Speed::Cruise => cruise_kn,
     };
     plan.course = Course::Heading(wrap_tau(own.heading + dh));
-    if ordered_kn.is_finite() { plan.speed = Speed::Knots((ordered_kn * sf.clamp(0.2, 1.2)).max(0.0)); }
+    if !ordered_kn.is_finite() { return None; }
+    let kn = (ordered_kn * sf.clamp(0.2, 1.2)).max(0.0);
+    plan.speed = Speed::Knots(kn);
+    Some(kn)
 }
 
 /// Feed a captain the picture changes of this tick as percepts (new contact, stance change, inbound weapon,
@@ -683,9 +733,12 @@ pub(crate) struct Plan {
     pub(crate) emcon: Option<Emcon>,
     pub(crate) preset: Option<DoctrinePreset>,
     pub(crate) strike: bool,
+    /// The hull lies still (at anchor, or struck): `ShipOrders::at_rest`, so the Helm's own evasion does not
+    /// get it under way.
+    pub(crate) at_rest: bool,
 }
 impl Plan {
-    fn new(mode: CaptainMode) -> Self { Plan { mode, course: Course::Keep, speed: Speed::Keep, designated: None, weapons_tight: None, evade: None, keep_range_m: None, emcon: None, preset: None, strike: false } }
+    fn new(mode: CaptainMode) -> Self { Plan { mode, course: Course::Keep, speed: Speed::Keep, designated: None, weapons_tight: None, evade: None, keep_range_m: None, emcon: None, preset: None, strike: false, at_rest: false } }
 }
 
 fn under_fire(c: &CaptainState, now: u64) -> bool { c.mem.under_fire_tick.is_some_and(|t| now.saturating_sub(t) < UNDER_FIRE_S * TICKS_PER_S) }
@@ -705,6 +758,7 @@ pub(crate) fn think(c: &mut CaptainState, s: &Situation<'_>) -> Plan {
         p.designated = Some(TrackId::NONE);
         p.weapons_tight = Some(true);
         p.evade = Some(false);
+        p.at_rest = true;
         return p;
     }
     // Strike colours under the surrender rule (never a player hull, a proxy or an ace).
@@ -717,6 +771,7 @@ pub(crate) fn think(c: &mut CaptainState, s: &Situation<'_>) -> Plan {
             p.designated = Some(TrackId::NONE);
             p.weapons_tight = Some(true);
             p.evade = Some(false);
+            p.at_rest = true;
             p.strike = true;
             c.target = TrackId::NONE;
             return p;
@@ -741,6 +796,12 @@ pub(crate) fn think(c: &mut CaptainState, s: &Situation<'_>) -> Plan {
         return p;
     }
     if let Some(t) = s.threats.first() { c.mem.threat_bearing = Some(bearing(own.pos, t.pos)); }
+    if c.directive.anchored {
+        let p = at_anchor(c, s);
+        c.mode = p.mode;
+        if let Some(d) = p.designated { c.target = d; }
+        return p;
+    }
     if !c.mem.withdraw_latched && !has_flag(s, "hold_ground") && wants_withdraw(&own.health, c.behaviour, c.ace.is_some()) { c.mem.withdraw_latched = true; }
 
     let target = pick_target(c, s);
@@ -1068,6 +1129,28 @@ fn merchant(c: &mut CaptainState, s: &Situation<'_>) -> Plan {
     p
 }
 
+/// A hull whose group orders are `Anchor` lies at anchor (owner ruling of 22 November 2026): it makes no way,
+/// a merchant does not flee, and no hull turns away from inbound weapons or an unseen shooter. An armed hull
+/// fights from where it lies (DECISION, s2: as a site does, weapons free once under fire or holding a Hostile
+/// contact; the ruling is silent on what an anchored warship fires at). A merchant designates nothing.
+/// Before, in cutting_out seed 0 the prize crept north at the group's 1 kn hold speed and ran at 24 kn from
+/// 480 s, when the player came inside the merchant's 10 km threat range.
+fn at_anchor(c: &mut CaptainState, s: &Situation<'_>) -> Plan {
+    let merchant = c.behaviour == Behaviour::Merchant;
+    let target = if merchant { None } else { pick_target(c, s) };
+    let mut p = Plan::new(if target.is_some_and(|t| t.hostile) { CaptainMode::Attacking } else { CaptainMode::Following });
+    p.course = Course::Stop;
+    p.speed = Speed::Knots(0.0);
+    p.at_rest = true;
+    p.designated = if merchant { None } else { Some(target.map_or(TrackId::NONE, |t| t.id)) };
+    p.weapons_tight = Some(c.directive.weapons_tight && !under_fire(c, s.now) && !target.is_some_and(|t| t.hostile));
+    p.evade = Some(false);
+    p.keep_range_m = Some(None);
+    p.emcon = if merchant { None } else { Some(base_emcon(c, s)) };
+    p.preset = preset_for(c, s, &p);
+    p
+}
+
 fn stationary(c: &mut CaptainState, s: &Situation<'_>, target: Option<Contact>) -> Plan {
     let anchor = *c.mem.anchor.get_or_insert(s.own.pos);
     let mut p = Plan::new(if target.is_some() { CaptainMode::Attacking } else { CaptainMode::Following });
@@ -1182,6 +1265,7 @@ pub(crate) fn build_out(p: &Plan, cur: &ShipOrders, emcon: Emcon, preset: Doctri
         }
         Course::Stop => { o.route.clear(); o.station = None; o.formation = None; }
     }
+    o.at_rest = p.at_rest;
     let top_kn = own.top_speed_mps / KN;
     match p.speed {
         Speed::Keep => {}
@@ -1238,6 +1322,95 @@ mod tests {
         let gun = vec![mount(0, WeaponClass::Decoy, 2_000.0), mount(1, WeaponClass::Gun, 8_000.0)];
         let parts = vec![parts[0].clone(), part(1, PartState::Mount(MountState { ready_rounds: 10, ..Default::default() }))];
         assert!(strike_weapon_works(&gun, &parts), "a loaded, intact gun still works");
+    }
+
+    /// cutting_out seed 1, `BP_DROP=all`: the prize, taken and ordered home at cruise, had the boarding hull
+    /// alongside; avoidance wrote its speed over ground (1.02 kn) into a proxy plan that keeps its speed, and it
+    /// kept 1.02 kn for the rest of the sortie.
+    #[test]
+    fn a_kept_speed_comes_back_once_the_way_is_clear() {
+        use content::campaign::MapDef;
+        let t = sim_core::terrain::Terrain::new(MapDef { size_m: [40_000.0, 40_000.0], depth_m: 200.0, ..Default::default() });
+        let o = own();
+        let cruise = o.top_speed_mps * 0.7 / KN;
+        // About 1 kn ahead, the captor lying 63 m off the bow.
+        let me = Kinematics { pose: Pose::from_heading(DVec3::ZERO, 0.0), lin_vel: DVec3::new(0.0, 0.0, -0.5), ang_vel: DVec3::ZERO };
+        let alongside = Kinematics { pose: Pose::from_heading(DVec3::new(60.0, 0.0, -20.0), 0.0), lin_vel: DVec3::ZERO, ang_vel: DVec3::ZERO };
+        let mods = DoctrineMods::default();
+        let mut c = new_captain(Behaviour::Proxy, None, None, SurrenderRule::Never);
+        c.route = vec![DVec2::new(0.0, -10_000.0)];
+        let mut orders = ShipOrders { route: c.route.clone(), speed_kn: None, ..Default::default() };
+        let decide = |c: &mut CaptainState, orders: &mut ShipOrders, near: &[Kinematics], now: u64| {
+            let mut p = run(c, &o, &[], &[], &mods, now);
+            assert_eq!(p.speed, Speed::Keep, "a proxy keeps its speed");
+            steer_clear(c, &mut p, &me, near, &o, orders.speed_kn, cruise, &t);
+            if let Some(n) = build_out(&p, orders, Emcon::Burst, DoctrinePreset::Cautious, &o, &sea).orders { *orders = n; }
+        };
+        decide(&mut c, &mut orders, &[alongside], 10);
+        let k = orders.speed_kn.expect("avoidance sets a speed");
+        assert!(k >= 0.2 * cruise - 1e-9, "scaled from the cruise speed, not the 1 kn over ground: {k}");
+        decide(&mut c, &mut orders, &[alongside], 20);
+        assert_eq!(orders.speed_kn, Some(k), "no ratchet while the risk lasts");
+        decide(&mut c, &mut orders, &[], 30);
+        assert_eq!(orders.speed_kn, None, "the way clear, it cruises again");
+        // An ordered speed comes back as ordered.
+        orders.speed_kn = Some(12.0);
+        decide(&mut c, &mut orders, &[alongside], 40);
+        assert_ne!(orders.speed_kn, Some(12.0));
+        decide(&mut c, &mut orders, &[], 50);
+        assert_eq!(orders.speed_kn, Some(12.0));
+        // A speed someone else ordered while avoidance held the hull stands.
+        decide(&mut c, &mut orders, &[alongside], 60);
+        orders.speed_kn = Some(5.0);
+        decide(&mut c, &mut orders, &[], 70);
+        assert_eq!(orders.speed_kn, Some(5.0));
+        // A plan with its own speed is scaled from it, and the next clear decision writes it anew.
+        let mut m = new_captain(Behaviour::Merchant, None, None, SurrenderRule::Never);
+        m.directive.route = vec![DVec2::new(0.0, -10_000.0)];
+        let mut p = run(&mut m, &o, &[], &[], &mods, 80);
+        assert_eq!(p.speed, Speed::Cruise);
+        steer_clear(&mut m, &mut p, &me, &[alongside], &o, Some(3.0), cruise, &t);
+        assert!(matches!(p.speed, Speed::Knots(k) if k >= 0.2 * cruise - 1e-9), "{:?}", p.speed);
+        assert_eq!(m.mem.avoid_speed, None, "only a kept speed is remembered");
+    }
+
+    /// Owner ruling of 22 November 2026: a hull whose group orders are Anchor is at anchor; it makes no way and
+    /// its captain does not flee. cutting_out seed 0: the anchored prize ran at 24 kn from 480 s, when the player
+    /// came inside the merchant's 10 km threat range.
+    #[test]
+    fn a_hull_at_anchor_makes_no_way_and_does_not_flee() {
+        let mods = DoctrineMods::default();
+        let o = own();
+        let near = [contact(2, DVec2::new(0.0, -9_800.0), true)];
+        let mut missile = contact(3, DVec2::new(0.0, -3_000.0), true);
+        missile.vel = DVec2::new(0.0, 250.0);
+        let anchored = |behaviour: Behaviour| {
+            let mut c = new_captain(behaviour, None, None, SurrenderRule::Never);
+            c.directive.anchored = true;
+            c.directive.route = vec![DVec2::new(0.0, 0.0)];
+            c.directive.weapons_tight = true;
+            c
+        };
+        let mut c = anchored(Behaviour::Merchant);
+        c.mem.under_fire_tick = Some(5);
+        for (now, threats, inbound) in [(10, &near[..], &[][..]), (20, &near[..], &[missile][..]), (30, &[][..], &[][..])] {
+            let p = run(&mut c, &o, threats, inbound, &mods, now);
+            assert_eq!((p.course.clone(), p.speed, p.evade), (Course::Stop, Speed::Knots(0.0), Some(false)), "at {now}");
+            assert_ne!(p.mode, CaptainMode::Fleeing);
+            // The orders tell the Helm it lies still, so its own evasion does not get it under way.
+            let sea = |_: DVec2| 100.0;
+            let orders = build_out(&p, &ShipOrders { route: vec![DVec2::new(5.0, 5.0)], ..Default::default() }, Emcon::Burst, DoctrinePreset::Cautious, &o, &sea).orders.expect("new orders");
+            assert!(orders.at_rest && orders.route.is_empty() && orders.speed_kn == Some(0.0), "{orders:?}");
+        }
+        // An armed hull at anchor fights from where it lies.
+        let mut w = anchored(Behaviour::Combatant);
+        let p = run(&mut w, &o, &[contact(2, DVec2::new(0.0, -5_000.0), true)], &[], &mods, 10);
+        assert_eq!((p.course, p.speed, p.designated, p.weapons_tight, p.mode), (Course::Stop, Speed::Knots(0.0), Some(TrackId(2)), Some(false), CaptainMode::Attacking));
+        // A group that only holds station is not at anchor: its merchant still flees.
+        let mut h = anchored(Behaviour::Merchant);
+        h.directive.anchored = false;
+        let p = run(&mut h, &o, &near, &[], &mods, 10);
+        assert_eq!((p.mode, p.speed), (CaptainMode::Fleeing, Speed::Flank));
     }
 
     #[test]

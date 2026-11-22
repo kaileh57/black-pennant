@@ -394,6 +394,17 @@ fn rotating_bearing(s: &SensorInstance, part_rel: Option<f64>, heading: f64, tic
 /// `sim_core::parts::mount_zero_rad`, which is counter-clockwise.
 pub(crate) fn part_facing_cw(rot: content::kit::PartRot) -> f64 { wrap_tau(-sim_core::parts::mount_zero_rad(rot)) }
 
+/// Whether a hull's implicit lookout (L2446) keeps watch: the hull is afloat and was built with a crew.
+///
+/// DECISION (s4, 22 November 2026; the spec is silent on what stops a lookout): the watch does not stand down
+/// with the berth count. L704 takes a berth out of the count while its compartment burns, floods past 50% or
+/// is destroyed, and gives that count one effect, the time of damage-control jobs; L700 keeps crew as capacity
+/// and damage about systems. The lookout stood down at `surviving_berths == 0`, so the first fire in a small
+/// craft's one berth compartment blinded it for the rest of the fight: in op.act1.agent_extraction seed 0 the
+/// insertion craft, sailing Silent, lost its 4 berths to a fire 9 s after the first hit, its tracks fell from
+/// Fine to Bearing in 4 s, and its gun held on the grade after 22 rounds while 400 more hit it.
+pub(crate) fn lookout_active(alive: bool, crew: &sim_core::crew::CrewState) -> bool { alive && crew.original_berths > 0 }
+
 fn refresh_on_vessel(s: &mut SensorInstance, v: &sim_core::vessel::Vessel, ships: &ShipTable, ctx: &SimCtx<'_>, tick: u64) {
     use sim_core::parts::PartState;
     use sim_core::vessel::VesselStatus;
@@ -418,7 +429,7 @@ fn refresh_on_vessel(s: &mut SensorInstance, v: &sim_core::vessel::Vessel, ships
         s.pos = if pos.is_finite() { pos } else { v.kin.pose.pos };
         s.height_m = if s.pos.y.is_finite() { s.pos.y } else { 0.0 };
         s.bearing_rad = heading;
-        s.active = alive && v.crew.surviving_berths > 0;
+        s.active = lookout_active(alive, &v.crew);
         s.radiating = false;
         s.output = 1.0;
         s.error_factor = 1.0;
@@ -716,6 +727,18 @@ mod tests {
     fn eid(i: u32) -> EntityId { EntityId { index: i, generation: 0 } }
 
     /// A part's compass facing follows content's yaw rule: one quarter turn carries its +X from the bow to port.
+    #[test]
+    fn the_lookout_keeps_watch_with_every_berth_out_of_the_count() {
+        use sim_core::crew::CrewState;
+        // L704 takes berths out of the damage-control count while their compartment burns; the watch stays.
+        let burning = CrewState { original_berths: 4, surviving_berths: 0, ..Default::default() };
+        assert!(lookout_active(true, &burning), "a crewed hull afloat keeps its lookout with 0 of 4 berths in the count");
+        assert!(lookout_active(true, &CrewState { original_berths: 4, surviving_berths: 4, ..Default::default() }));
+        // A hull that is lost, or one built with no crew (a drone boat), has none.
+        assert!(!lookout_active(false, &burning));
+        assert!(!lookout_active(true, &CrewState::default()));
+    }
+
     #[test]
     fn part_facing_is_compass_sense() {
         use content::kit::PartRot;

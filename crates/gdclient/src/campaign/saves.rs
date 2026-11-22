@@ -329,6 +329,7 @@ impl BpCampaign {
             return match self.resume_inner(&file) { Ok(()) => Vec::new(), Err(m) => vec![m] };
         }
         let save = match store::read_save(&file) { Ok(s) => s, Err(m) => return vec![m] };
+        if let Some(m) = store::act_problem(&save.theatre, &super::theatre_data().campaign.acts) { return vec![m]; }
         self.close_inner(true);
         self.reset_run();
         self.open_theatre(Theatre::from_save(save, super::theatre_data()));
@@ -351,6 +352,11 @@ impl BpCampaign {
     fn resume_inner(&mut self, file: &std::path::Path) -> Result<(), Msg> {
         if Self::session_busy() { return Err(Msg::new("campaign.new.busy")); }
         let save = store::read_suspend(file)?;
+        // Refused before anything closes: another build's keyframe, a slot the campaign has played past, or an
+        // act this build has no row for.
+        if let Some(m) = store::suspend_version_problem(&save) { return Err(m); }
+        if let Some(m) = store::stale_suspend(&saves_root(), &save.header) { return Err(m); }
+        if let Some(m) = store::act_problem(&save.theatre, &super::theatre_data().campaign.acts) { return Err(m); }
         let (theatre, checkpoint) = sim_systems::theatre::saves::resume_suspend(save, super::theatre_data());
         self.close_inner(true);
         self.reset_run();

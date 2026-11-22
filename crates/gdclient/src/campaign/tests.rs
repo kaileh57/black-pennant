@@ -96,7 +96,7 @@ fn every_sentence_fills_all_its_placeholders() {
     let interrupts = vec![
         Interrupt::Arrived(node.clone()), Interrupt::RefitDone, Interrupt::WaitDone, Interrupt::OperationOffered(op.clone()), Interrupt::ForcedOperation(op.clone()),
         Interrupt::HunterGroupWarning { hours: 30 }, Interrupt::CardArriving { region: region.clone(), card: card.clone(), hours: 24 }, Interrupt::ClockLow { days_left: 6.9 },
-        Interrupt::ActEnded, Interrupt::HullReady(PlayerSlot(1)), Interrupt::Paused,
+        Interrupt::ActEnded { won: true }, Interrupt::HullReady(PlayerSlot(1)), Interrupt::Paused,
     ];
     for (i, int) in interrupts.iter().enumerate() {
         assert_eq!(words::interrupt_kind(int), i as i64, "Bp.INTERRUPT_* order");
@@ -464,9 +464,11 @@ fn listing_suspend_and_pruning() {
     assert!(Arc::ptr_eq(&again, &bslot));
 
     // One suspend slot in all: writing another campaign's removes the first.
-    let cp = content::save::SortieCheckpoint { tick: 3600, keyframe_format: 1, config: vec![1, 2, 3], keyframe: vec![9; 1000] };
-    let s1 = SuspendSave { header: sa.header.clone(), theatre: sa.theatre.clone(), sortie: cp.clone() };
-    let s2 = SuspendSave { header: sb.header.clone(), theatre: sb.theatre.clone(), sortie: cp.clone() };
+    let cp = content::save::SortieCheckpoint { tick: 3600, keyframe_format: sim_systems::PROTOCOL_VERSION, config: vec![1, 2, 3], keyframe: vec![9; 1000] };
+    // A suspend is written after the campaign's last full save, one sequence on.
+    let next = |h: &content::save::SaveHeader| content::save::SaveHeader { sequence: h.sequence + 1, ..h.clone() };
+    let s1 = SuspendSave { header: next(&sa.header), theatre: sa.theatre.clone(), sortie: cp.clone() };
+    let s2 = SuspendSave { header: next(&sb.header), theatre: sb.theatre.clone(), sortie: cp.clone() };
     let p1 = store::write_suspend(&root, &s1).unwrap();
     assert!(p1.is_file());
     let p2 = store::write_suspend(&root, &s2).unwrap();
@@ -494,6 +496,52 @@ fn listing_suspend_and_pruning() {
     let manual: Vec<String> = std::fs::read_dir(store::campaign_dir(&root, 0xB)).unwrap().flatten().map(|e| e.file_name().to_string_lossy().to_string()).filter(|n| n.starts_with("save-")).collect();
     assert_eq!(manual.len(), store::MANUAL_KEEP);
     assert!(manual.contains(&store::file_name(&store::manual_stem(1000 + store::MANUAL_KEEP as u64 + 4))));
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+/// A suspend slot the host could only refuse is not offered: one another build wrote (protocol 1 or 2 against
+/// this build's keyframes), one the campaign was saved past (a failed resume left it behind), or one in an
+/// act this build has no row for. Before, all three were the main menu's primary Resume sortie button.
+#[test]
+fn suspend_slots_the_host_would_refuse_are_not_loadable() {
+    let root = temp_root("refuse");
+    let mut a = theatre(1, false);
+    let sa = save_of(&mut a);
+    let cp = |format: u32| content::save::SortieCheckpoint { tick: 3600, keyframe_format: format, config: vec![], keyframe: vec![] };
+    let suspend = |format: u32, seq: u64| {
+        let mut h = sa.header.clone();
+        h.sequence = seq;
+        SuspendSave { header: h, theatre: sa.theatre.clone(), sortie: cp(format) }
+    };
+    let mut cache = store::SlotCache::default();
+    // The current build's suspend, newer than every full save: offered.
+    store::write_save(&root, &sa, store::AUTOSAVE_STEM).unwrap();
+    store::write_suspend(&root, &suspend(sim_systems::PROTOCOL_VERSION, sa.header.sequence + 1)).unwrap();
+    let found = store::find_suspend(&root, &mut cache).expect("suspend");
+    assert!(found.problem.is_none(), "{:?}", found.problem);
+    // Another build's keyframe.
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    store::write_suspend(&root, &suspend(sim_systems::PROTOCOL_VERSION - 1, sa.header.sequence + 1)).unwrap();
+    let found = store::find_suspend(&root, &mut cache).expect("suspend");
+    assert_eq!(found.problem.as_ref().map(|m| m.key.as_str()), Some("campaign.save.other_build"));
+    // Played past: a full save of the same campaign at or after the suspend's sequence.
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    store::write_suspend(&root, &suspend(sim_systems::PROTOCOL_VERSION, sa.header.sequence + 1)).unwrap();
+    let mut later = sa.clone();
+    later.header.sequence += 3;
+    store::write_save(&root, &later, store::AUTOSAVE_STEM).unwrap();
+    let found = store::find_suspend(&root, &mut cache).expect("suspend");
+    assert_eq!(found.problem.as_ref().map(|m| m.key.as_str()), Some("campaign.save.stale_suspend"));
+    // An act with no row in this build's data; Open Theatre plays whatever its act.
+    let shipped = &content::campaign::load::shipped_campaign().acts;
+    let mut t = sa.theatre.clone();
+    assert!(store::act_problem(&t, shipped).is_none());
+    t.act = content::enums::Act::Act2;
+    if !shipped.iter().any(|a| a.act == t.act) {
+        assert_eq!(store::act_problem(&t, shipped).map(|m| m.key.as_str().to_string()).as_deref(), Some("campaign.save.later_act"));
+        t.open_theatre = true;
+        assert!(store::act_problem(&t, shipped).is_none());
+    }
     let _ = std::fs::remove_dir_all(&root);
 }
 
@@ -559,13 +607,18 @@ fn act_one_end_says_it_is_the_end_of_this_build() {
     let mut t = Theatre::new_campaign(new, shipped.clone());
     t.state.clock_hours_left = Some(1.0);
     let _ = t.drain_events();
-    t.advance_hour();
+    t.commit(&TheatreAction::Wait { hours: 3 }).expect("a wait");
+    // The clock-expiry interrupt is a loss: the banner must say the act starts again, not that the build ended.
+    let stop = t.advance(3);
+    assert_eq!(stop, Interrupt::ActEnded { won: false });
     assert_eq!((t.state.act, t.state.retreat), (Act::Act1, true), "Act 1 starts again in retreat");
     let n = words::Names { campaign: &shipped.campaign, catalogue: &shipped.catalogue, players: vec![], act: Some(t.state.act) };
     let lost = t.drain_events().into_iter().find(|e| matches!(e, TheatreEvent::ActLost { .. })).expect("the act is lost");
     let line = text(&lk, &words::event_msg(&lost, 10, &n));
     assert!(filled(&line) && line.contains("Act 1") && line.to_lowercase().contains("this build") && !line.contains("next act"), "{line}");
-    let banner = text(&lk, &words::interrupt_msg(&Interrupt::ActEnded, &n));
+    let banner = text(&lk, &words::interrupt_msg(&Interrupt::ActEnded { won: false }, &n));
+    assert!(filled(&banner) && banner.contains("Act 1") && banner.to_lowercase().contains("retreat") && !banner.contains("look over"), "{banner}");
+    let banner = text(&lk, &words::interrupt_msg(&Interrupt::ActEnded { won: true }, &n));
     assert!(filled(&banner) && banner.contains("Act 1") && banner.to_lowercase().contains("this build"), "{banner}");
     let won = text(&lk, &words::event_msg(&TheatreEvent::ActWon { act: Act::Act1 }, 10, &n));
     assert!(filled(&won) && won.to_lowercase().contains("this build"), "{won}");
@@ -573,5 +626,23 @@ fn act_one_end_says_it_is_the_end_of_this_build() {
     let full = data();
     let n = words::Names { campaign: &full.campaign, catalogue: &full.catalogue, players: vec![], act: Some(Act::Act1) };
     assert_eq!(text(&lk, &words::event_msg(&TheatreEvent::ActWon { act: Act::Act1 }, 10, &n)), "Act 1 won.");
-    assert!(!text(&lk, &words::interrupt_msg(&Interrupt::ActEnded, &n)).to_lowercase().contains("this build"));
+    assert!(!text(&lk, &words::interrupt_msg(&Interrupt::ActEnded { won: true }, &n)).to_lowercase().contains("this build"));
+}
+
+/// Every way a sortie can end reads as its own plain sentence; a mode without end rules has none.
+#[test]
+fn every_end_reason_reads_as_its_own_sentence() {
+    let lk = CsvLookup::load();
+    let mut seen = std::collections::BTreeSet::new();
+    for r in words::END_REASONS {
+        let msg = words::end_reason_msg(Some(r)).expect("every reason has a sentence");
+        let t = text(&lk, &msg);
+        assert!(filled(&t), "{r:?} reads {t:?}");
+        assert!(t.chars().next().is_some_and(|c| c.is_uppercase()) && !t.chars().skip(1).any(|c| c.is_uppercase()), "{r:?} is not sentence case: {t:?}");
+        assert!(seen.insert(t.clone()), "{r:?} repeats {t:?}");
+    }
+    assert_eq!(words::end_reason_msg(None), None);
+    let disabled = text(&lk, &words::end_reason_msg(Some(sim_systems::objectives::EndReason::PlayerHullsDisabled)).unwrap());
+    assert!(disabled.starts_with("Every ship was sunk or dead in the water for "), "{disabled}");
+    println!("disabled reads {disabled:?}");
 }

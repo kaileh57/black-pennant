@@ -1243,8 +1243,20 @@ impl<'a, 'd> Build<'a, 'd> {
         self.s.op.force.iter().find(|f| !tag.is_empty() && f.tag == *tag).map(|f| f.marker.clone()).filter(|n| self.marker(n).is_some())
     }
 
+    /// The marker the group a destroy-group objective names starts at (its force entry's marker: the ace's
+    /// patrol station in a duel), when the map has it. See [`destroy_group_marker`].
+    fn target_group_marker_name(&self) -> Option<String> {
+        destroy_group_marker(self.s.op, self.data).map(str::to_string).filter(|n| self.marker(n).is_some())
+    }
+
+    /// The marker the briefing route ends at: a cutting-out's berth, a destroy-group's target group, else the
+    /// objective's own marker or the map's first objective-kind marker.
+    fn objective_marker(&self) -> Option<String> {
+        self.prize_marker_name().or_else(|| self.target_group_marker_name()).or_else(|| self.objective_pos_name())
+    }
+
     fn objective_point(&self) -> [f64; 2] {
-        self.prize_marker_name().or_else(|| self.objective_pos_name()).and_then(|n| self.marker(&n).map(|m| m.pos_m))
+        self.objective_marker().and_then(|n| self.marker(&n).map(|m| m.pos_m))
             .or_else(|| self.s.op.force.first().and_then(|f| self.marker(&f.marker)).map(|m| m.pos_m))
             .unwrap_or([0.0, 0.0])
     }
@@ -1577,7 +1589,8 @@ impl<'a, 'd> Build<'a, 'd> {
         let mut briefing_map = config.map.clone();
         {
             let mut named: Vec<String> = objective_exits(&s.op.objective);
-            if let Some(n) = self.prize_marker_name().or_else(|| self.objective_pos_name()) { named.push(n); }
+            let goal = self.objective_marker();
+            if let Some(n) = goal.clone() { named.push(n); }
             named.extend(s.op.force.iter().map(|f| f.marker.clone()));
             let convoy = matches!(s.op.objective, Objective::DestroyGroup { .. } | Objective::Escort { .. } | Objective::Photograph { .. });
             let wants = |k: MarkerKind| match k {
@@ -1587,7 +1600,12 @@ impl<'a, 'd> Build<'a, 'd> {
                 MarkerKind::ConvoyEntry | MarkerKind::ConvoyExit => convoy,
                 _ => false,
             };
-            briefing_map.markers.retain(|m| wants(m.kind) || (m.kind != MarkerKind::EnemySpawn && named.contains(&m.name)));
+            briefing_map.markers.retain(|m| wants(m.kind) || (m.kind != MarkerKind::EnemySpawn && named.contains(&m.name)) || goal.as_ref() == Some(&m.name));
+            // A destroy-group's target group starts at a force marker the chart does not draw (an enemy
+            // spawn): on the briefing's copy it is drawn as the objective the route ends at.
+            if let Some(n) = self.target_group_marker_name() {
+                for m in briefing_map.markers.iter_mut().filter(|m| m.name == n && m.kind == MarkerKind::EnemySpawn) { m.kind = MarkerKind::Objective; }
+            }
         }
         let briefing = Briefing {
             operation: s.op.id.clone(), kind: s.op.kind.clone(), name: s.op.name.clone(), text: s.op.briefing.clone(), region: s.region_id.clone().unwrap_or_default(), node: s.node.clone().unwrap_or_default(),
@@ -1673,6 +1691,19 @@ fn default_orders(g: &Group, map: &MapDef, objective: &Objective, groups: &[Grou
         FleetKind::HunterKiller => GroupOrders::Hunt,
         FleetKind::TaskGroup => if matches!(objective, Objective::Survive { .. } | Objective::Feint { .. }) { GroupOrders::Hunt } else { GroupOrders::Guard { marker: g.marker.clone(), radius_m: 5_000.0 } },
     }
+}
+
+/// The force marker of the group a destroy-group objective names (the first force entry carrying its tag):
+/// the briefing route ends there, not at the map's first objective-kind marker, which in an ace duel lay 11 km
+/// or more from the ace's 3 km patrol ring (22 November 2026). A convoy is the exception: its marker is the
+/// lane entry it leaves at the start, and the generator puts it on its lane to pass the objective point as the
+/// players arrive, so a convoy's objective keeps that point. The pilot (`abstract_combat`) reads the same rule.
+pub(crate) fn destroy_group_marker<'o>(op: &'o OperationDef, data: &TheatreData) -> Option<&'o str> {
+    let Objective::DestroyGroup { tag, .. } = &op.objective else { return None };
+    if tag.is_empty() { return None; }
+    let f = op.force.iter().find(|f| f.tag == *tag)?;
+    let kind = data.campaign.fleets.get(&f.fleet).map(|t| t.kind)?;
+    (!matches!(kind, FleetKind::Convoy | FleetKind::DecoyConvoy)).then_some(f.marker.as_str())
 }
 
 fn objective_marker_name(o: &Objective) -> Option<String> {
@@ -2161,6 +2192,64 @@ pub(crate) mod tests {
                 for (i, v) in g.config.vessels.iter().enumerate().filter(|(_, v)| v.role == VesselRole::Combatant && v.tag != *tag && v.side == combine) {
                     let ace = v.group.is_some_and(|gid| g.config.groups.iter().any(|x| x.id == gid && x.ace.is_some()));
                     assert!(ace || !g.config.intel.named.contains(&(i as u16)), "{} seed {seed}: vessel {i} ({:?}) is named", op.id.as_str(), v.tag);
+                }
+            }
+        }
+        assert!(seen > 0);
+    }
+
+    /// Real data, 200 seeds on every map of each ace duel: the briefing route ends at the ace group's marker,
+    /// the ace starts within its patrol ring of the route's end, the spawn lies on the approach to it, the
+    /// briefing chart draws the end as the objective, and the gate's pilot steers for the same point. Before
+    /// 22 November 2026 the route ended at the map's first Objective marker, 11 km or more from the ace.
+    #[test]
+    fn act1_ace_duel_route_ends_at_the_ace() {
+        let data = real_data();
+        let mut seen = 0u32;
+        for op in act1_ops(&data) {
+            if !matches!(op.kind, OperationKind::AceDuel(_)) { continue; }
+            let Objective::DestroyGroup { tag, .. } = &op.objective else { panic!("{}: a duel destroys the ace", op.id.as_str()) };
+            let marker = destroy_group_marker(op, &data).expect("a duel's target is not a convoy");
+            for (node, map) in act1_maps(op, &data) {
+                let where_ = node.map_or("authored map", |n| n.id.as_str());
+                for seed in 0..200u64 {
+                    let g = build(&act1_spec(op, node, map.clone(), seed, FAC, &data), &data);
+                    let at = g.config.map.markers.iter().find(|m| m.name == marker).expect("the ace's marker").pos_m;
+                    assert_eq!(g.briefing.route[1], at, "{} on {where_} seed {seed}: the route ends at the ace's marker", op.id.as_str());
+                    let combine = g.config.sides.iter().find(|s| s.faction == Faction::Combine).expect("the Combine").id;
+                    let ace = g.config.vessels.iter().filter(|v| v.side == combine && v.tag == *tag).map(|v| libm::sqrt(d2([v.pos.x, v.pos.z], at))).fold(f64::INFINITY, f64::min);
+                    assert!(ace <= 3_000.0, "{} on {where_} seed {seed}: the ace starts {ace:.0} m from the route's end", op.id.as_str());
+                    assert!((g.briefing.distance_km * 1000.0 - libm::sqrt(d2(g.briefing.route[0], at))).abs() < 1.0, "{} on {where_} seed {seed}: the approach is measured to the ace", op.id.as_str());
+                    let drawn = g.briefing.map.markers.iter().find(|m| m.pos_m == at).map(|m| m.kind);
+                    assert_eq!(drawn, Some(MarkerKind::Objective), "{} on {where_} seed {seed}: the chart draws the route's end", op.id.as_str());
+                    let setup = crate::theatre::abstract_combat::PlayerSetup { reference_setup: None, method: None, emcon: None, ghosts: false, follow_briefing_route: true };
+                    let pilot = crate::theatre::abstract_combat::Pilot::new(&g.config, &setup, &data);
+                    assert_eq!(pilot.objective_pos(), glam::DVec2::from(at), "{} on {where_} seed {seed}: the pilot steers for the briefing's end", op.id.as_str());
+                    seen += 1;
+                }
+            }
+        }
+        assert!(seen >= 400, "{seen} duel sorties checked");
+    }
+
+    /// Real data: a destroy-group whose targets are a convoy keeps its objective point (the convoy is put on
+    /// its lane to pass it), and the pilot agrees with the briefing route.
+    #[test]
+    fn act1_convoy_destroy_group_keeps_its_point() {
+        let data = real_data();
+        let mut seen = 0u32;
+        for op in act1_ops(&data) {
+            if !matches!(op.objective, Objective::DestroyGroup { .. }) || matches!(op.kind, OperationKind::AceDuel(_)) { continue; }
+            assert_eq!(destroy_group_marker(op, &data), None, "{}: its targets are a convoy", op.id.as_str());
+            for (node, map) in act1_maps(op, &data) {
+                for seed in 0..10u64 {
+                    let g = build(&act1_spec(op, node, map.clone(), seed, FAC, &data), &data);
+                    let first = g.config.map.markers.iter().find(|m| matches!(m.kind, MarkerKind::Objective | MarkerKind::DepotSite | MarkerKind::RadarSite | MarkerKind::Berth)).map(|m| m.pos_m);
+                    if let Some(p) = first { assert_eq!(g.briefing.route[1], p, "{} seed {seed}", op.id.as_str()); }
+                    let setup = crate::theatre::abstract_combat::PlayerSetup { reference_setup: None, method: None, emcon: None, ghosts: false, follow_briefing_route: true };
+                    let pilot = crate::theatre::abstract_combat::Pilot::new(&g.config, &setup, &data);
+                    assert_eq!(pilot.objective_pos(), glam::DVec2::from(g.briefing.route[1]), "{} seed {seed}", op.id.as_str());
+                    seen += 1;
                 }
             }
         }

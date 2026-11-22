@@ -58,6 +58,30 @@ fn default_board_reads_cleanly() {
 }
 
 #[test]
+fn sensors_cite_the_shellfire_that_started_a_burst() {
+    // Burst, bursting, no track at all: the trigger was shellfire (`emcon`, module notes), a weapon inbound.
+    let mut fx = Fx::new();
+    fx.tick = 6_000;
+    fx.stages.emcon.phase = crate::emcon::EmconPhase::Bursting;
+    fx.stages.emcon.under_fire_tick = Some(5_990);
+    let b = fx.board();
+    check_board(&b);
+    assert_eq!(b.officers[2].reason.key.0, "sim.emcon.burst_weapon_inbound");
+    // Past the 60 s window with a burst still running for a weapon assigned: the refresh reason again.
+    fx.stages.emcon.under_fire_tick = Some(6_000 - 61 * 60);
+    assert_eq!(fx.board().officers[2].reason.key.0, "sim.emcon.burst_refresh_for_weapon");
+    // Silent with the directors lit by the exception reads as the Silent exception.
+    fx.settings.emcon = Emcon::Silent;
+    fx.stages.emcon.phase = crate::emcon::EmconPhase::PointDefenceOnly;
+    assert_eq!(fx.board().officers[2].reason.key.0, "sim.emcon.point_defence_exception");
+    // Lit by shellfire alone (no weapon inside the point-defence window), it says so. Before, a gun director
+    // radiating under fire read "Point-defence radar on: weapon inbound".
+    fx.stages.emcon.under_fire_tick = Some(5_990);
+    fx.stages.emcon.self_defence_only = true;
+    assert_eq!(fx.board().officers[2].reason.key.0, "sim.emcon.self_defence");
+}
+
+#[test]
 fn gunnery_cites_the_reason_and_player_control_shows_advisory() {
     let mut fx = Fx::new();
     fx.stages.engage.mounts = vec![

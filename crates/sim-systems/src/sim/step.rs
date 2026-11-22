@@ -147,6 +147,56 @@ pub(crate) fn rendezvous_met(members: &[DVec2], players: &[DVec2]) -> bool {
     members.iter().any(|m| players.iter().any(|p| m.is_finite() && p.is_finite() && m.distance_squared(*p) <= RENDEZVOUS_M * RENDEZVOUS_M))
 }
 
+/// Whether a contact seen this update is out of the fight for the officers (DECISION, k2): colours struck,
+/// dead in the water with no working propulsion, or going down. A shore site has no propulsion that its
+/// objective counts, so a disabled site stays in the fight while it floats (DECISION, r4, from s3's site
+/// rule); a site that strikes or is lost is out of it like any hull.
+pub(crate) fn out_of_action(struck: bool, status: sim_core::vessel::VesselStatus, site: bool) -> bool {
+    use sim_core::vessel::VesselStatus;
+    struck || match status { VesselStatus::Active => false, VesselStatus::Disabled => !site, VesselStatus::Lost(_) | VesselStatus::Wreck => true }
+}
+
+/// The stance an AI side's briefing declares for a track (L490): its enemies are Hostile, and civilian traffic
+/// and protected hulls it is not at war with are Neutral, so it never auto-engages them. A civilian or
+/// protected side (a defector) is at war with nobody: a side hostile to it is Hostile, every other side
+/// Neutral, so it never fires on its own escort as Suspect (DECISION, r2c). `located` is false when the
+/// track's truth entity is gone from the world (an expired chaff cloud the track last took a fix from).
+///
+/// DECISION, s2: a track whose truth is gone keeps the stance the briefing last declared for it. Before, the
+/// declaration fell to None and the track turned Suspect, so in duel.auditor the Arrears stood off a Hostile
+/// track from 630 to 1,990 s after it took a fix from the player's chaff.
+pub(crate) fn ai_declared(viewer: &SideDef, side: SideId, located: bool, truth_def: Option<&SideDef>, track: &Track) -> Option<Stance> {
+    match truth_def {
+        Some(d) if viewer.hostile_to.has(d.id) => Some(Stance::Hostile),
+        Some(d) if matches!(d.faction, Faction::Civilian | Faction::Protected) => Some(Stance::Neutral),
+        Some(d) if matches!(viewer.faction, Faction::Civilian | Faction::Protected) => Some(if d.hostile_to.has(side) { Stance::Hostile } else { Stance::Neutral }),
+        None if !located => match (track.stance, track.stance_reason) {
+            (Stance::Hostile, StanceReason::BriefingHostile) => Some(Stance::Hostile),
+            (Stance::Neutral, StanceReason::BriefingNeutral) => Some(Stance::Neutral),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+/// A side's call for reinforcements: each of its scheduled hulls not yet called comes at half the wait it had
+/// left, but never on less than a minute's notice (`hastened` gets (config index, arrival tick)).
+///
+/// DECISION, s2: an ace's group (`GroupInit::ace`) is not a reinforcement wave and keeps its own arrival. The
+/// AceArrives complication schedules the ace for 900 s; a side that reached Alerted early pulled her in with the
+/// waves, and in capstone seed 0 the Covenant was at sea and launching missiles from 570 s.
+pub(crate) fn hasten_reinforcements(config: &crate::protocol::config::SortieConfig, scheduled: &[u16], hastened: &mut Vec<(u16, u64)>, side: SideId, now: u64) {
+    for &i in scheduled {
+        let Some(v) = config.vessels.get(i as usize).filter(|v| v.side == side) else { continue };
+        if hastened.iter().any(|h| h.0 == i) { continue; }
+        if v.group.is_some_and(|g| config.groups.iter().any(|gi| gi.id == g && gi.ace.is_some())) { continue; }
+        let planned = v.arrives_s as u64 * TICK_HZ as u64;
+        let left = planned.saturating_sub(now);
+        let by = now.saturating_add((left / 2).max(REINFORCE_NOTICE_TICKS)).min(planned);
+        hastened.push((i, by));
+    }
+}
+
 /// Indices of the player ships (`(player owned, side, designated track)` per ship) whose designation is a
 /// track of `vessel` on their side's picture. The officers stop firing on a hull that strikes (ruling 1); a
 /// player who designates it again afterwards is firing on purpose, so the Strike handler clears each one
@@ -501,7 +551,8 @@ impl Sim {
                 // the player's designation still can). Cleared when it is seen in the fight again.
                 if seen.is_some() && !friend {
                     if let Some(v) = world.vessel(track.truth) {
-                        track.out_of_action = v.struck || !matches!(v.status, sim_core::vessel::VesselStatus::Active);
+                        let site = index_of.get(&track.truth).and_then(|i| self.config.vessels.get(*i as usize)).is_some_and(|v| v.role == crate::protocol::config::VesselRole::Site);
+                        track.out_of_action = out_of_action(v.struck, v.status, site);
                         track.struck = v.struck;
                     }
                 }
@@ -527,15 +578,7 @@ impl Sim {
                         // An AI side's briefing: its enemies are Hostile, and civilian traffic and protected
                         // hulls it is not at war with are Neutral, so it never auto-engages them (L490).
                         let truth_def = truth_side.and_then(|s| self.config.sides.iter().find(|d| d.id == s));
-                        // A civilian or protected side (a defector) is at war with nobody: a side hostile to it
-                        // is Hostile, every other side Neutral, so it never fires on its own escort as Suspect
-                        // (DECISION, r2c).
-                        match truth_def {
-                            Some(d) if def.hostile_to.has(d.id) => Some(Stance::Hostile),
-                            Some(d) if matches!(d.faction, Faction::Civilian | Faction::Protected) => Some(Stance::Neutral),
-                            Some(d) if matches!(def.faction, Faction::Civilian | Faction::Protected) => Some(if d.hostile_to.has(side) { Stance::Hostile } else { Stance::Neutral }),
-                            _ => None,
-                        }
+                        ai_declared(def, side, truth_side.is_some(), truth_def, track)
                     };
                     let facts = ident::stance::StanceFacts { declared, ..facts_base };
                     if ident::stance::evaluate(track, &facts) {
@@ -550,6 +593,14 @@ impl Sim {
                     match self.run.esm_heard.iter_mut().find(|h| h.0 == side && h.1 == track.id) { Some(h) => h.2 = tick, None => self.run.esm_heard.push((side, track.id, tick)) }
                 }
                 track.emitting = !friend && self.run.esm_heard.iter().any(|h| h.0 == side && h.1 == track.id && tick.saturating_sub(h.2) <= EMITTING_TICKS);
+            }
+            // The shore sites in this side's picture: its Weapons officers give them no anti-ship missile
+            // (`engage::EngageState::shore_sites`, `HoldReason::ShoreSite`).
+            let sites: Vec<TrackId> = picture.tracks.iter()
+                .filter(|t| t.is_live() && index_of.get(&t.truth).and_then(|i| self.config.vessels.get(*i as usize)).is_some_and(|v| v.role == crate::protocol::config::VesselRole::Site))
+                .map(|t| t.id).collect();
+            for s in self.ships.ships.iter_mut().filter(|s| s.side == side) {
+                if s.stages.engage.shore_sites != sites { s.stages.engage.shore_sites.clone_from(&sites); }
             }
             for ch in &changes {
                 let ev = match *ch {
@@ -639,17 +690,7 @@ impl Sim {
                 }
                 AiOut::SteerBody { body, steer } => self.world.steer_body(body, steer),
                 AiOut::Alert { side, level } => self.emit(Audience::Host, Lane::Log, SimEvent::EnemyAlert { side, level }),
-                AiOut::CallReinforcements { side } => {
-                    for &i in &self.schedule.vessels {
-                        let Some(v) = self.config.vessels.get(i as usize).filter(|v| v.side == side) else { continue };
-                        if self.run.hastened.iter().any(|h| h.0 == i) { continue; }
-                        // Half the wait that was left, but never less than a minute's notice.
-                        let planned = v.arrives_s as u64 * TICK_HZ as u64;
-                        let left = planned.saturating_sub(t.0);
-                        let by = t.0.saturating_add((left / 2).max(REINFORCE_NOTICE_TICKS)).min(planned);
-                        self.run.hastened.push((i, by));
-                    }
-                }
+                AiOut::CallReinforcements { side } => hasten_reinforcements(&self.config, &self.schedule.vessels, &mut self.run.hastened, side, t.0),
                 AiOut::SettingsChanged { vessel } => self.recompile_ship(vessel),
                 AiOut::AceLine { ace, cue, text, from } => self.ace_line(ace, cue, text, from),
                 AiOut::Release(r) => {

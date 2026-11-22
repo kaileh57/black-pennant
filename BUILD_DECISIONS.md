@@ -1706,3 +1706,133 @@ later entry contradicts an earlier one, the later entry is what the code does.
 - Coordinator's ruling and departure. The release smoke run follows the task, not L1298's scenario, and lets one exit-time line through. L1298 asks for 3,600 ticks of the splash basin then 1,800 ticks of an Act 1 convoy raid through the campaign path, failing on any error-level line. `-- --smoke-sortie` (`crates/gdclient/src/session/smoke.rs`) plays 60 s of sortie time of an offline skirmish (fast attack craft, the default convoy raid mission, Act 1, seed 7) at 4x and fails on any ERROR, SCRIPT ERROR or USER ERROR line. release.yml runs it after `--smoke`. **Pending**: the launch checks let through `^ERROR: [0-9]+ resources still in use at exit` (`EXIT_LEAK` in `.github/workflows/release.yml`), from audio voices still held at exit. A fix to `game/audio/sound.gd` is in progress; remove `EXIT_LEAK` and amend this entry when it lands.
 - Coordinator's ruling and reading. The release workflow also builds, smoke-tests and uploads both archives as workflow artifacts, without publishing, for a pull request labelled "package" (L1274 is silent on pull-request builds). The publish job runs for tags only, on GitHub-hosted standard runners.
 - Reading. Every v0.* tag publishes as a pre-release, as do hyphenated tags (L1274, L2177: versions stay 0.x until 1.0 and the playtest builds are pre-releases).
+
+### s1: sunk at the weather turn (22 November, round 3)
+
+- DESIGN.md L537: the sunk test is left as the spec defines it, one sample, no hold and no water-aboard condition. Measured: no deck-under tick occurs on a steady sea or through a blended turn, so a hold would only delay real losses.
+- DESIGN.md L1871 ("Weather blends over 20 to 60 s") is about the render presets; the spec is silent on blending the simulated sea. I applied 60 s, the top of that range, to the wave set too.
+- DESIGN.md L1116 fixes the component count in every sea state, so the blend fades amplitudes through zero per component rather than summing two sets (24 components, above MAX_WAVES 16 and the 8-mat4 shader packing). Spec-silent on how.
+- DESIGN.md L920 replicates the weather state and wave seed. The WeatherChanged event and the protocol are unchanged; the client is expected to reproduce the blend with the public sim_core::world::weather::blended_waves (patch in not_done).
+- A weather turn arriving during a blend starts a new blend from the set in force at that tick. Spec-silent.
+- Keyframe format bumped from 1 to 2 for the blend field (bincode is positional), so old keyframes are refused with KeyframeError::Format. Spec-silent; keyframes are transient.
+
+### s2: captains (22 November, round 3)
+
+- L768 (flocking and collision avoidance adjust heading and speed only) is silent on what speed avoidance scales. I chose the ordered speed for Keep and the cruise speed for Cruise, with cruise as the helm.cruise slider share of top speed (0.7 when unset, as the Helm). A kept speed is restored on the next clear decision unless the orders changed in between.
+- Anchor ruling (brief, 22 November 2026), applied as written: at_anchor covers every behaviour, not only merchants. An armed hull at anchor fights from where it lies, weapons free once under fire or holding a Hostile, as a site does. at_anchor also takes precedence over a latched withdraw. The ruling is silent on armed hulls; in the data only prize and defector groups get Anchor.
+- Anchor ruling, applied as written: the defector waiting for the rendezvous has Anchor orders (opgen default_orders for Protected), so it no longer flees before the rendezvous. Cost in the numbers: see open.
+- L94 and L778 are silent on whether a call for reinforcements moves an ace forward. I chose that an ace's group (GroupInit::ace) keeps the AceArrives arrival time; scheduled waves are still hastened.
+- L497-502 (stance rules) are silent on a truth entity that has left the world. I chose that an AI track keeps its last briefing stance until it drops.
+- L483 against L328: Aggressive lowers the ASHM requirement to rung Domain and grade Bearing (doctrine/mod.rs:107-110), below L483's Type and Coarse. I read L483 as the default entry and the presets as allowed departures, so nothing changed for item 6.
+- Item 3: the spec has no convoy-under-attack rule (L747-748, L778, L963). Merchants flee at design top speed, so nothing changed.
+
+### s3: site rule (22 November, round 3)
+
+- Measure changed, not only the number (the brief asked for one number; the constant comment said "destroyed cells, L561"). No share of destroyed cells put the patrol boat inside 70% of its 400 rounds in every seed: 0.25% took 161 to 400 rounds, 0.10% (9 cells) 114 to 362, against a 280 round budget. Health, L561's own term (mean of 1 - bucket/8), moves with every damaging hit. The spec does not say what destroys a site.
+- Value 1.25%: the largest 0.25% step at which both starters stay inside 70% in every sortie that fired. Patrol boat 104 to 243 rounds of 400, fast attack craft 54 to 92 of 224. 1.5% fails (patrol boat up to 288, 72%). 1.0% would give 86 to 206 and 41 to 70; I took the larger passing step and did not tune to wins.
+- L483 (anti-ship missiles fire at Hostile tracks) and L523 (seeker acquisition) say nothing about sites; departed from L483 per the coordinator's ruling: the hold applies whatever stance, designation or written fire permission says. No DESIGN.md line says anti-ship missiles are meant to hit sites, and there is no land-attack weapon in MunitionKind or WeaponClass.
+- L797 "depot strike uses weapons only": read as guns per the ruling. Everything except a missile counts (shells, torpedoes, mines, ramming, and fire lit by any of those).
+- Fire and cook-off damage names no weapon, so it goes to the last direct hit: after a missile hit it does not count until a shell hits again.
+- A site hull that is lost counts as destroyed whatever sank it, missiles included; otherwise the operation could never end.
+- L797 with L791 (insertion): L791 does not say which shore marker or what the finished hold does to the site. Taken: any ShoreLanding marker (the one the briefing map shows for this operation) or the site's own marker, and the hold's end destroys the site at once (L784: no walking crew). The landing is 2.2 km and 6.3 km from the radar on the two maps I checked. This is one line plus one text key if the coordinator wants it out.
+- Hold wording "Holding: no seeker lock on a shore site" follows the coordinator's example and the existing "Holding: ..." rows. Splash does not rank it as a design fault.
+- L317 and L85: nothing was tuned toward the gate; approach length and hostile counts were left alone.
+
+### s4: return fire (22 November, round 3)
+
+- L2446 and L704 (spec silent on what stops a lookout): the implicit lookout keeps watch while the hull is afloat and was built with berths. The code had tied it to surviving berths, so one fire in a small craft's only berth compartment blinded it.
+- L507 (departure, taken on the brief's ruling that a ship under fire defends itself with its guns): in Silent, every fire-control radar radiates while the hull is under fire. L507 names one exception. The whole departure is the condition `under_fire && e.kind == EmitterKind::FireControlRadar` in the Silent arm of emission_controller; removing it leaves the Burst trigger intact.
+- L507 and L509 (spec silent on shellfire): for Burst, shellfire counts as 'a weapon is inbound', so bursts start and repeat every 10 s.
+- L2540 (borrowed): the hull stays under fire for 60 s after the last inbound shell.
+- L486 (spec silent on shells): a shell is inbound on a hull when its straight path passes within 150 m of it, the existing near-miss distance, inside the next 3 s. Per hull, not per side. The hull's own shells and those of a datalink Friend never count.
+- L501: no change. The fired-on rule was already in force; the brief's stance ruling needed no code.
+- L484 and L489: the Weapons officer and doctrine are unchanged. Guns still need a Hostile track graded Fine inside effective range; missiles keep their identification hold.
+- L1664: the board reuses two existing lines ('Burst: weapon inbound', and the point-defence exception line in Silent) so no text key outside my file list was needed.
+- Both rules apply to every hull, AI included. The spec draws no player-only line, and a player-only officer rule would be a tuning lever.
+- I kept the Silent half landed although wins did not improve, because the brief gave the ruling. Its measured cost is in open.
+
+### h1: generator and gate harness (22 November, round 3)
+
+- L317 / brief item 1: DestroyGroup objectives whose named force fleet is a Convoy or DecoyConvoy keep the old objective point. Measured with the rule applied to them too: convoy_raid fell from 1W to 0W with hostiles and from 3W to 2W drop-all; kessel_toll fell from 1W to 0W and from 4W to 1W. A convoy leaves its marker (the lane entry) at the start, and lane_start puts it on its lane to meet the players at the objective point.
+- L317 / briefing chart (DESIGN silent): on the briefing's copy of the map only, the destroy-group target's EnemySpawn marker is re-kinded to Objective. The client hides enemy spawns (convert::map_dict), and without this the route would end at a blank point. The route line already shows that point.
+- L790: the boarding hold is board_range_m minus three Helm arrival radii (155 m for the starter), not a free choice. Closer than the on-station band allows, the boarding can sit Paused TooFar with the Helm content to stay put.
+- L108/L507 (DESIGN silent on what the ordered column designates): for Photograph and Escort, BP_PILOT=ordered designates only Hostile tracks, never the photo targets or the escorted Neutral. Designating the photo targets or the escort's charge would turn the guns on them.
+- L786 harness: a Paused boarding is cancelled only when its site is more than 100 m from the chosen prize, or its track is gone and it has made no progress. One the pilot started on the prize's own track is kept.
+
+### c4: client (22 November, round 3)
+
+- DESIGN.md L1729 (looks are type variations only; none named like a base type): the tutorial card and finish panel use the engine's own TooltipPanel variation, which the project theme already compiles as the popup look. I did not add a new variation name. TooltipPanel is an engine type name, so this departs from the letter of 'none named like a base type'; it adds no colour and passes ui_lint.
+- DESIGN.md L1653-1671 (Sortie HUD rules): silent on own weapons in flight. They get no bridge-overlay marker, matching the track list (L106 is also silent).
+- DESIGN.md L2283: the dedicated server's load_data filters act rows with content::campaign::load::shipped(), the same filter as shipped_campaign(). Classes, fleets and operations stay. This applies to every server subcommand (serve, soak, trials, reference, campaign-bot).
+- DESIGN.md L914-916 and L935: the interpolation delay follows the vessel rate: 4 x 1/30 s at 30 Hz or more, otherwise 3 intervals at that rate (150 ms at 20 Hz). Remote links take ServerOptions::new's rate (20 Hz); the in-process stand-in uses its 30 Hz.
+- DESIGN.md L1298: --smoke-sortie skips consent, the quality flotilla, shader warm-up and the main menu, but Screens routing still starts, so the sortie's world view is routed as in play.
+- DESIGN.md L1687: flood mode keeps the strip visible with only its flood line while no alert is shown. That is the strip's documented behaviour and I left it unchanged.
+- The after-action capture used env HOME=<mktemp> together with screens_capture's --scratch-home flag. That flag only lets the campaign stage run (it changes no paths); the scratch user folder came from env HOME as asked.
+- run_all.gd counts a suite as failed when its output contains 'Parse Error' or 'Failed to load script', because Godot exits 0 when a -s script fails to parse.
+
+### c5: end reason (22 November, round 3)
+
+- Out-of-list edits: I reverted all of them and put them in not_done as one patch, per the brief's rule. Partial edits that do not compile cannot land.
+- The protocol bump is needed, and is in the patch rather than landed. SortieSummary goes on the wire (net Msg::SortieClosed) and AfterAction goes to co-op members (ServerMsg::AfterAction), both as positional bincode. serde(default) does not rescue bincode: the patch's test shows an old-layout SortieSummary fails to decode. SortieResult is inside keyframes (sim/keyframe.rs ObjectivesPart.result), but only as Some after the sortie is decided, so old suspend saves would decode. However, the bump to 3 makes Sim::from_checkpoint refuse keyframe_format 2 (keyframe.rs L267), so suspend saves from the current build are stranded after it lands. Campaign saves (content::save) and RON files carry none of these types.
+- Copy says 'ship', matching objective.end.hulls_disabled. The term is 'How it ended'. The rows are hidden when no reason is given (None: non-objective modes, a forced or aborted end, old data). I did not invent a reason from the outcome.
+- Interim on the after-action screen (spec silent; L70 lists the report's contents and does not forbid this): until the report carries the reason, the primary objective's last text from Hud.objectives() stands in under 'Objective'. For a disabled-rule loss that text already says why. It is shown only when the report has no end_reason, so it never repeats the reason row.
+- On the sortie-end screen, a disabled-rule loss will say it twice once the patch lands: once in the objective list (objective.end.hulls_disabled, from views() objectives/mod.rs L1030) and once in the reason row. The brief asks for the row on both screens, so I accepted the duplicate.
+- EndReason stays defined in objectives/mod.rs. config.rs re-exports it (pub use crate::objectives::EndReason) rather than moving it, so the patch touches objectives/mod.rs only at the two initialisers.
+- The pause menu's static _withdrawn_seed: checked and left alone. After a sortie the theatre hour always advances by at least 1 (theatre/mod.rs L504), and sortie_seed keys on hour, so retrying the operation gets a new seed. The only stale case is a new campaign with the same seed in the same process, which is rare.
+- DESIGN.md is silent on what the player does with a hull that is immobile but still Active (L537 defines disabled as no working propulsion part). L2450 (build decision) covers withdrawal only as 'clear of contact'. I added no control.
+
+### b1: tracker and bandwidth (22 November, round 3)
+
+- L522 to L524 (silent on a weapon after the decoy it kept has gone): a weapon whose seeker is Lost flies straight for 5 s, then ends its flight with no burst (new Steer::Ditch, ending as an expiry like range exhaustion).
+- L465 with L471 (a return without height does not tell the domain): a track with one search-radar return and nothing else coasts 20 s, not 120 s.
+- L465 (starts a new track for every ungated detection): departed from. Two unconfirmed search-radar returns up to 3 s apart, 30 to 1,200 m/s apart and over 3 sigma of their errors, become one Air or Weapon track; the second never shows as its own track.
+- L465 (a detection joins the nearest track whose contour contains it): one sensor's ranged reports of one instant are associated together, nearest pair first, each report and track used once.
+- L460 and L467 (Track::truth is bookkeeping, and identification follows it): the hull is the heaviest fix's in a batch, and a fix with over 4 times the track's variance does not rename it. It used to be the latest fix's.
+- L462 and L463: an air or weapon track whose second fix shows it has moved gets its velocity uncertainty raised to that speed; the gains are unchanged. A fresh Air track's prior speed is the weapon's 250 m/s, not 150.
+- L463: an Air track whose speed clears 400 m/s by 1 sigma becomes a Weapon track. The old Surface speed test was removed; it read the speed after the 30 m/s limit and could never pass.
+- L465 (silent on a weapon whose end was seen): an own weapon that leaves the link leaves no last-known mark. Own hulls, drones and hostile tracks keep theirs.
+- L468: the 2.5 sigma swap fallback was not tried. gate_sigma already sits at 3.5 from the duplicate fallback, and the two clauses pull opposite ways.
+- L932: the gate is not loosened and ci.yml is not edited.
+- Outside the listed files: crates/sim-systems/src/guidance/missile.rs (missile guidance lives there, not in sim-core) and one match arm in crates/sim-core/src/world/keyframe.rs for the new steer order.
+- The soak census is an environment switch, BP_SOAK_CENSUS=1, printing a per-second series and a 10 s census on stderr, instead of a command-line flag.
+
+### n3: network rates (22 November, round 3)
+
+- L1418 (tracks at 10 Hz in the sim) and L1423 (client rates set only beyond 10 km): new rule. An Air or Surface track that is Relevance::Near (not engaged, not own-side) and more than 3 km horizontally from the viewer's hull goes to clients at 5 Hz (RateTuning.near_track_hz). The 3 km line (CLOSE_TRACK_M) is my choice; the spec is silent. Subsurface tracks are exempt and keep 10 Hz.
+- Same rule, side viewers: with no own hull in the snapshot, nothing counts as close, so every near Air or Surface track is capped at 5 Hz.
+- Same rule, floor: the cap is never below distant_hz (1 Hz), which keeps the L937 floor.
+- Own ship status (Section::Ship) goes from 10 to 5 Hz in every session, not only soaks. The spec gives no rate for it; L640's 2 Hz covers compartments, which ride ShipSlow and are unchanged.
+- Measurement-only additions to net's public API: ServerSession::enable_event_census() and event_census(). They are off unless the soak's BP_SOAK_CENSUS is set.
+- Two measurement-only soak switches, BP_SOAK_CAP_MAX_KBPS and BP_SOAK_CAP_START_KBPS, change the adaptive cap tuning (L937) for diagnosis. The gate computation is unchanged, but a cap max set under 256 could make the client_p95_kbps line read pass. They must never be set in CI.
+- L935 fallback 2 is not applied, although the fallbacks are meant to apply in order. Reasons: it needs a sim-core API change (not my files) and a new wire event, and it is bounded by the 8 to 13 kbps projectile channel.
+
+### r4: repair of the round 3 leftovers (22 November, round 3)
+
+- L537: the disabled defeat waits for a prize or escort under way, at most 1,800 s more; under way means 0.5 m/s or faster.
+- L2575 with the 22 November anchor ruling: at_rest stops the Helm's own evasion for anchored and struck AI hulls. Player hulls never set it.
+- L828: a resume that fails now deletes the suspend slot after an autosave (reverses the earlier choice to keep it). Suspends from another build and stale suspends are refused.
+- L465: a wedge's hull is kept when two hulls tie on (tick, sensor).
+- L507: new Sensors reason for the under-fire Silent exception.
+- L797: a disabled site stays in the fight; a struck or lost one does not.
+- Spec silent: lost-act banner wording; refusing a save from a later act; capping the dedicated-server skirmish act; net carrying sampled tracks to the sampled tick; blank_track public.
+
+### Coordinator (22 November, round 3)
+
+- Release workflow, macOS launch check (L1264, L1291). The GitHub-hosted macOS runner's GPU ("Apple Paravirtual device") has no Metal argument buffers and rejects every baked shader, so the launch check lets those three error lines through only when the log names that adapter (PARAVIRTUAL_SHADER in .github/workflows/release.yml). Departure: CI cannot verify that baked shaders load on a real Mac; the owner must hand-run the packaged app on Apple silicon.
+- Release export on Windows. The Windows editor prints "ERROR: The original PDB path size in bytes is too small" on every start; export_printed_errors in crates/xtask/src/release.rs ignores only that line (EDITOR_PDB_LINE).
+- Packaging without publishing. A pull request labelled package builds and smoke-tests both archives on every push; the publish job runs for tags only. At head f0995b4 both builds, all three test jobs, both Godot smoke jobs and both fuzz jobs passed; the server soak failed only on client_p95_kbps.
+- Bandwidth gate (L932, L935), state after b1 and n3 at seed 1: 308.4 kbps (5-minute soak) and 336.2 (2-minute overload) against 256. Fallback 1 is on; fallback 2 is not applied (n3: per-round dispersion is private to sim-core, batching needs a new salvo event and a protocol bump, and the projectile channel is only 8 to 13 kbps). The CI soak job stays continue-on-error. Owner question: the next lever is the pose rate of distant hulls, which the spec does not allow.
+- Close-out. The round was closed out on 22 November 2026 at the owner's request before the planned measure phase: no 20-seed gate and no second verifier pass over the tracker repair (t2).
+
+### t2: tracker repair (22 November, round 3)
+
+- Tracker repair (t2, commit adabb9d). These entries supersede the b1 entries above where they differ. No verifier reviewed t2, and no soak, gate sweep, reference battle or state hash was run on the landed code by t2; the soak figures below come from a pre-landing build.
+- Three-point initiation replaces b1's two-point rule (L465; crates/sim-systems/src/tracks/mod.rs; TWO_POINT_TICKS is gone). Nothing happens at two fixes. On a third new fix, three one-fix tracks join into one Air or Weapon track only if one sensor reported all three, both gaps are 100 to 280 ticks and equal within 30, the first two show a speed above a hull's, and the third lies in the gate on the predicted line. The first track keeps its number, the second leaves as Merged and the third never shows. No track that anything has updated is moved, renamed or deleted. This closes the verifier's breaks-play defect: its hijack probe is now a test in tracks/tests/kb1.rs, and in all 6 geometries both hulls stay Surface with 2 track numbers. Cost: a 600 m/s missile on search radar alone becomes a fast track at its third look, 5 s after the first return, against 2.5 s under b1. In one traced dense-scene run the pass fired 0 times in the first 50 s, so its value there is not shown.
+- Demotion (L463 and L471 are silent on a domain that proves wrong; settle_to_surface). An Air or Weapon track with 4 or more ranged fixes over 5 s or more, no air evidence, and travel plus 3 sigma under 30 m/s returns to Surface.
+- b1's 20 s coast for a one-return track is withdrawn; every Surface track coasts 120 s as L465 says. This closes the verifier's intermittent-hull defect (one track, no drops, no dark time at 25, 40 and 60 s, as at base).
+- Association exchange (L465). Within one sensor's joint association, a report left with no track takes one from a neighbour that has a second track in its gate. It was added because b1's nearest-pair-first order stranded a report in the 300 m geometries.
+- Renaming (L460, L467). A fix renames a track only when association was sure of it: no other gated track within 4.0 in squared Mahalanobis distance. This replaces b1's RELABEL_VAR_RATIO rule. Scored by position in the probe scene (seeds 1, 2, 3), hull-track labels are wrong 1.18, 0.87 and 1.58% of the time, against 0.69, 0.63 and 1.85% at base and 8.55, 2.58 and 5.44% under b1's rule. The trade: b1's rule held fewer tracks (surface tracks per hull 1.55, 1.32, 1.37 against 1.68, 1.71, 1.90 with this rule; truths duplicated over 10 s 33, 41, 55 against 69, 82, 73).
+- A Lost weapon runs on 1,500 m, not 5 s, then ditches (L522 to L524 are silent; LOST_CARRY_M = 1_500.0 in crates/sim-systems/src/guidance/missile.rs; Guided.lost_tick became lost_at). A torpedo that passes a towed decoy reaches the towing hull 200 m on (tested). This closes the verifier's torpedo defect.
+- AIR_SPEED_MPS and WEAPON_SPEED_MPS are removed. MotionFit gained sensor, first and first_var (serde default). No golden hash is committed.
+- Not done by t2: Weapon-domain tracks that carry a hull's label remain (0 to 2 at seed 1, 1 to 4 at seeds 2 and 3 in the first 100 s; they are moving objects with a hull's label, cause not established); hostile weapon last-known marks (the first version matched on Track::truth alone and could delete a live missile's track, so it was removed); slow air objects on search radar alone; chaff (L460 to L471 and L521 to L526 do not say whether a side tracks its own chaff).
+- Bandwidth after t2, seed 1, pre-landing build (a88b1ad plus the repairs plus code later removed): 297.7 kbps in the 5-minute soak and 308.1 in the overload run, against 256. The gate was not re-measured at the landed tip. feint's 4-seed median at this tip: see "Act 1 gate at close-out".
