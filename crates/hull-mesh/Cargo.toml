@@ -1,0 +1,16 @@
+[package]
+name = "hull-mesh"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+content.workspace = true
+binary-greedy-meshing.workspace = true
+libm.workspace = true
+glam.workspace = true
+serde.workspace = true
+thiserror.workspace = true

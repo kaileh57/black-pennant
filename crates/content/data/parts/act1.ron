@@ -1,0 +1,597 @@
+// Vec<PartDef>: the first-release part catalogue (DESIGN.md L136-151, L539-553, L801-807). Unit
+// `data-parts-act1` owns this file. Licensed CC BY 4.0.
+//
+// 66 parts in 5 tiers: 7 guns, 4 missile launchers, 2 torpedo tube sets (the third underwater weapon is the
+// mine the mine rail lays), 5 defence systems, 2 drone bays, 8 sensors and 38 hull and system parts. Tier 1 is
+// open at campaign start, tiers 2 and 3 open inside Act 1 (150 t), tier 4 in Act 2 (400 t) and tier 5 in Act 3
+// (900 t); sandbox, skirmish and PvP offer every row. Phase `Slice` marks the rows the vertical slice needs
+// (tutorial, 22 m fast attack craft, the splash patrol boat); everything else is `R010`. Heavy guns, depth
+// charge racks and the helicopter deck arrive in the later act files.
+//
+// Units: mass_kg is dry mass (fuel, ammunition, ballast water and munitions are added from their own rows);
+// cost is Salvage, scaled with mass and tier from the 1,000 S anchor for a fitted 150 t hull (L820). Power
+// ports are kW, fuel ports L/s and litres. Footprints are 0.5 m cells along (bow, up, starboard). Default power
+// priorities follow the table at L287-295. Every part that draws power has a Power `Consume` port, and every
+// part an officer commands has a Data `Link`.
+//
+// Guns. Damage per hit comes from the calibre band (L565-580), so mounts in one band differ in rate of fire,
+// dispersion, ammunition, weight and price. The 20 mm is light and cheap but scatters; the 30 mm matches its
+// hits per minute with tighter groups and twice the endurance; the 40 mm hits about twice as often at 3 km for
+// more than twice the weight. The 57 mm fires faster and wider, the 76 mm slower and tighter, which evens out
+// at medium range. The 100 mm suits a 400 t hull's weight budget; the 127 mm is tighter and carries ammunition
+// for twice as long. Autocannon mounts carry their whole load as ready rounds; medium and large guns feed from
+// a magazine of their calibre through a hoist (L283). The 76 mm magazine holds the spec's 1,800 kg (L666).
+[
+    // ---------------------------------------------------------------------------------------------------
+    // Guns
+    (
+        id: "gun.20mm.single", name: "part.gun.20mm.single.name", description: "part.gun.20mm.single.desc",
+        category: Gun, tier: T1, phase: Slice, size: (3, 3, 3), placement: Weather, mass_kg: 900.0, cost: 25,
+        ports: [(network: Power, role: Consume, rate: 4.0), (network: Data, role: Link)], power_priority: 3,
+        flammable: Ammunition,
+        function: Gun((calibre_mm: 20, band: Auto, barrels: 1, rof_rpm: 450.0, muzzle_mps: 1050.0, shell_kg: 0.12,
+            train_rate_dps: 70.0, elevation_rate_dps: 60.0, elevation_min_deg: -15.0, elevation_max_deg: 70.0,
+            dispersion_mrad: 3.5, ready_rounds: 600)),
+        model: (generator: "gun.open", params: [20.0, 1.0]), icon: "part_gun",
+    ),
+    (
+        id: "gun.30mm.single", name: "part.gun.30mm.single.name", description: "part.gun.30mm.single.desc",
+        category: Gun, tier: T1, phase: Slice, size: (4, 3, 3), placement: Weather, mass_kg: 1700.0, cost: 45,
+        ports: [(network: Power, role: Consume, rate: 8.0), (network: Data, role: Link)], power_priority: 3,
+        flammable: Ammunition,
+        function: Gun((calibre_mm: 30, band: Auto, barrels: 1, rof_rpm: 200.0, muzzle_mps: 1080.0, shell_kg: 0.36,
+            train_rate_dps: 60.0, elevation_rate_dps: 55.0, elevation_min_deg: -15.0, elevation_max_deg: 70.0,
+            dispersion_mrad: 1.5, ready_rounds: 400)),
+        model: (generator: "gun.open", params: [30.0, 1.0]), icon: "part_gun",
+    ),
+    (
+        id: "gun.40mm.single", name: "part.gun.40mm.single.name", description: "part.gun.40mm.single.desc",
+        category: Gun, tier: T2, phase: R010, size: (5, 4, 4), placement: Weather, mass_kg: 4000.0, cost: 80,
+        ports: [(network: Power, role: Consume, rate: 15.0), (network: Data, role: Link)], power_priority: 3,
+        flammable: Ammunition, rcs_factor: 0.6,
+        function: Gun((calibre_mm: 40, band: Auto, barrels: 1, rof_rpm: 300.0, muzzle_mps: 1010.0, shell_kg: 0.98,
+            train_rate_dps: 55.0, elevation_rate_dps: 45.0, elevation_min_deg: -10.0, elevation_max_deg: 80.0,
+            dispersion_mrad: 1.0, ready_rounds: 300)),
+        model: (generator: "gun.turret", params: [40.0, 1.0, 1.0]), icon: "part_gun",
+    ),
+    (
+        id: "gun.57mm.single", name: "part.gun.57mm.single.name", description: "part.gun.57mm.single.desc",
+        category: Gun, tier: T2, phase: R010, size: (5, 4, 5), placement: Weather, mass_kg: 6500.0, cost: 120,
+        ports: [(network: Power, role: Consume, rate: 25.0), (network: Data, role: Link)], power_priority: 3,
+        rcs_factor: 0.6,
+        function: Gun((calibre_mm: 57, band: Medium, barrels: 1, rof_rpm: 180.0, muzzle_mps: 1035.0, shell_kg: 2.4,
+            train_rate_dps: 55.0, elevation_rate_dps: 40.0, elevation_min_deg: -10.0, elevation_max_deg: 77.0,
+            dispersion_mrad: 1.8, ready_rounds: 120)),
+        model: (generator: "gun.turret", params: [57.0, 1.0, 1.0]), icon: "part_gun",
+    ),
+    (
+        id: "gun.76mm.single", name: "part.gun.76mm.single.name", description: "part.gun.76mm.single.desc",
+        category: Gun, tier: T2, phase: Slice, size: (6, 4, 6), placement: Weather, mass_kg: 7500.0, cost: 140,
+        ports: [(network: Power, role: Consume, rate: 40.0), (network: Data, role: Link)], power_priority: 3,
+        function: Gun((calibre_mm: 76, band: Medium, barrels: 1, rof_rpm: 100.0, muzzle_mps: 925.0, shell_kg: 6.3,
+            train_rate_dps: 60.0, elevation_rate_dps: 35.0, elevation_min_deg: -15.0, elevation_max_deg: 85.0,
+            dispersion_mrad: 0.9, ready_rounds: 80)),
+        model: (generator: "gun.turret", params: [76.0, 1.0, 1.0]), icon: "part_gun",
+    ),
+    (
+        id: "gun.100mm.single", name: "part.gun.100mm.single.name", description: "part.gun.100mm.single.desc",
+        category: Gun, tier: T4, phase: R010, size: (8, 5, 8), placement: Weather, mass_kg: 15000.0, cost: 240,
+        ports: [(network: Power, role: Consume, rate: 60.0), (network: Data, role: Link)], power_priority: 3,
+        rcs_factor: 0.7,
+        function: Gun((calibre_mm: 100, band: Large, barrels: 1, rof_rpm: 60.0, muzzle_mps: 870.0, shell_kg: 13.5,
+            train_rate_dps: 40.0, elevation_rate_dps: 25.0, elevation_min_deg: -10.0, elevation_max_deg: 80.0,
+            dispersion_mrad: 0.8, ready_rounds: 40)),
+        model: (generator: "gun.turret", params: [100.0, 1.0, 1.0]), icon: "part_gun",
+    ),
+    (
+        id: "gun.127mm.single", name: "part.gun.127mm.single.name", description: "part.gun.127mm.single.desc",
+        category: Gun, tier: T5, phase: R010, size: (10, 6, 9), placement: Weather, mass_kg: 24000.0, cost: 380,
+        ports: [(network: Power, role: Consume, rate: 90.0), (network: Data, role: Link)], power_priority: 3,
+        rcs_factor: 0.7,
+        function: Gun((calibre_mm: 127, band: Large, barrels: 1, rof_rpm: 40.0, muzzle_mps: 808.0, shell_kg: 31.75,
+            train_rate_dps: 30.0, elevation_rate_dps: 20.0, elevation_min_deg: -15.0, elevation_max_deg: 65.0,
+            dispersion_mrad: 0.55, ready_rounds: 20)),
+        model: (generator: "gun.turret", params: [127.0, 1.0, 1.0]), icon: "part_gun",
+    ),
+
+    // ---------------------------------------------------------------------------------------------------
+    // Ammunition handling. Magazines are watertight, count as ammunition for fire, and cook off by their
+    // stored mass (L666): 1,800 kg of 76 mm gives 16 cells; 13,500 kg of 127 mm reaches the 24-cell cap.
+    (
+        id: "magazine.57mm", name: "part.magazine.57mm.name", description: "part.magazine.57mm.desc",
+        category: Gun, tier: T2, phase: R010, size: (3, 2, 3), placement: Internal, mass_kg: 500.0, cost: 10,
+        watertight: true, flammable: Ammunition, tags: [Magazine],
+        function: Magazine(calibre_mm: 57, rounds: 300, ammo_kg: 1830.0),
+        model: (generator: "fit.internal", params: [2.0]), icon: "part_gun",
+    ),
+    (
+        id: "magazine.76mm", name: "part.magazine.76mm.name", description: "part.magazine.76mm.desc",
+        category: Gun, tier: T2, phase: Slice, size: (3, 2, 3), placement: Internal, mass_kg: 600.0, cost: 12,
+        watertight: true, flammable: Ammunition, tags: [Magazine],
+        function: Magazine(calibre_mm: 76, rounds: 144, ammo_kg: 1800.0),
+        model: (generator: "fit.internal", params: [2.0]), icon: "part_gun",
+    ),
+    (
+        id: "magazine.100mm", name: "part.magazine.100mm.name", description: "part.magazine.100mm.desc",
+        category: Gun, tier: T4, phase: R010, size: (4, 3, 4), placement: Internal, mass_kg: 1200.0, cost: 25,
+        watertight: true, flammable: Ammunition, tags: [Magazine],
+        function: Magazine(calibre_mm: 100, rounds: 200, ammo_kg: 4640.0),
+        model: (generator: "fit.internal", params: [2.0]), icon: "part_gun",
+    ),
+    (
+        id: "magazine.127mm", name: "part.magazine.127mm.name", description: "part.magazine.127mm.desc",
+        category: Gun, tier: T5, phase: R010, size: (6, 3, 4), placement: Internal, mass_kg: 2500.0, cost: 45,
+        watertight: true, flammable: Ammunition, tags: [Magazine],
+        function: Magazine(calibre_mm: 127, rounds: 300, ammo_kg: 13500.0),
+        model: (generator: "fit.internal", params: [2.0]), icon: "part_gun",
+    ),
+    // One hoist type feeds every medium and large mount, faster than any of them fires. It is a watertight
+    // trunk: a kit feeds its gun through the deck, and an open hoist would open the space below to the sky.
+    (
+        id: "hoist.ammunition", name: "part.hoist.ammunition.name", description: "part.hoist.ammunition.desc",
+        category: Gun, tier: T2, phase: Slice, size: (1, 3, 1), placement: Anywhere, mass_kg: 600.0, cost: 15,
+        ports: [(network: Power, role: Consume, rate: 10.0), (network: Data, role: Link)], power_priority: 3,
+        watertight: true,
+        function: Hoist(rounds_per_min: 200.0),
+        model: (generator: "fit.internal", params: [2.0]), icon: "part_gun",
+    ),
+
+    // ---------------------------------------------------------------------------------------------------
+    // Missile launchers. Munitions are separate rows in weapons.ron; reloads happen at the tender.
+    (
+        id: "launcher.ashm.light", name: "part.launcher.ashm.light.name", description: "part.launcher.ashm.light.desc",
+        category: Missile, tier: T2, phase: Slice, size: (9, 3, 3), placement: Weather, mass_kg: 1000.0, cost: 40,
+        ports: [(network: Power, role: Consume, rate: 2.0), (network: Data, role: Link)], power_priority: 3,
+        flammable: Ammunition, standard_limit: 4,
+        function: Launcher((kind: Missile, munition: "missile.ashm.light", cells: 2, interval_s: 2.0, reload_s: 0.0)),
+        model: (generator: "launcher.box", params: [2.0, 4.0, 0.5, 0.0, 15.0]), icon: "part_missile",
+    ),
+    (
+        id: "launcher.ashm.heavy", name: "part.launcher.ashm.heavy.name", description: "part.launcher.ashm.heavy.desc",
+        category: Missile, tier: T4, phase: R010, size: (11, 4, 4), placement: Weather, mass_kg: 2800.0, cost: 90,
+        ports: [(network: Power, role: Consume, rate: 3.0), (network: Data, role: Link)], power_priority: 3,
+        flammable: Ammunition, standard_limit: 2,
+        function: Launcher((kind: Missile, munition: "missile.ashm.heavy", cells: 4, interval_s: 3.0, reload_s: 0.0)),
+        model: (generator: "launcher.box", params: [4.0, 5.0, 0.7, 0.0, 15.0]), icon: "part_missile",
+    ),
+    // Vertical launch cells are sealed boxes sunk through the deck, so they are watertight structure.
+    (
+        id: "launcher.sam", name: "part.launcher.sam.name", description: "part.launcher.sam.desc",
+        category: Missile, tier: T4, phase: R010, size: (5, 10, 3), placement: Weather, mass_kg: 6000.0, cost: 150,
+        ports: [(network: Power, role: Consume, rate: 10.0), (network: Data, role: Link)], power_priority: 3,
+        watertight: true, flammable: Ammunition, standard_limit: 2,
+        function: Launcher((kind: Missile, munition: "missile.sam", cells: 8, interval_s: 1.0, reload_s: 0.0)),
+        model: (generator: "launcher.vls", params: [2.0, 4.0, 0.6]), icon: "part_missile",
+    ),
+    (
+        id: "launcher.pd", name: "part.launcher.pd.name", description: "part.launcher.pd.desc",
+        category: Missile, tier: T4, phase: R010, size: (6, 5, 5), placement: Weather, mass_kg: 5800.0, cost: 140,
+        ports: [(network: Power, role: Consume, rate: 15.0), (network: Data, role: Link)], power_priority: 2,
+        flammable: Ammunition, tags: [PointDefence], standard_limit: 2,
+        function: Launcher((kind: Missile, munition: "missile.pd", cells: 8, interval_s: 0.5, reload_s: 0.0, train_rate_dps: 100.0)),
+        model: (generator: "launcher.box", params: [8.0, 2.8, 0.3, 1.0, 10.0]), icon: "part_missile",
+    ),
+
+    // ---------------------------------------------------------------------------------------------------
+    // Underwater weapons. The mine rail is a hull and system part (L551) and sits under special operations.
+    (
+        id: "tube.torpedo.light", name: "part.tube.torpedo.light.name", description: "part.tube.torpedo.light.desc",
+        category: Underwater, tier: T2, phase: R010, size: (7, 2, 3), placement: DeckEdge, mass_kg: 1100.0, cost: 35,
+        ports: [(network: Power, role: Consume, rate: 1.0), (network: Data, role: Link)], power_priority: 3,
+        flammable: Ammunition, standard_limit: 2,
+        function: Launcher((kind: TorpedoTube, munition: "torpedo.light", cells: 3, interval_s: 3.0, reload_s: 0.0, train_rate_dps: 20.0)),
+        model: (generator: "launcher.torpedo", params: [3.0, 3.2, 0.33, 1.0]), icon: "part_underwater",
+    ),
+    (
+        id: "tube.torpedo.heavy", name: "part.tube.torpedo.heavy.name", description: "part.tube.torpedo.heavy.desc",
+        category: Underwater, tier: T3, phase: R010, size: (15, 3, 3), placement: DeckEdge, mass_kg: 3200.0, cost: 70,
+        ports: [(network: Power, role: Consume, rate: 1.0), (network: Data, role: Link)], power_priority: 3,
+        flammable: Ammunition, standard_limit: 2,
+        function: Launcher((kind: TorpedoTube, munition: "torpedo.heavy", cells: 2, interval_s: 4.0, reload_s: 0.0)),
+        model: (generator: "launcher.torpedo", params: [2.0, 7.0, 0.53, 0.0]), icon: "part_underwater",
+    ),
+
+    // ---------------------------------------------------------------------------------------------------
+    // Defence: one of each (L547). Point-defence rounds self-destruct after 4 s and hit small bodies within
+    // 1.5 m (L557, L597); decoys follow L599-604 and the 10 s reload at L486.
+    (
+        id: "gun.ciws.20mm", name: "part.gun.ciws.20mm.name", description: "part.gun.ciws.20mm.desc",
+        category: Defence, tier: T3, phase: R010, size: (4, 8, 4), placement: Weather, mass_kg: 6200.0, cost: 150,
+        ports: [(network: Power, role: Consume, rate: 70.0), (network: Data, role: Link)], power_priority: 2,
+        flammable: Ammunition, tags: [PointDefence], standard_limit: 2,
+        function: Gun((calibre_mm: 20, band: Auto, barrels: 6, rof_rpm: 750.0, muzzle_mps: 1100.0, shell_kg: 0.1,
+            train_rate_dps: 115.0, elevation_rate_dps: 90.0, elevation_min_deg: -25.0, elevation_max_deg: 85.0,
+            dispersion_mrad: 2.0, point_defence: true, ready_rounds: 1550)),
+        model: (generator: "gun.ciws", params: [20.0, 6.0, 1.0]), icon: "part_defence",
+    ),
+    (
+        id: "decoy.chaff", name: "part.decoy.chaff.name", description: "part.decoy.chaff.desc",
+        category: Defence, tier: T2, phase: Slice, size: (2, 2, 2), placement: Weather, mass_kg: 350.0, cost: 15,
+        ports: [(network: Power, role: Consume, rate: 1.0), (network: Data, role: Link)], power_priority: 2,
+        standard_limit: 4,
+        function: Decoy((kind: Chaff, rounds: 12, salvo: 2, reload_s: 10.0)),
+        model: (generator: "launcher.decoy", params: [6.0, 45.0]), icon: "part_defence",
+    ),
+    (
+        id: "decoy.flare", name: "part.decoy.flare.name", description: "part.decoy.flare.desc",
+        category: Defence, tier: T3, phase: R010, size: (2, 2, 2), placement: Weather, mass_kg: 300.0, cost: 12,
+        ports: [(network: Power, role: Consume, rate: 1.0), (network: Data, role: Link)], power_priority: 2,
+        standard_limit: 4,
+        function: Decoy((kind: Flare, rounds: 24, salvo: 2, reload_s: 10.0)),
+        model: (generator: "launcher.decoy", params: [8.0, 55.0]), icon: "part_defence",
+    ),
+    (
+        id: "decoy.smoke", name: "part.decoy.smoke.name", description: "part.decoy.smoke.desc",
+        category: Defence, tier: T1, phase: R010, size: (2, 2, 2), placement: Weather, mass_kg: 300.0, cost: 8,
+        ports: [(network: Power, role: Consume, rate: 1.0), (network: Data, role: Link)], power_priority: 2,
+        standard_limit: 2,
+        function: Decoy((kind: Smoke, rounds: 4, salvo: 1, reload_s: 30.0)),
+        model: (generator: "launcher.decoy", params: [4.0, 30.0]), icon: "part_defence",
+    ),
+    (
+        id: "decoy.towed", name: "part.decoy.towed.name", description: "part.decoy.towed.desc",
+        category: Defence, tier: T3, phase: R010, size: (4, 3, 3), placement: DeckEdge, mass_kg: 1500.0, cost: 45,
+        ports: [(network: Power, role: Consume, rate: 5.0), (network: Data, role: Link)], power_priority: 2,
+        standard_limit: 1,
+        function: Decoy((kind: TowedDecoy, rounds: 1, salvo: 1, reload_s: 30.0)),
+        model: (generator: "fit.box"), icon: "part_defence",
+    ),
+
+    // ---------------------------------------------------------------------------------------------------
+    // Offboard: drone bays launch and recharge their drones (L549, L553).
+    (
+        id: "bay.drone.rotor", name: "part.bay.drone.rotor.name", description: "part.bay.drone.rotor.desc",
+        category: Offboard, tier: T2, phase: R010, size: (4, 2, 4), placement: Weather, mass_kg: 700.0, cost: 40,
+        ports: [(network: Power, role: Consume, rate: 6.0), (network: Data, role: Link)], power_priority: 4,
+        standard_limit: 1,
+        function: DroneBay(drone: "drone.rotor", count: 2, recharge_s: 120.0),
+        model: (generator: "fit.drone_bay", params: [1.0]), icon: "part_offboard",
+    ),
+    (
+        id: "bay.drone.fixed", name: "part.bay.drone.fixed.name", description: "part.bay.drone.fixed.desc",
+        category: Offboard, tier: T3, phase: R010, size: (8, 3, 4), placement: Weather, mass_kg: 2000.0, cost: 70,
+        ports: [(network: Power, role: Consume, rate: 8.0), (network: Data, role: Link)], power_priority: 4,
+        standard_limit: 1,
+        function: DroneBay(drone: "drone.fixed", count: 2, recharge_s: 300.0),
+        model: (generator: "fit.drone_bay", params: [2.0]), icon: "part_offboard",
+    ),
+
+    // ---------------------------------------------------------------------------------------------------
+    // Sensors (L410-456). Reference ranges against 100 m^2: navigation radar 20 km, frigate-class search radar
+    // 40 km, fire-control radar 25 km, hull sonar 8 km passive and 4 km active (L432, L453-454). Search and
+    // navigation radars stay at the 5 Hz default so the sensor-budget fallback (L419) reaches them. The
+    // low-intercept radar trades range for an ESM footprint of 2 x 12 km instead of 2 x 20 km (L434).
+    (
+        id: "radar.nav", name: "part.radar.nav.name", description: "part.radar.nav.desc",
+        category: Sensor, tier: T1, phase: Slice, size: (4, 1, 2), placement: Weather, mass_kg: 120.0, cost: 15,
+        ports: [(network: Power, role: Consume, rate: 2.0), (network: Data, role: Link)], power_priority: 4,
+        function: Sensor((kind: NavRadar, r_ref_m: 20000.0, rate_hz: 5.0, rpm: 24.0, fov_half_deg: 180.0, emitter: "radar.nav.x")),
+        model: (generator: "radar.nav", params: [1.8]), icon: "part_sensor",
+    ),
+    (
+        id: "radar.lpi", name: "part.radar.lpi.name", description: "part.radar.lpi.desc",
+        category: Sensor, tier: T3, phase: R010, size: (3, 1, 2), placement: Weather, mass_kg: 200.0, cost: 45,
+        ports: [(network: Power, role: Consume, rate: 2.0), (network: Data, role: Link)], power_priority: 4,
+        function: Sensor((kind: NavRadar, r_ref_m: 12000.0, rate_hz: 5.0, rpm: 24.0, fov_half_deg: 180.0, emitter: "radar.lpi.x")),
+        model: (generator: "radar.nav", params: [1.2]), icon: "part_sensor",
+    ),
+    (
+        id: "radar.search", name: "part.radar.search.name", description: "part.radar.search.desc",
+        category: Sensor, tier: T4, phase: R010, size: (8, 3, 3), placement: Weather, mass_kg: 4000.0, cost: 200,
+        ports: [(network: Power, role: Consume, rate: 60.0), (network: Data, role: Link)], power_priority: 4,
+        function: Sensor((kind: SearchRadar, r_ref_m: 40000.0, rate_hz: 5.0, rpm: 24.0, fov_half_deg: 180.0, emitter: "radar.search.s")),
+        model: (generator: "radar.search", params: [4.0, 1.4, 1.0]), icon: "part_sensor",
+    ),
+    (
+        id: "radar.fire_control", name: "part.radar.fire_control.name", description: "part.radar.fire_control.desc",
+        category: Sensor, tier: T2, phase: Slice, size: (2, 2, 2), placement: Weather, mass_kg: 500.0, cost: 60,
+        ports: [(network: Power, role: Consume, rate: 8.0), (network: Data, role: Link)], power_priority: 2,
+        function: Sensor((kind: FireControlRadar, r_ref_m: 25000.0, rate_hz: 10.0, fov_half_deg: 180.0, emitter: "radar.fc.ku")),
+        model: (generator: "radar.fc", params: [1.0]), icon: "part_sensor",
+    ),
+    (
+        id: "sensor.esm", name: "part.sensor.esm.name", description: "part.sensor.esm.desc",
+        category: Sensor, tier: T2, phase: Slice, size: (2, 1, 2), placement: Weather, mass_kg: 200.0, cost: 45,
+        ports: [(network: Power, role: Consume, rate: 2.0), (network: Data, role: Link)], power_priority: 4,
+        function: Sensor((kind: Esm, r_ref_m: 0.0, rate_hz: 2.0, fov_half_deg: 180.0)),
+        model: (generator: "sensor.esm", params: [2.0]), icon: "part_sensor",
+    ),
+    // A stabilised day and night camera turret: doubles visual range (L436) and gives a passive track to aim
+    // with in Silent. Not the special-operations camera mast.
+    (
+        id: "sensor.eo", name: "part.sensor.eo.name", description: "part.sensor.eo.desc",
+        category: Sensor, tier: T3, phase: R010, size: (2, 2, 2), placement: Weather, mass_kg: 150.0, cost: 40,
+        ports: [(network: Power, role: Consume, rate: 1.0), (network: Data, role: Link)], power_priority: 2,
+        function: Sensor((kind: Camera, r_ref_m: 10000.0, rate_hz: 2.0, fov_half_deg: 180.0)),
+        model: (generator: "sensor.director", params: [1.2]), icon: "part_sensor",
+    ),
+    (
+        id: "sonar.passive", name: "part.sonar.passive.name", description: "part.sonar.passive.desc",
+        category: Sensor, tier: T3, phase: R010, size: (6, 2, 3), placement: Underwater, mass_kg: 1500.0, cost: 60,
+        ports: [(network: Power, role: Consume, rate: 4.0), (network: Data, role: Link)], power_priority: 4,
+        function: Sensor((kind: PassiveSonar, r_ref_m: 8000.0, rate_hz: 2.0, fov_half_deg: 180.0)),
+        model: (generator: "sensor.sonar_dome", params: [3.0]), icon: "part_sensor",
+    ),
+    (
+        id: "sonar.active", name: "part.sonar.active.name", description: "part.sonar.active.desc",
+        category: Sensor, tier: T3, phase: R010, size: (4, 2, 3), placement: Underwater, mass_kg: 1800.0, cost: 70,
+        ports: [(network: Power, role: Consume, rate: 20.0), (network: Data, role: Link)], power_priority: 4,
+        function: Sensor((kind: ActiveSonar, r_ref_m: 4000.0, rate_hz: 2.0, fov_half_deg: 180.0, emitter: "sonar.active.mf")),
+        model: (generator: "sensor.sonar_dome", params: [2.0]), icon: "part_sensor",
+    ),
+
+    // ---------------------------------------------------------------------------------------------------
+    // Propulsion. Engines feed the shafts; propulsors turn shaft power into thrust (static N/kW, falling with
+    // speed). Diesels burn about 210 g/kWh, the gas turbine about 230 g/kWh (0.84 kg/L). Engines and diesel
+    // generators carry day tanks, so their cells count as fuel for fire (L662, L394).
+    (
+        id: "engine.diesel.small", name: "part.engine.diesel.small.name", description: "part.engine.diesel.small.desc",
+        category: Propulsion, tier: T1, phase: Slice, size: (4, 3, 3), placement: Internal, mass_kg: 3500.0, cost: 35,
+        ports: [(network: Fuel, role: Consume, rate: 0.07), (network: Data, role: Link)],
+        flammable: Fuel, tags: [Propulsion],
+        function: Engine((kind: Diesel, shaft_kw: 1000.0, fuel_lps: 0.07, spool_s: 6.0)),
+        model: (generator: "fit.internal", params: [0.0]), icon: "part_propulsion",
+    ),
+    (
+        id: "engine.diesel.large", name: "part.engine.diesel.large.name", description: "part.engine.diesel.large.desc",
+        category: Propulsion, tier: T2, phase: Slice, size: (8, 4, 3), placement: Internal, mass_kg: 9500.0, cost: 90,
+        ports: [(network: Fuel, role: Consume, rate: 0.2), (network: Data, role: Link)],
+        flammable: Fuel, tags: [Propulsion],
+        function: Engine((kind: Diesel, shaft_kw: 3000.0, fuel_lps: 0.2, spool_s: 10.0)),
+        model: (generator: "fit.internal", params: [0.0]), icon: "part_propulsion",
+    ),
+    (
+        id: "engine.turbine", name: "part.engine.turbine.name", description: "part.engine.turbine.desc",
+        category: Propulsion, tier: T5, phase: R010, size: (14, 6, 6), placement: Internal, mass_kg: 22000.0, cost: 450,
+        ports: [(network: Fuel, role: Consume, rate: 1.5), (network: Data, role: Link)],
+        flammable: Fuel, tags: [Propulsion],
+        function: Engine((kind: GasTurbine, shaft_kw: 20000.0, fuel_lps: 1.5, spool_s: 25.0)),
+        model: (generator: "fit.internal", params: [0.0]), icon: "part_propulsion",
+    ),
+    // Electric drive for quiet running: it draws its shaft power from the Power network (priority 2, L291).
+    (
+        id: "motor.electric", name: "part.motor.electric.name", description: "part.motor.electric.desc",
+        category: Propulsion, tier: T3, phase: R010, size: (3, 3, 3), placement: Internal, mass_kg: 3000.0, cost: 70,
+        ports: [(network: Power, role: Consume, rate: 850.0), (network: Data, role: Link)], power_priority: 2,
+        tags: [Propulsion],
+        function: Engine((kind: ElectricMotor, shaft_kw: 800.0, fuel_lps: 0.0, spool_s: 3.0)),
+        model: (generator: "fit.internal", params: [0.0]), icon: "part_propulsion",
+    ),
+    (
+        id: "prop.small", name: "part.prop.small.name", description: "part.prop.small.desc",
+        category: Propulsion, tier: T1, phase: Slice, size: (2, 3, 3), placement: Underwater, mass_kg: 700.0, cost: 15,
+        ports: [(network: Data, role: Link)],
+        tags: [Propulsion],
+        function: Propulsor((kind: Propeller, max_shaft_kw: 3500.0, thrust_n_per_kw: 110.0, cavitation_kn: 20.0, steer_max_deg: 0.0)),
+        model: (generator: "fit.propeller", params: [1.3, 4.0]), icon: "part_propulsion",
+    ),
+    (
+        id: "prop.large", name: "part.prop.large.name", description: "part.prop.large.desc",
+        category: Propulsion, tier: T4, phase: R010, size: (3, 8, 8), placement: Underwater, mass_kg: 7000.0, cost: 75,
+        ports: [(network: Data, role: Link)],
+        tags: [Propulsion],
+        function: Propulsor((kind: Propeller, max_shaft_kw: 15000.0, thrust_n_per_kw: 135.0, cavitation_kn: 24.0, steer_max_deg: 0.0)),
+        model: (generator: "fit.propeller", params: [3.8, 5.0]), icon: "part_propulsion",
+    ),
+    // Waterjets sit inside the hull at the transom, so they add no draft and steer without a rudder; their
+    // static thrust is lower than a propeller's and they stay quiet to high speed.
+    (
+        id: "waterjet", name: "part.waterjet.name", description: "part.waterjet.desc",
+        category: Propulsion, tier: T2, phase: R010, size: (6, 2, 3), placement: Underwater, mass_kg: 1800.0, cost: 45,
+        ports: [(network: Power, role: Consume, rate: 3.0), (network: Data, role: Link)], power_priority: 1,
+        tags: [Propulsion, Steering],
+        function: Propulsor((kind: Waterjet, max_shaft_kw: 3000.0, thrust_n_per_kw: 75.0, cavitation_kn: 40.0, steer_max_deg: 30.0)),
+        model: (generator: "fit.waterjet", params: [0.9]), icon: "part_propulsion",
+    ),
+    (
+        id: "rudder.small", name: "part.rudder.small.name", description: "part.rudder.small.desc",
+        category: Propulsion, tier: T1, phase: Slice, size: (2, 3, 1), placement: Underwater, mass_kg: 300.0, cost: 8,
+        ports: [(network: Power, role: Consume, rate: 3.0), (network: Data, role: Link)], power_priority: 1,
+        tags: [Steering],
+        function: Rudder(area_m2: 0.8, max_deg: 35.0, rate_dps: 10.0),
+        model: (generator: "fit.rudder", params: [1.4, 0.8]), icon: "part_propulsion",
+    ),
+    (
+        id: "rudder.large", name: "part.rudder.large.name", description: "part.rudder.large.desc",
+        category: Propulsion, tier: T4, phase: R010, size: (5, 7, 1), placement: Underwater, mass_kg: 3500.0, cost: 35,
+        ports: [(network: Power, role: Consume, rate: 20.0), (network: Data, role: Link)], power_priority: 1,
+        tags: [Steering],
+        function: Rudder(area_m2: 7.0, max_deg: 35.0, rate_dps: 4.0),
+        model: (generator: "fit.rudder", params: [3.4, 2.4]), icon: "part_propulsion",
+    ),
+
+    // ---------------------------------------------------------------------------------------------------
+    // Power and fuel.
+    (
+        id: "gen.diesel.small", name: "part.gen.diesel.small.name", description: "part.gen.diesel.small.desc",
+        category: Power, tier: T1, phase: Slice, size: (4, 2, 2), placement: Internal, mass_kg: 1800.0, cost: 18,
+        ports: [(network: Power, role: Supply, rate: 150.0), (network: Fuel, role: Consume, rate: 0.012), (network: Data, role: Link)],
+        flammable: Fuel, tags: [Generation],
+        function: Generator(kw: 150.0, fuel_lps: 0.012),
+        model: (generator: "fit.internal", params: [0.0]), icon: "part_power",
+    ),
+    (
+        id: "gen.diesel.large", name: "part.gen.diesel.large.name", description: "part.gen.diesel.large.desc",
+        category: Power, tier: T2, phase: R010, size: (6, 3, 3), placement: Internal, mass_kg: 6500.0, cost: 55,
+        ports: [(network: Power, role: Supply, rate: 800.0), (network: Fuel, role: Consume, rate: 0.058), (network: Data, role: Link)],
+        flammable: Fuel, tags: [Generation],
+        function: Generator(kw: 800.0, fuel_lps: 0.058),
+        model: (generator: "fit.internal", params: [0.0]), icon: "part_power",
+    ),
+    (
+        id: "battery", name: "part.battery.name", description: "part.battery.desc",
+        category: Power, tier: T3, phase: R010, size: (3, 2, 3), placement: Internal, mass_kg: 2200.0, cost: 45,
+        ports: [(network: Power, role: Store, rate: 500.0, capacity: 250.0), (network: Data, role: Link)],
+        function: Battery(kwh: 250.0, max_kw: 500.0),
+        model: (generator: "fit.internal", params: [0.0]), icon: "part_power",
+    ),
+    (
+        id: "tank.fuel.small", name: "part.tank.fuel.small.name", description: "part.tank.fuel.small.desc",
+        category: Fuel, tier: T1, phase: Slice, size: (3, 2, 3), placement: Internal, mass_kg: 300.0, cost: 4,
+        ports: [(network: Fuel, role: Store, rate: 1.0, capacity: 2000.0)],
+        watertight: true, flammable: Fuel, tags: [FuelStore],
+        function: FuelTank(litres: 2000.0),
+        model: (generator: "fit.internal", params: [1.0]), icon: "part_fuel",
+    ),
+    (
+        id: "tank.fuel.large", name: "part.tank.fuel.large.name", description: "part.tank.fuel.large.desc",
+        category: Fuel, tier: T1, phase: Slice, size: (6, 4, 4), placement: Internal, mass_kg: 1500.0, cost: 12,
+        ports: [(network: Fuel, role: Store, rate: 3.0, capacity: 12000.0)],
+        watertight: true, flammable: Fuel, tags: [FuelStore],
+        function: FuelTank(litres: 12000.0),
+        model: (generator: "fit.internal", params: [1.0]), icon: "part_fuel",
+    ),
+
+    // ---------------------------------------------------------------------------------------------------
+    // Control, crew and damage control. Damage Control fields floor(berths / 4) teams, 1 to 6 (L703): two crew
+    // berth parts give the 22 m craft its 8 berths and six give the 90 m destroyer its 24.
+    (
+        id: "console.bridge", name: "part.console.bridge.name", description: "part.console.bridge.desc",
+        category: Control, tier: T1, phase: Slice, size: (3, 2, 2), placement: Anywhere, mass_kg: 800.0, cost: 25,
+        ports: [(network: Power, role: Consume, rate: 5.0), (network: Data, role: Link)], power_priority: 1,
+        function: Console,
+        model: (generator: "fit.internal", params: [3.0]), icon: "part_control",
+    ),
+    (
+        id: "director.fire_control", name: "part.director.fire_control.name", description: "part.director.fire_control.desc",
+        category: Control, tier: T2, phase: Slice, size: (2, 2, 2), placement: Weather, mass_kg: 700.0, cost: 40,
+        ports: [(network: Power, role: Consume, rate: 3.0), (network: Data, role: Link)], power_priority: 2,
+        function: Director,
+        model: (generator: "sensor.director", params: [1.5]), icon: "part_control",
+    ),
+    (
+        id: "berths.crew", name: "part.berths.crew.name", description: "part.berths.crew.desc",
+        category: Crew, tier: T1, phase: Slice, size: (4, 3, 3), placement: Internal, mass_kg: 1200.0, cost: 8,
+        ports: [(network: Power, role: Consume, rate: 2.0)], power_priority: 5,
+        function: Berths(count: 4),
+        model: (generator: "fit.internal", params: [3.0]), icon: "part_crew",
+    ),
+    (
+        id: "pump.small", name: "part.pump.small.name", description: "part.pump.small.desc",
+        category: DamageControl, tier: T1, phase: Slice, size: (1, 1, 1), placement: Internal, mass_kg: 150.0, cost: 4,
+        ports: [(network: Power, role: Consume, rate: 4.0), (network: Data, role: Link)], power_priority: 1,
+        function: Pump(m3ps: 0.05),
+        model: (generator: "fit.internal", params: [0.0]), icon: "part_damage_control",
+    ),
+    (
+        id: "pump.large", name: "part.pump.large.name", description: "part.pump.large.desc",
+        category: DamageControl, tier: T2, phase: R010, size: (2, 1, 1), placement: Internal, mass_kg: 400.0, cost: 10,
+        ports: [(network: Power, role: Consume, rate: 12.0), (network: Data, role: Link)], power_priority: 1,
+        function: Pump(m3ps: 0.15),
+        model: (generator: "fit.internal", params: [0.0]), icon: "part_damage_control",
+    ),
+
+    // ---------------------------------------------------------------------------------------------------
+    // Hull fittings and structure.
+    (
+        id: "door.watertight", name: "part.door.watertight.name", description: "part.door.watertight.desc",
+        category: Hull, tier: T1, phase: Slice, size: (1, 4, 2), placement: Internal, mass_kg: 250.0, cost: 2,
+        ports: [(network: Data, role: Link)], watertight: true,
+        function: Door,
+        model: (generator: "fit.door", params: [0.0]), icon: "part_hull",
+    ),
+    (
+        id: "ballast.tank", name: "part.ballast.tank.name", description: "part.ballast.tank.desc",
+        category: Hull, tier: T1, phase: Slice, size: (4, 2, 4), placement: Internal, mass_kg: 400.0, cost: 3,
+        ports: [(network: Power, role: Consume, rate: 3.0), (network: Data, role: Link)], power_priority: 5,
+        watertight: true,
+        function: Ballast(max_kg: 4000.0),
+        model: (generator: "fit.internal", params: [1.0]), icon: "part_hull",
+    ),
+    // Masts carry antennas on their top cells, so they place anywhere that is connected; the parts on them need
+    // the open sky.
+    (
+        id: "mast.pole", name: "part.mast.pole.name", description: "part.mast.pole.desc",
+        category: Hull, tier: T1, phase: Slice, size: (1, 16, 1), placement: Anywhere, mass_kg: 400.0, cost: 5,
+        function: Structure,
+        model: (generator: "mast.pole", params: [8.0, 1.0]), icon: "part_hull",
+    ),
+    (
+        id: "mast.lattice", name: "part.mast.lattice.name", description: "part.mast.lattice.desc",
+        category: Hull, tier: T3, phase: R010, size: (4, 24, 4), placement: Anywhere, mass_kg: 3000.0, cost: 20,
+        function: Structure,
+        model: (generator: "mast.lattice", params: [12.0, 2.0, 2.0]), icon: "part_hull",
+    ),
+    // Faceted composite mast that encloses its antennas: a fifth of a steel mast's radar cross-section.
+    (
+        id: "mast.enclosed", name: "part.mast.enclosed.name", description: "part.mast.enclosed.desc",
+        category: Hull, tier: T3, phase: R010, size: (4, 16, 4), placement: Anywhere, mass_kg: 2500.0, cost: 45,
+        rcs_factor: 0.2, tags: [LowSignature],
+        function: Structure,
+        model: (generator: "fit.box"), icon: "part_hull",
+    ),
+    (
+        id: "funnel", name: "part.funnel.name", description: "part.funnel.desc",
+        category: Hull, tier: T1, phase: Slice, size: (4, 6, 3), placement: Weather, mass_kg: 600.0, cost: 3,
+        function: Structure,
+        model: (generator: "fit.funnel", params: [2.8, 1.4, 1.8, 8.0, 1.0]), icon: "part_hull",
+    ),
+
+    // ---------------------------------------------------------------------------------------------------
+    // Special operations (L786-797) and electronic warfare.
+    (
+        id: "rail.mine", name: "part.rail.mine.name", description: "part.rail.mine.desc",
+        category: SpecialOps, tier: T2, phase: R010, size: (16, 2, 2), placement: DeckEdge, mass_kg: 800.0, cost: 25,
+        ports: [(network: Power, role: Consume, rate: 1.0), (network: Data, role: Link)], power_priority: 5,
+        flammable: Ammunition, tags: [MineRail], standard_limit: 1,
+        function: MineRail(mine: "mine.influence", capacity: 8),
+        model: (generator: "launcher.mine_rail", params: [16.0]), icon: "part_special_ops",
+    ),
+    (
+        id: "davit.rhib", name: "part.davit.rhib.name", description: "part.davit.rhib.desc",
+        category: SpecialOps, tier: T2, phase: R010, size: (10, 5, 5), placement: DeckEdge, mass_kg: 2200.0, cost: 30,
+        ports: [(network: Power, role: Consume, rate: 8.0), (network: Data, role: Link)], power_priority: 5,
+        tags: [RhibDavit],
+        function: RhibDavit,
+        model: (generator: "fit.davit", params: [5.0]), icon: "part_special_ops",
+    ),
+    (
+        id: "davit.boarding", name: "part.davit.boarding.name", description: "part.davit.boarding.desc",
+        category: SpecialOps, tier: T3, phase: R010, size: (12, 5, 6), placement: DeckEdge, mass_kg: 4000.0, cost: 55,
+        ports: [(network: Power, role: Consume, rate: 10.0), (network: Data, role: Link)], power_priority: 5,
+        tags: [BoardingKit, RhibDavit],
+        function: BoardingKit(team_berths: 6),
+        model: (generator: "fit.davit", params: [6.5]), icon: "part_special_ops",
+    ),
+    (
+        id: "net.recovery", name: "part.net.recovery.name", description: "part.net.recovery.desc",
+        category: SpecialOps, tier: T2, phase: R010, size: (1, 4, 8), placement: DeckEdge, mass_kg: 400.0, cost: 8,
+        ports: [(network: Power, role: Consume, rate: 3.0), (network: Data, role: Link)], power_priority: 5,
+        tags: [RecoveryNet],
+        function: RecoveryNet,
+        model: (generator: "fit.recovery_net", params: [4.0]), icon: "part_special_ops",
+    ),
+    (
+        id: "berths.passenger", name: "part.berths.passenger.name", description: "part.berths.passenger.desc",
+        category: SpecialOps, tier: T2, phase: R010, size: (4, 3, 4), placement: Internal, mass_kg: 1400.0, cost: 10,
+        ports: [(network: Power, role: Consume, rate: 3.0)], power_priority: 5,
+        tags: [PassengerBerths],
+        function: PassengerBerths(count: 6),
+        model: (generator: "fit.internal", params: [3.0]), icon: "part_special_ops",
+    ),
+    (
+        id: "mast.camera", name: "part.mast.camera.name", description: "part.mast.camera.desc",
+        category: SpecialOps, tier: T2, phase: R010, size: (2, 8, 2), placement: Weather, mass_kg: 500.0, cost: 35,
+        ports: [(network: Power, role: Consume, rate: 2.0), (network: Data, role: Link)], power_priority: 5,
+        tags: [CameraMast],
+        function: CameraMast(fov_deg: 10.0, photo_range_m: 6000.0),
+        model: (generator: "sensor.camera", params: [0.6, 3.5]), icon: "part_special_ops",
+    ),
+    (
+        id: "crane", name: "part.crane.name", description: "part.crane.desc",
+        category: SpecialOps, tier: T3, phase: R010, size: (4, 8, 4), placement: Weather, mass_kg: 3500.0, cost: 30,
+        ports: [(network: Power, role: Consume, rate: 20.0), (network: Data, role: Link)], power_priority: 5,
+        tags: [Crane],
+        function: Crane,
+        model: (generator: "fit.crane", params: [6.0]), icon: "part_special_ops",
+    ),
+    // Self-screening jammer at the spec's 10 km burn-through rating (L428); an emitter that Silent turns off.
+    (
+        id: "jammer", name: "part.jammer.name", description: "part.jammer.desc",
+        category: Defence, tier: T3, phase: R010, size: (2, 2, 2), placement: Weather, mass_kg: 600.0, cost: 80,
+        ports: [(network: Power, role: Consume, rate: 25.0), (network: Data, role: Link)], power_priority: 2,
+        standard_limit: 1,
+        function: Jammer(r_bt0_m: 10000.0),
+        model: (generator: "sensor.jammer", params: [2.0]), icon: "part_defence",
+    ),
+]

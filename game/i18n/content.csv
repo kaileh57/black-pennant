@@ -1,0 +1,85 @@
+keys,?context,en
+content.locked.not_in_build,Why a part or kit cannot be placed: this build does not carry it,Not in this build
+content.locked.retired,Why a part cannot be placed: a later release replaced it,Replaced by a newer part
+content.locked.no_campaign,Why campaign parts read as closed: no save is loaded,Load a campaign to see which parts are open
+content.locked.act,Why a part cannot be placed yet; {0} an act such as Act 2,Arrives in {0}
+content.locked.tier,Why a part cannot be placed yet; {0} a part tier such as Tier 3,{0} parts are not open yet
+content.locked.blueprint,Why a part of an open tier cannot be placed yet,Recover its blueprint in an operation to fit it
+content.locked.unknown_part,Why a kit cannot be placed: one of its parts is missing from this build,Uses a part this build does not have
+content.stat.weapon_range,Part spec sheet row: range of the weapon or drone it launches,Weapon range
+content.stat.weapon_speed,Part spec sheet row: cruise speed of the weapon it launches,Weapon speed
+content.stat.ballast,Part spec sheet row: most ballast the tank holds,Most ballast
+content.stat.shaft_power,Part spec sheet row: engine power at full throttle,Shaft power
+content.stat.fuel_burn,Part spec sheet row: fuel use at full power in litres a second,Fuel at full power (L/s)
+content.stat.spool_time,Part spec sheet row: time from idle to full power,Time to full power
+content.stat.output,Part spec sheet row: electrical output of a generator,Electrical output
+content.stat.stored_energy,Part spec sheet row: battery capacity in kilowatt hours,Stored energy (kWh)
+content.stat.max_output,Part spec sheet row: highest battery output,Peak output
+content.stat.fuel_capacity,Part spec sheet row: fuel the tank holds,Fuel capacity
+content.stat.max_shaft_power,Part spec sheet row: largest shaft power a propeller or waterjet can take,Largest shaft power
+content.stat.static_thrust,Part spec sheet row: thrust at rest for each kilowatt in newtons,Static thrust per kW (N)
+content.stat.cavitation_speed,Part spec sheet row: speed above which the propeller cavitates and gets louder,Cavitates above
+content.stat.steer_angle,Part spec sheet row: how far a waterjet turns its thrust,Thrust vectoring
+content.stat.rudder_area,Part spec sheet row: rudder blade area in square metres,Rudder area (m²)
+content.stat.rudder_angle,Part spec sheet row: largest rudder angle,Largest rudder angle
+content.stat.rudder_rate,Part spec sheet row: rudder swing speed in degrees a second,Rudder speed (°/s)
+content.stat.calibre,Part spec sheet row: gun or ammunition calibre,Calibre
+content.stat.barrels,Part spec sheet row: barrels on the mount,Barrels
+content.stat.rate_of_fire,Part spec sheet row: rounds a minute from each barrel,Rounds a minute per barrel
+content.stat.effective_range,Part spec sheet row: the gun's effective range,Effective range
+content.stat.muzzle_velocity,Part spec sheet row: shell speed leaving the barrel in metres a second,Muzzle velocity (m/s)
+content.stat.shell_mass,Part spec sheet row: mass of one shell in kilograms,Shell mass (kg)
+content.stat.ready_rounds,Part spec sheet row: rounds on the mount before the hoist must feed it,Ready rounds
+content.stat.train_rate,Part spec sheet row: turning speed of a mount in degrees a second,Training speed (°/s)
+content.stat.elevation_rate,Part spec sheet row: speed a gun changes elevation in degrees a second,Elevation speed (°/s)
+content.stat.elevation_min,Part spec sheet row: lowest gun elevation,Lowest elevation
+content.stat.elevation_max,Part spec sheet row: highest gun elevation,Highest elevation
+content.stat.dispersion,Part spec sheet row: shot spread on a steady deck in milliradians,Spread (mrad)
+content.stat.rounds_stowed,Part spec sheet row: rounds a magazine holds,Rounds stowed
+content.stat.ammo_mass,Part spec sheet row: mass of a full magazine's ammunition in kilograms,Ammunition mass (kg)
+content.stat.hoist_rate,Part spec sheet row: rounds a minute the hoist lifts,Hoist rounds a minute
+content.stat.cells,Part spec sheet row: ready launch cells or tubes,Cells
+content.stat.launch_interval,Part spec sheet row: time between launches from adjacent cells,Time between launches
+content.stat.reload_time,Part spec sheet row: time to reload one cell at sea,Reload time at sea
+content.stat.mines,Part spec sheet row: mines the rail carries,Mines carried
+content.stat.decoy_rounds,Part spec sheet row: decoy rounds carried,Rounds carried
+content.stat.salvo,Part spec sheet row: decoy rounds fired in one salvo,Rounds per salvo
+content.stat.salvo_interval,Part spec sheet row: time between decoy salvos,Time between salvos
+content.stat.burn_through,Part spec sheet row: range inside which radar burns through the jammer,Burn-through range
+content.stat.reference_range,Part spec sheet row: detection range against the reference target,Reference range
+content.stat.update_rate,Part spec sheet row: sensor updates each second,Updates a second
+content.stat.rotation,Part spec sheet row: antenna turns a minute,Rotation (rpm)
+content.stat.field_of_view,Part spec sheet row: width of the field of view,Field of view
+content.stat.pump_rate,Part spec sheet row: water a pump moves in cubic metres a second,Pump rate (m³/s)
+content.stat.berths,Part spec sheet row: crew berths,Berths
+content.stat.passenger_berths,Part spec sheet row: passenger berths,Passenger berths
+content.stat.drones,Part spec sheet row: drones the bay carries,Drones carried
+content.stat.recharge_time,Part spec sheet row: time to recharge a recovered drone,Recharge time
+content.stat.team_berths,Part spec sheet row: berths for the boarding team,Boarding team berths
+content.stat.photo_range,Part spec sheet row: longest range for a photograph,Photograph range
+content.stat.power_priority,"Part spec sheet row: power priority, 1 is fed first",Power priority
+content.role.submarine,Enemy class role,Submarine
+content.role.patrol_boat,Enemy class role,Patrol boat
+content.role.fast_attack,Enemy class role,Fast attack craft
+content.role.corvette,Enemy class role,Corvette
+content.role.frigate,Enemy class role,Frigate
+content.role.destroyer,Enemy class role,Destroyer
+content.role.capital,Enemy class role,Capital ship
+content.role.picket,Enemy class role,Picket
+content.role.minesweeper,Enemy class role,Minesweeper
+content.role.freighter,Enemy class role,Freighter
+content.role.tanker,Enemy class role,Tanker
+content.role.tender,Enemy class role,Tender
+content.role.civilian,Enemy class role,Civilian vessel
+content.role.drone,Enemy class role,Drone boat
+content.mission.convoy_raid.desc,Skirmish template description; one sentence,Sink or disable a convoy's tonnage before it reaches port.
+content.mission.depot_strike.desc,Skirmish template description; one sentence,Destroy a Combine depot and cut the lanes it feeds.
+content.mission.radar_decapitation.desc,Skirmish template description; one sentence,Knock out a radar site by gunfire or a landing party.
+content.mission.agent_extraction.desc,Skirmish template description; one sentence,Land a RHIB at a shore marker and bring the agents home.
+content.mission.minelaying.desc,Skirmish template description; one sentence,Lay a minefield across a lane without being seen.
+content.mission.prize_capture.desc,Skirmish template description; one sentence,"Disable a ship, board it and take it as a prize."
+content.mission.defector_escort.desc,Skirmish template description; one sentence,Meet a defecting ship and see it safely out of the region.
+content.mission.feint.desc,Skirmish template description; one sentence,"Draw the enemy's attention, hold it, then slip away."
+content.mission.photo_reconnaissance.desc,Skirmish template description; one sentence,Photograph the named ships from inside camera range.
+content.mission.hunter_group_survival.desc,Skirmish template description; one sentence,Survive the hunter-killer group sent after SEXTANT and get clear.
+content.mission.cutting_out.desc,Skirmish template description; one sentence,Board a ship in harbour and sail it out past the defences.

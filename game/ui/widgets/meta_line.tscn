@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/widgets/meta_line.gd" id="1"]
+
+[node name="MetaLine" type="Label"]
+visible = false
+theme_type_variation = &"Meta"
+script = ExtResource("1")

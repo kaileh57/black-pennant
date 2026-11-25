@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/widgets/msg_label.gd" id="1"]
+
+[node name="MsgLabel" type="Label"]
+theme_type_variation = &"Body"
+autowrap_mode = 3
+script = ExtResource("1")

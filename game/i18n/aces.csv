@@ -1,0 +1,71 @@
+keys,?context,en
+ace.auditor.name,Ace name (person name),Captain Ines Varga
+ace.auditor.callsign,Ace callsign (proper noun),Auditor
+ace.auditor.arrives,"Radio line, ace Auditor, when the ace arrives on the scene; at most two 40-character lines",Auditor on station. Let us review the books.
+ace.auditor.sights,"Radio line, ace Auditor, when the ace first sights the player; at most two 40-character lines","There you are, LANTERN. Your books never balance."
+ace.auditor.fires,"Radio line, ace Auditor, when the ace opens fire first; at most two 40-character lines","Opening the ledger. All mounts, commence."
+ace.auditor.hit,"Radio line, ace Auditor, when the ace takes damage; at most two 40-character lines",A debit noted. Continue the engagement.
+ace.auditor.scores,"Radio line, ace Auditor, when the ace damages the player; at most two 40-character lines",Write that down. Their losses are mounting.
+ace.auditor.withdraws,"Radio line, ace Auditor, when the ace withdraws; at most two 40-character lines",Auditor withdrawing. The account stays open.
+ace.auditor.defeated,"Radio line, ace Auditor, when the ace is defeated; at most two 40-character lines",Auditor to all units. I am closing my books.
+ace.auditor.captured,"Radio line, ace Auditor, when the ace is captured; at most two 40-character lines",Record that I surrendered nothing of value.
+ace.bailiff.name,Ace name (person name),Commander Teodor Halloran
+ace.bailiff.callsign,Ace callsign (proper noun),Bailiff
+ace.bailiff.arrives,"Radio line, ace Bailiff, when the ace arrives on the scene; at most two 40-character lines",Bailiff to group. Form on me. We collect today.
+ace.bailiff.sights,"Radio line, ace Bailiff, when the ace first sights the player; at most two 40-character lines","Contact confirmed. LANTERN, heave to and be served."
+ace.bailiff.fires,"Radio line, ace Bailiff, when the ace opens fire first; at most two 40-character lines","Notice is served. Batteries, fire."
+ace.bailiff.hit,"Radio line, ace Bailiff, when the ace takes damage; at most two 40-character lines",Hit taken. Damage control report. Keep firing.
+ace.bailiff.scores,"Radio line, ace Bailiff, when the ace damages the player; at most two 40-character lines","They are bleeding. Close the distance, slowly."
+ace.bailiff.withdraws,"Radio line, ace Bailiff, when the ace withdraws; at most two 40-character lines",Bailiff breaking off. This debt will keep.
+ace.bailiff.defeated,"Radio line, ace Bailiff, when the ace is defeated; at most two 40-character lines",Covenant is lost. Bailiff out.
+ace.bailiff.captured,"Radio line, ace Bailiff, when the ace is captured; at most two 40-character lines",Take the ship if you like. The debt remains.
+ace.underwriter.name,Ace name (person name),Captain Mireille Osei
+ace.underwriter.callsign,Ace callsign (proper noun),Underwriter
+ace.underwriter.arrives,"Radio line, ace Underwriter, when the ace arrives on the scene; at most two 40-character lines",Underwriter in the area. Risk is acceptable.
+ace.underwriter.sights,"Radio line, ace Underwriter, when the ace first sights the player; at most two 40-character lines","Contact. I have priced you, LANTERN."
+ace.underwriter.fires,"Radio line, ace Underwriter, when the ace opens fire first; at most two 40-character lines",Missiles away. Cover the spread.
+ace.underwriter.hit,"Radio line, ace Underwriter, when the ace takes damage; at most two 40-character lines",Loss within limits. Hold course.
+ace.underwriter.scores,"Radio line, ace Underwriter, when the ace damages the player; at most two 40-character lines",Claim settled. Strike again.
+ace.underwriter.withdraws,"Radio line, ace Underwriter, when the ace withdraws; at most two 40-character lines",Exposure too high. Underwriter withdrawing.
+ace.underwriter.defeated,"Radio line, ace Underwriter, when the ace is defeated; at most two 40-character lines",Policy void. Underwriter out.
+ace.underwriter.captured,"Radio line, ace Underwriter, when the ace is captured; at most two 40-character lines",I insured against this. Not well enough.
+ace.broker.name,Ace name (person name),Commander Lukas Brandt
+ace.broker.callsign,Ace callsign (proper noun),Broker
+ace.broker.arrives,"Radio line, ace Broker, when the ace arrives on the scene; at most two 40-character lines",Broker on station. Opening positions.
+ace.broker.sights,"Radio line, ace Broker, when the ace first sights the player; at most two 40-character lines","There you are. Let us trade, LANTERN."
+ace.broker.fires,"Radio line, ace Broker, when the ace opens fire first; at most two 40-character lines","Buying in. All guns, fire."
+ace.broker.hit,"Radio line, ace Broker, when the ace takes damage; at most two 40-character lines",Bad trade. Shift fire and press on.
+ace.broker.scores,"Radio line, ace Broker, when the ace damages the player; at most two 40-character lines",Good fill. Keep the pressure on.
+ace.broker.withdraws,"Radio line, ace Broker, when the ace withdraws; at most two 40-character lines",Broker closing out. We will meet again.
+ace.broker.defeated,"Radio line, ace Broker, when the ace is defeated; at most two 40-character lines",Market is closed. Broker out.
+ace.broker.captured,"Radio line, ace Broker, when the ace is captured; at most two 40-character lines",Name your price. Everyone has one.
+ace.liquidator.name,Ace name (person name),Captain Saskia Thorne
+ace.liquidator.callsign,Ace callsign (proper noun),Liquidator
+ace.liquidator.arrives,"Radio line, ace Liquidator, when the ace arrives on the scene; at most two 40-character lines",Liquidator on station. Nothing leaves this water.
+ace.liquidator.sights,"Radio line, ace Liquidator, when the ace first sights the player; at most two 40-character lines","Found you, LANTERN. Your assets are forfeit."
+ace.liquidator.fires,"Radio line, ace Liquidator, when the ace opens fire first; at most two 40-character lines",Begin the sale. Fire at will.
+ace.liquidator.hit,"Radio line, ace Liquidator, when the ace takes damage; at most two 40-character lines",Damage noted. It changes nothing.
+ace.liquidator.scores,"Radio line, ace Liquidator, when the ace damages the player; at most two 40-character lines",Write them down to nothing.
+ace.liquidator.withdraws,"Radio line, ace Liquidator, when the ace withdraws; at most two 40-character lines",Liquidator falling back. Not finished.
+ace.liquidator.defeated,"Radio line, ace Liquidator, when the ace is defeated; at most two 40-character lines","All hands, abandon. Liquidator out."
+ace.liquidator.captured,"Radio line, ace Liquidator, when the ace is captured; at most two 40-character lines",You will find the ledgers empty.
+ace.actuary.name,Ace name (person name),Commander Dov Reyes
+ace.actuary.callsign,Ace callsign (proper noun),Actuary
+ace.actuary.arrives,"Radio line, ace Actuary, when the ace arrives on the scene; at most two 40-character lines",Actuary on station. The odds favour us.
+ace.actuary.sights,"Radio line, ace Actuary, when the ace first sights the player; at most two 40-character lines",Contact as predicted. Plotting you now.
+ace.actuary.fires,"Radio line, ace Actuary, when the ace opens fire first; at most two 40-character lines",Solution complete. Fire.
+ace.actuary.hit,"Radio line, ace Actuary, when the ace takes damage; at most two 40-character lines",Unexpected. Recalculating.
+ace.actuary.scores,"Radio line, ace Actuary, when the ace damages the player; at most two 40-character lines",As expected. Continue.
+ace.actuary.withdraws,"Radio line, ace Actuary, when the ace withdraws; at most two 40-character lines",Odds have turned. Actuary withdrawing.
+ace.actuary.defeated,"Radio line, ace Actuary, when the ace is defeated; at most two 40-character lines",An outlier. Actuary out.
+ace.actuary.captured,"Radio line, ace Actuary, when the ace is captured; at most two 40-character lines",Improbable. I will note it.
+ace.chairman.name,Ace name (person name),Commodore Aurelio Vance
+ace.chairman.callsign,Ace callsign (proper noun),Chairman
+ace.chairman.arrives,"Radio line, ace Chairman, when the ace arrives on the scene; at most two 40-character lines",Chairman to all units. The board is in session.
+ace.chairman.sights,"Radio line, ace Chairman, when the ace first sights the player; at most two 40-character lines",So this is LANTERN. Smaller than reported.
+ace.chairman.fires,"Radio line, ace Chairman, when the ace opens fire first; at most two 40-character lines","Motion carried. All ships, open fire."
+ace.chairman.hit,"Radio line, ace Chairman, when the ace takes damage; at most two 40-character lines",Noted in the minutes. Carry on.
+ace.chairman.scores,"Radio line, ace Chairman, when the ace damages the player; at most two 40-character lines",The board is pleased. Finish them.
+ace.chairman.withdraws,"Radio line, ace Chairman, when the ace withdraws; at most two 40-character lines","Chairman withdrawing. Adjourned, not ended."
+ace.chairman.defeated,"Radio line, ace Chairman, when the ace is defeated; at most two 40-character lines",The meeting is closed. Chairman out.
+ace.chairman.captured,"Radio line, ace Chairman, when the ace is captured; at most two 40-character lines",You have the chair. Hold it if you can.

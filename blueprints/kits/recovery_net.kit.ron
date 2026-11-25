@@ -1,0 +1,26 @@
+// Stock kit (DESIGN.md L140). Unit `data-kits-act1`. Licensed CC BY 4.0.
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.recovery_net",
+    version: 1,
+    hash: "",
+    name: "Recovery net",
+    name_key: "kit.recovery_net.name",
+    description_key: "kit.recovery_net.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "net.recovery", offset: (x: 0, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "edge", offset: (x: 0, y: 0, z: 4), face: YNeg),
+    ],
+    settings: [],
+    graph: (),
+    officer: None,
+    tags: [RecoveryNet],
+    tray_order: 64,
+)

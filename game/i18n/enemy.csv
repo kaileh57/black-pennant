@@ -1,0 +1,63 @@
+keys,?context,en
+class.launch.name,Enemy class name (ship name),Clerk class harbour launch
+class.patrol_boat.name,Enemy class name (ship name),Tally class patrol boat
+class.trawler.name,Civilian vessel type,Fishing trawler
+class.coaster.name,Enemy merchant vessel type,Coastal freighter
+class.tanker.name,Enemy merchant vessel type,Coastal tanker
+class.torpedo_boat.name,Enemy class name (ship name),Lien class torpedo boat
+class.minesweeper.name,Enemy class name (ship name),Escrow class minesweeper
+class.gunboat.name,Enemy class name (ship name),Levy class gunboat
+class.picket.name,Enemy class name (ship name),Audit class radar picket
+class.supply_tender.name,Enemy class name (ship name),Bursar class supply tender
+class.gunboat_b.name,"Enemy class name (ship name); batch 2 is the heavier variant","Levy class gunboat, batch 2"
+class.missile_boat.name,Enemy class name (ship name),Tariff class missile boat
+class.fac.name,Enemy class name (ship name),Margin class fast attack craft
+class.patrol_corvette.name,Enemy class name (ship name),Ledger class corvette
+class.patrol_corvette_b.name,"Enemy class name (ship name); batch 2 is the heavier variant","Ledger class corvette, batch 2"
+class.escort_corvette.name,Enemy class name (ship name),Surety class escort corvette
+class.missile_corvette.name,Enemy class name (ship name),Debenture class missile corvette
+class.ace_arrears.name,"Ship name; the Auditor's signature ship, a rebuilt Margin class",Arrears
+class.frigate.name,Enemy class name (ship name),Charter class frigate
+class.frigate_b.name,"Enemy class name (ship name); batch 2 is the heavier variant","Charter class frigate, batch 2"
+class.ace_covenant.name,"Ship name; the Bailiff's signature ship, a rebuilt Charter class",Covenant
+class.freighter.name,Enemy merchant vessel type,Island freighter
+class.oiler.name,Enemy merchant vessel type,Fleet oiler
+class.ferry.name,Civilian vessel type,Island ferry
+class.aviso.name,Enemy class name (ship name),Coupon class aviso
+class.warrant.name,Enemy class name (ship name),Warrant class corvette
+class.warrant_b.name,Enemy class name (ship name); batch 2 is the heavier variant,"Warrant class corvette, batch 2"
+class.indenture.name,Enemy class name (ship name),Indenture class missile corvette
+class.premium.name,Enemy class name (ship name),Premium class air-defence corvette
+class.bond.name,Enemy class name (ship name),Bond class frigate
+class.bond_b.name,Enemy class name (ship name); batch 2 is the heavier variant,"Bond class frigate, batch 2"
+class.ace_indemnity.name,"Ship name; the Underwriter's signature ship, a long composite missile corvette",Indemnity
+class.mortgage.name,Enemy class name (ship name),Mortgage class helicopter frigate
+class.ace_commission.name,"Ship name; the Broker's signature ship, an armoured gun frigate",Commission
+class.bulk_carrier.name,Enemy merchant vessel type,Bulk carrier
+class.fleet_tanker.name,Enemy merchant vessel type,Fleet tanker
+class.packet.name,Civilian vessel type,Island packet
+class.pledge.name,Enemy class name (ship name),Pledge class corvette
+class.tontine.name,Enemy class name (ship name),Tontine class coastal submarine
+class.pledge_b.name,Enemy class name (ship name); batch 2 is the heavier variant,"Pledge class corvette, batch 2"
+class.accrual.name,Enemy class name (ship name),Accrual class patrol submarine
+class.collateral.name,Enemy class name (ship name),Collateral class frigate
+class.annuity.name,Enemy class name (ship name),Annuity class missile frigate
+class.collateral_b.name,Enemy class name (ship name); batch 2 is the heavier variant,"Collateral class frigate, batch 2"
+class.dividend.name,Enemy class name (ship name),Dividend class destroyer
+class.ace_contingency.name,"Ship name; the Actuary's signature ship, a sensor-heavy destroyer leader",Contingency
+class.equity.name,Enemy class name (ship name),Equity class destroyer
+class.ace_foreclosure.name,"Ship name; the Liquidator's signature ship, a heavy cruiser",Foreclosure
+class.cargo_liner.name,Enemy merchant vessel type,Cargo liner
+class.replenisher.name,Enemy merchant vessel type,Replenishment ship
+class.yacht.name,Civilian vessel type,Motor yacht
+class.surety.name,Enemy class name (ship name),Surety class corvette
+class.option.name,Enemy class name (ship name),Option class missile corvette
+class.surety_b.name,Enemy class name (ship name); batch 2 is the heavier variant,"Surety class corvette, batch 2"
+class.debenture.name,Enemy class name (ship name),Debenture class frigate
+class.yield.name,Enemy class name (ship name),Yield class missile frigate
+class.debenture_b.name,Enemy class name (ship name); batch 2 is the heavier variant,"Debenture class frigate, batch 2"
+class.escrow.name,Enemy class name (ship name),Escrow class destroyer
+class.margin.name,Enemy class name (ship name),Margin class destroyer
+class.consol.name,Enemy class name (ship name),Consol class destroyer
+class.principal.name,Enemy class name (ship name),Principal class heavy cruiser
+class.ace_charter.name,"Ship name; the Chairman's signature ship, the Combine's flagship battlecruiser",Charter

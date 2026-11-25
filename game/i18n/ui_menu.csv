@@ -1,0 +1,82 @@
+keys,?context,en
+menu.title,"Main menu title, the game's name; proper noun",Black Pennant
+menu.version,"Main menu build line; {0} version number, {1} build id","Version {0}, build {1}"
+menu.campaign.start,Main menu button that opens campaign setup,Start a campaign
+menu.campaign.start.detail,Support line under the start-a-campaign button,Command one hull against the Meridian Combine across a theatre of operations.
+menu.campaign,Main menu button that opens the campaign saves,Play the campaign
+menu.skirmish,Main menu button that opens skirmish setup,Play a skirmish
+menu.sandbox,Main menu button that opens sandbox setup,Open the sandbox
+menu.multiplayer,Main menu button that opens hosting and joining,Host or join a game
+menu.dry_dock,Main menu button that opens the ship editor,Open the dry dock
+menu.tutorial.start,Main menu button that starts the tutorial,Start the tutorial
+menu.tutorial.again,Main menu button that starts the tutorial after it was finished once,Play the tutorial again
+menu.tutorial.detail,Support line under the start-the-tutorial button,Arm a fast attack craft and test it: about 10 minutes.
+menu.replays,Main menu button that opens the replay browser,Watch replays
+menu.benchmark,Main menu button that opens the benchmark,Run the benchmark
+menu.settings,Main menu button that opens the settings,Change settings
+menu.credits,Main menu button that opens credits and licences,Read the credits
+menu.quit,Main menu button that closes the game,Quit to desktop
+menu.resume,Main menu button that resumes the suspended sortie,Resume sortie
+menu.resume.detail,Support line under the resume button; {0} the campaign summary,Suspended mid-sortie: {0} Resuming deletes the suspend save.
+menu.continue,Main menu button that loads the newest campaign; {0} the player's campaign name,Continue {0}
+menu.slot.summary,"Campaign summary; {0} act such as Act 1, {1} theatre day, {2} time played","{0}, day {1}, {2} played."
+menu.slot.saved,Campaign summary suffix; {0} local date and time of the save,Saved {0}.
+menu.slot.ironman,Campaign summary suffix for an Ironman campaign,Ironman.
+menu.loading.resume,Loading cover while the suspended sortie loads,Loading the suspended sortie
+menu.loading.campaign,Loading cover while a campaign save loads,Loading the campaign
+menu.resume.failed_title,Dialog title when the suspended sortie could not resume,The sortie could not resume
+menu.resume.failed_body,Dialog body when the suspended sortie could not resume,The suspend save could not be read. Your campaign saves are unchanged.
+menu.load.failed_title,Dialog title when a campaign save did not load,The campaign did not load
+menu.load.failed_body,Dialog body when a campaign save did not load and gave no reason,The save could not be read.
+menu.tutorial.failed_title,Dialog title when the tutorial could not start,The tutorial could not start
+menu.tutorial.failed_body,Dialog body when the tutorial could not start,Its script is missing from this build.
+menu.dry_dock.failed_title,Dialog title when the dry dock could not open,The dry dock could not open
+menu.dry_dock.failed_body,Dialog body when the dry dock could not open and gave no reason,The design could not be loaded.
+menu.quit.unsaved_title,Dialog title before quitting with unsaved design changes,Quit with unsaved design changes?
+menu.quit.unsaved_body,Dialog body before quitting with unsaved design changes,The design in the dry dock has changes that are not saved.
+menu.quit.confirm,Dialog button that quits without saving the design,Quit without saving
+menu.quit.stay,Dialog button that cancels quitting,Keep playing
+pause.title.paused,Pause menu title while the game is paused,Paused
+pause.title.menu,Pause menu title while the game keeps running,Menu
+pause.state.paused,Pause menu line while the sortie is paused,The sortie is paused.
+pause.state.splash,Pause menu line over a splash test while it is paused,The splash test is paused.
+pause.state.running,Pause menu line in co-op and PvP,Co-op and PvP never pause: the sortie keeps running.
+pause.state.clock,Pause menu line over the chart table while theatre time is held,Theatre time is held.
+pause.state.replay,Pause menu line over a replay,The replay is paused.
+pause.resume,Pause menu button that closes the menu and resumes,Resume
+pause.settings,Pause menu button that opens the settings,Change settings
+pause.leave.splash,Pause menu button over a splash test,Return to the dry dock
+pause.note.splash,Line under the return-to-dry-dock button,The design and every edit since the splash began are kept.
+pause.leave.chart_save,Pause menu button over the chart table when a full save is allowed,Save and quit to the menu
+pause.note.chart_save,Line under the save-and-quit button,The campaign is saved first.
+pause.leave.chart,Pause menu button over the chart table when no full save is allowed,Quit to the menu
+pause.note.chart_lose,Line under the quit button over the chart table,Progress since the last full save is lost. Full saves happen at coves and between operations.
+pause.leave.replay,Pause menu button over a replay,Leave the replay
+pause.leave.suspend,Pause menu button in a campaign sortie that writes the suspend save,Save and leave
+pause.note.suspend,Line under the save-and-leave button,"Writes the suspend save from the last checkpoint, at most 60 s ago. Resuming it deletes it."
+pause.withdraw,Pause menu button in a campaign sortie that orders the hull out of the area,Withdraw from the operation
+pause.note.withdraw,Line under the withdraw button,"The helm sails for the nearest exit at full speed. The sortie ends there, or once no enemy holds contact. Unless the objective is done, the operation counts as failed."
+pause.note.withdrawing,Line under the withdraw button once withdrawal is ordered,"Withdrawal ordered: the helm is making for the nearest exit."
+pause.leave.operation,Pause menu button for a co-op member in a campaign sortie,Leave the operation
+pause.note.drop,Line under the leave-the-operation button,"Your officers keep your hull fighting, and your slot is held for 5 minutes."
+pause.leave.skirmish,Pause menu button in a skirmish,Leave the skirmish
+pause.note.skirmish,Line under the leave-the-skirmish button,The skirmish ends without a result.
+pause.leave.match,Pause menu button in a PvP match,Leave the match
+pause.note.match,Line under the leave-the-match button,Your team plays on without you.
+pause.leave.tutorial,Pause menu button in the tutorial,Leave the tutorial
+pause.note.tutorial,Line under the leave-the-tutorial button,You can start it again from the main menu.
+pause.leave.sortie,Pause menu button in a sandbox or other sortie,Leave the sortie
+pause.note.sandbox,Line under the leave button in the sandbox,The sandbox closes. Your designs are kept.
+pause.ask.title,Dialog title before leaving a sortie that loses progress,Leave now?
+pause.ask.lose,Dialog body before leaving a skirmish or match,The result of this sortie is lost.
+pause.ask.stay,Dialog button that cancels leaving,Keep playing
+credits.title,Credits screen title,Credits and licences
+credits.close,Button that closes the credits,Close credits
+credits.made_by,Credits line about the game,"Black Pennant is a free naval combat game, built to its owner's direction and playtested by its owner and volunteers."
+credits.disclosure,"AI disclosure, copy rule 14; keep its meaning exact","Code, text and procedural assets were written by an AI coding agent under owner direction. No generative image, audio, voice or music models were used."
+credits.assets,Credits line about how the art and sound are made,"Every ship, sea and sky is drawn by code, and every sound is synthesized. Officers and aces speak in text with radio effects."
+credits.blueprints,Credits line about the licence of the stock ships,Stock ships and kits are licensed CC BY 4.0.
+credits.licences,Heading of the licence list,Licences
+credits.licence_row,"Licence list row; {0} the work, {1} its licence","{0}, {1}"
+credits.no_licences,Shown when the licence list could not be read,The licence list could not be read. The licence texts ship in the LICENSES folder.
+credits.build,"Credits build line; {0} version, {1} build id, {2} network protocol, {3} blueprint format, {4} save format","Version {0}, build {1}. Protocol {2}, blueprint format {3}, save format {4}."

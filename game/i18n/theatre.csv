@@ -1,0 +1,58 @@
+keys,?context,en
+theatre.saltreach.name,Theatre name (place name),Saltreach
+act.1.name,Act title (proper noun),Low water
+act.2.name,Act title (proper noun),Flood tide
+act.3.name,Act title (proper noun),High water
+act.4.name,Act title (proper noun),Ebb tide
+region.gannet.name,Region name (place name),Gannet Banks
+region.corran.name,Region name (place name),Corran Sound
+region.hollin.name,Region name (place name),Hollin Straits
+region.meridian.name,Region name (place name),Meridian Roads
+node.cove.wren.name,Theatre node name (place name),Wren Cove
+node.cove.pell.name,Theatre node name (place name),Pell Cove
+node.cove.caddow.name,Theatre node name (place name),Caddow Cove
+node.yard.fenwick.name,Theatre node name (place name),Fenwick yard
+node.depot.skerrow.name,Theatre node name (place name),Skerrow depot
+node.depot.tarn.name,Theatre node name (place name),Tarn Head depot
+node.base.ollan.name,Theatre node name (place name),Port Ollan
+node.harbour.mareby.name,Theatre node name (place name),Mareby
+node.radar.crane.name,Theatre node name (place name),Crane Head
+node.sea.kessel.name,Theatre node name (place name),Kessel Gap
+node.sea.saltmere.name,Theatre node name (place name),Saltmere Roads
+node.sea.saddle.name,Theatre node name (place name),Saddle Narrows
+node.cove.gull.name,Theatre node name (place name),Gull Cove
+node.cove.hesk.name,Theatre node name (place name),Hesk Cove
+node.cove.brine.name,Theatre node name (place name),Brine Cove
+node.yard.corran.name,Theatre node name (place name),Corran yard
+node.depot.lowther.name,Theatre node name (place name),Lowther depot
+node.depot.amble.name,Theatre node name (place name),Amble depot
+node.base.sallow.name,Theatre node name (place name),Fort Sallow
+node.harbour.kittering.name,Theatre node name (place name),Kittering
+node.esm.ness.name,Theatre node name (place name),Ness Point
+node.sea.dunmere.name,Theatre node name (place name),Dunmere Channel
+node.sea.corran.name,Theatre node name (place name),Corran Sound
+node.sea.blackwater.name,Theatre node name (place name),Blackwater
+node.cove.rook.name,Theatre node name (place name),Rook Cove
+node.cove.teal.name,Theatre node name (place name),Teal Cove
+node.cove.morrow.name,Theatre node name (place name),Morrow Cove
+node.yard.hollin.name,Theatre node name (place name),Hollin yard
+node.depot.strand.name,Theatre node name (place name),Strand depot
+node.depot.vell.name,Theatre node name (place name),Vell depot
+node.base.arden.name,Theatre node name (place name),Cape Arden
+node.harbour.saltby.name,Theatre node name (place name),Saltby
+node.radar.hollin.name,Theatre node name (place name),Hollin Light
+node.sea.hollin.name,Theatre node name (place name),Hollin Straits
+node.sea.greywater.name,Theatre node name (place name),Greywater
+node.sea.spindle.name,Theatre node name (place name),Spindle Reach
+node.cove.fathom.name,Theatre node name (place name),Fathom Cove
+node.cove.ember.name,Theatre node name (place name),Ember Cove
+node.cove.last.name,Theatre node name (place name),Last Cove
+node.yard.meridian.name,Theatre node name (place name),Meridian yards
+node.depot.quay.name,Theatre node name (place name),Quay Nine depot
+node.depot.orrin.name,Theatre node name (place name),Orrin depot
+node.base.meridian.name,Theatre node name (place name),Meridian anchorage
+node.harbour.castor.name,Theatre node name (place name),Port Castor
+node.esm.halden.name,Theatre node name (place name),Halden Rock
+node.sea.roads.name,Theatre node name (place name),Meridian Roads
+node.sea.sable.name,Theatre node name (place name),Sable Deep
+node.sea.sentinel.name,Theatre node name (place name),Sentinel Reach

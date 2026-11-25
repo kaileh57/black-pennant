@@ -1,0 +1,29 @@
+// Stock kit (DESIGN.md L140). Unit `data-kits-act1`. Licensed CC BY 4.0.
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.ashm.light",
+    version: 1,
+    hash: "",
+    name: "Light anti-ship missiles",
+    name_key: "kit.ashm.light.name",
+    description_key: "kit.ashm.light.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "launcher.ashm.light", offset: (x: 0, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+        (part: "launcher.ashm.light", offset: (x: 0, y: 0, z: 3), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "deck", offset: (x: 4, y: 0, z: 3), face: YNeg),
+    ],
+    settings: [
+        (key: "gunnery.pn_surface", label: "tuning.slider.gunnery.pn_surface", min: 2.0, max: 6.0, default: 3.0),
+    ],
+    graph: (),
+    officer: None,
+    tags: [],
+    tray_order: 30,
+)

@@ -1,0 +1,86 @@
+keys,?context,en
+after_action.accessible_name,Accessible name of the after-action report screen,After-action report
+after_action.accessible_report,Accessible name of the scrolling report,Report
+after_action.accessible_chart,Accessible name of the belief map,Belief map
+after_action.title.none,Report title when there is no report,No report yet
+after_action.title.plain,Report title for a sortie with no named operation,Sortie report
+after_action.empty,Body text when there is no report,The report has not arrived. Go back to the chart table; it opens here when the sortie result is in.
+after_action.section.result,Report section title,Result
+after_action.section.payout,Report section title,Payout
+after_action.section.ghosts,Report section title; the optional ghost conditions,Ghost conditions
+after_action.section.theatre,Report section title; regional Alert and the operation clock,Theatre
+after_action.section.belief,"Panel title of the map of where Combine task groups believe the player is",Belief map
+after_action.section.doctrine,"Panel title of the Combine's win-method tallies and counter cards",Doctrine
+after_action.section.log,Panel title of the theatre events the sortie caused,Theatre log
+after_action.belief.note,Explains the belief map,Shading marks where Combine task groups now believe you operate. It follows you into the next operations in this region.
+after_action.result.outcome,"Result table term; victory, defeat, withdrawn, aborted or draw",Outcome
+after_action.result.ended,Result table term; why the sortie ended,How it ended
+after_action.result.objective,Result table term; the primary objective's last text when the report does not say why the sortie ended,Objective
+after_action.result.tonnage,Result table term,Disabled
+after_action.result.tonnage_value,"Result value; {0} enemy tonnage disabled, {1} enemy tonnage present, {2} percent","{0} of {1} ({2})"
+after_action.result.kills,Result table term; kills by method,Kills
+after_action.result.kill_entry,"Kill method with a count; {0} method word, {1} count",{0} {1}
+after_action.result.no_kills,Result value when there were no kills,None
+after_action.result.struck,Result table term; enemy hulls that surrendered under the Combine rule,Struck colours
+after_action.result.cells,Result table term; own hull cells destroyed,Cells lost
+after_action.result.hulls_lost,Result table term; player hulls lost,Hulls lost
+after_action.player,Player with no name; {0} seat number,Player {0}
+after_action.payout.wrecks,Payout table term,Salvage from wrecks
+after_action.payout.prizes,Payout table term,Salvage from prizes
+after_action.payout.intel,Payout table term,Intel
+after_action.payout.blueprints,Payout table term; part blueprints captured,Blueprints
+after_action.payout.fuel,Payout table term; fuel taken from depots and convoys,Fuel taken
+after_action.payout.ammo,Payout table term; ammunition taken from depots and convoys,Ammunition taken
+after_action.payout.kg,Mass in kilograms; {0} a number,{0} kg
+after_action.payout.repairs,Payout table term; the repair bill,Repairs
+after_action.payout.repair_entry,"Repair bill for one player; {0} player name, {1} salvage with unit",{0} {1}
+after_action.payout.no_repairs,Payout value when nothing needs repair,None needed
+after_action.payout.net,Payout table term; salvage income minus the repair bill,After repairs
+after_action.payout.net_gain,Salvage left after repairs; {0} salvage with unit,{0} gained
+after_action.payout.net_loss,Salvage short after repairs; {0} salvage with unit,{0} short
+after_action.ghost.met,Ghost condition verdict word,Met
+after_action.ghost.missed,Ghost condition verdict word,Not met
+after_action.alert.line,"Regional Alert after the sortie; {0} region name, {1} Alert level 0 to 5, {2} causes",{0}: Alert {1} after {2}.
+after_action.alert.line_plain,"Regional Alert after the sortie; {0} region name, {1} Alert level 0 to 5",{0}: Alert {1}.
+after_action.alert.none,Theatre line when no regional Alert changed,No region's Alert changed.
+after_action.clock.pushed,Operation clock line; {0} theatre days,The operation clock moved back {0} days.
+after_action.clock.pushed_one,Operation clock line; {0} is 1 theatre day,The operation clock moved back {0} day.
+after_action.clock.with_left,"Operation clock line with the time left; {0} the pushback sentence, {1} whole days left",{0} {1} days remain.
+after_action.clock.not_done,"Operation clock line when the objective was not done, so nothing moved the clock back; {0} whole days left","The objective was not done, so the operation clock did not move back. {0} days remain."
+after_action.doctrine.lead,"Explains the tallies; {0} the threshold, 10","The Combine tallies how you win. At {0}, a counter card goes on the doctrine bulletin."
+after_action.doctrine.no_tallies,Doctrine note when nothing is tallied,The Combine has no tally on your methods yet.
+after_action.doctrine.none,Doctrine note when there is no report,No doctrine changes to show.
+after_action.doctrine.waiver,Gauge checklist waiver for tally gauges; read by the gauge lint,Exact readout after the sortie; tallies decay only in theatre time.
+after_action.cards.none,Doctrine note when no counter card was queued,No counter card was queued.
+after_action.cards.queued,"A counter card queued on the doctrine bulletin; {0} card name, {1} region name, {2} arrival date-time group","Counter queued: {0} in {1}, arrives {2}."
+after_action.cards.counter,How to answer a queued card,"At the chart table, 2 intel delays a queued card by 72 hours and 5 intel cancels it."
+after_action.close,Button; leave the report for the chart table,Return to the chart table
+sortie_end.accessible_name,Accessible name of the sortie summary,Sortie summary
+sortie_end.title.none,Summary title when there is no summary,No result
+sortie_end.empty,Body text when there is no summary,The sortie ended without a result to show.
+sortie_end.meta,"Mode and sortie length beside the summary title; {0} mode word, {1} sortie clock","{0}, {1}"
+sortie_end.lead.tonnage,"Summary lead; {0} enemy tonnage disabled, {1} enemy tonnage present, {2} percent",Disabled {0} of the {1} of enemy hulls present ({2}).
+sortie_end.lead.no_enemy,Summary lead when no enemy hulls took part,No enemy hulls took part.
+sortie_end.objective,Objective with no text; {0} its number,Objective {0}
+sortie_end.ended,Summary table term; why the sortie ended,How it ended
+sortie_end.met,Objective verdict word,Met
+sortie_end.missed,Objective verdict word,Not met
+sortie_end.stat.guns,Summary table term; gun rounds,Gun hits
+sortie_end.stat.missiles,Summary table term,Missile hits
+sortie_end.stat.torpedoes,Summary table term,Torpedo hits
+sortie_end.stat.hits_value,"Hits against shots; {0} hits, {1} fired, {2} percent","{0} of {1} ({2})"
+sortie_end.stat.decoys,Summary table term,Decoys
+sortie_end.stat.decoys_value,"Decoys fired and missiles they drew off; {0} decoys fired, {1} missiles seduced","{0} fired, {1} missiles drawn off"
+sortie_end.stat.first_detection,Summary table term; sortie time of the first enemy detection,First detection
+sortie_end.stat.never,Summary value when something never happened,Never
+sortie_end.stat.radiating,Summary table term; time own radars and emitters were on,Time radiating
+sortie_end.stat.fires,Summary table term; fires aboard,Fires aboard
+sortie_end.stat.cells,Summary table term; own hull cells destroyed,Cells lost
+sortie_end.stat.alerts,Summary table term; alerts the ship raised,Alerts raised
+sortie_end.stat.kills,Summary table term; kills by method,Kills
+sortie_end.stat.kill_entry,"Kill method with a count; {0} method word, {1} count",{0} {1}
+sortie_end.stat.no_kills,Summary value when there were no kills,None
+sortie_end.to_menu,Button; leave the sortie for the main menu,Return to the menu
+sortie_end.to_lobby,Button; leave the match for the lobby,Back to the lobby
+sortie_end.leave_match,Button; leave the match and the lobby,Leave the match
+sortie_end.leave_lobby,Button after a co-op sortie from a lobby; leave the lobby for the main menu,Leave the lobby

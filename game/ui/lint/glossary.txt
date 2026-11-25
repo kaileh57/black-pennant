@@ -1,0 +1,45 @@
+# Codes that keep capitals in copy (L1695, L1707, L1730): acronyms, track numbers, hull designators,
+# classification and precedence. One per line, spelled as copy writes them. Two all-caps words in a row pass
+# only when both are listed here or the pair is listed as one entry. Read by cargo xtask lint (copy.case);
+# Code labels match these spellings.
+LANTERN
+SEXTANT
+EMCON
+ESM
+ID
+CG
+CB
+GM
+GZ
+RHIB
+# Sensors, weapons and comms.
+AIS
+ASW
+CIC
+CIWS
+ECM
+ECCM
+EO
+IFF
+IR
+LOS
+RF
+SAM
+SSM
+HF
+VHF
+UHF
+DTG
+# Units and screen codes.
+AI
+CPU
+GPU
+FPS
+HUD
+HDR
+UI
+UTC
+# Platforms and licences named in the README and docs.
+MIT
+OFL
+CC BY

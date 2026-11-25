@@ -1,0 +1,13 @@
+keys,?context,en
+bench.stage.idle,"Benchmark stage line, nothing running",Benchmark not running
+bench.stage.reference_battle,"Benchmark stage line; {0} graphics tier","Reference battle, {0} tier"
+bench.stage.coop_reference,"Benchmark stage line; {0} graphics tier","Co-op reference battle, {0} tier"
+bench.stage.minimum_swarm,"Benchmark stage line; {0} graphics tier","Minimum swarm, {0} tier"
+bench.stage.editor,"Benchmark stage line: gauge and splash timing",Dry dock timing
+bench.stage.sim_calib,"Benchmark stage line: the CPU calibration run",Simulation calibration
+bench.stage.soak,"Benchmark stage line; {0} graphics tier","Soak, {0} tier"
+bench.stage.done,"Benchmark stage line, run complete",Benchmark finished
+bench.tier.low,"Graphics tier name inside a benchmark line",Low
+bench.tier.medium,"Graphics tier name inside a benchmark line",Medium
+bench.tier.high,"Graphics tier name inside a benchmark line",High
+bench.tier.fallback,"Graphics tier name inside a benchmark line: the Compatibility renderer",Compatibility

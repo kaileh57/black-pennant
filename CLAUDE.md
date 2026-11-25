@@ -12,7 +12,7 @@ Before working on a system, read its section in `DESIGN.md`. Quote the section h
 
 - `crates/`: the Rust workspace members named in DESIGN.md's Crate layout table: sim-core, sim-systems, content, net, hull-mesh, audio, server, xtask, gdclient. Only gdclient depends on Godot.
 - `game/`: the Godot project (`game/project.godot`). GDScript is UI glue only.
-- `game/gen/`: written by `cargo xtask gen` (wave shader include, baked FFT detail, rendered audio). It is never edited by hand and never committed.
+- `game/shaders/gen/`, `game/art/gen/` and `game/audio/gen/`: written by `cargo xtask gen` (wave shader include, baked FFT detail, rendered audio). They are never edited by hand and never committed.
 - `game/_placeholder/`: the only place temporary art may live. Export presets exclude it, and release CI fails on any reference to it.
 - `blueprints/`: stock ships and kits as RON, licensed CC BY 4.0.
 

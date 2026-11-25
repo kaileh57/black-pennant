@@ -1,0 +1,56 @@
+# Words and forms banned in copy (CLAUDE.md, DESIGN.md L1702-1703, copy rules 3, 8 and 9). One per line,
+# matched as whole words, case-insensitive (letters and digits bound a word; "unlocks" is its own line).
+# Refreshed quarterly from Wikipedia's Signs of AI writing. Read by cargo xtask lint (copy.banned-words)
+# and res://test/lint/lint_rules.gd. Proper nouns in proper_nouns.txt are masked first.
+# Radio chatter, save rows and player-typed text are exempt (L1608).
+introducing
+introduces
+unlock
+unlocks
+unlocked
+unlocking
+empower
+empowers
+empowering
+elevate
+elevates
+elevating
+streamline
+streamlines
+streamlined
+transform
+transforms
+transformative
+discover
+discovers
+seamless
+seamlessly
+smart
+smarter
+next-gen
+next gen
+revolutionize
+revolutionizes
+revolutionise
+revolutionary
+leverage
+leverages
+leveraging
+delve
+delves
+vibrant
+pivotal
+showcase
+showcases
+tapestry
+testament
+unleash
+unleashes
+# Copy rule 3: buttons are effect verbs.
+get started
+# Copy rule 9 tics and puffery.
+game-changer
+game-changing
+cutting-edge
+state-of-the-art
+immersive

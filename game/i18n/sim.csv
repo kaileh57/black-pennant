@@ -1,0 +1,147 @@
+keys,?context,en
+sim.hold.no_target,Mount hold reason; no track assigned,Holding: no target
+sim.hold.stance,"Mount hold reason; {0} track stance, {1} stance doctrine needs","Holding: track is {0}, doctrine needs {1}"
+sim.hold.id,"Mount hold reason; {0} ID rung now, {1} rung needed","Holding: ID {0}, doctrine needs {1}"
+sim.hold.grade,"Mount hold reason; {0} track grade, {1} grade needed","Holding: track grade {0}, needs {1}"
+sim.hold.out_of_range,"Mount hold reason; {0} range to target, {1} range limit","Holding: target at {0}, range limit {1}"
+sim.hold.suspect_outside_self_defence,"Mount hold reason; {0} range to the Suspect, {1} self-defence range","Holding: Suspect at {0}, outside self-defence {1}"
+sim.hold.neutral_in_seeker_basket,Mount hold reason; {0} Neutral track number,Holding: Neutral {0} inside seeker basket
+sim.hold.train_limit,"Mount hold reason; {0} training the solution needs, {1} mount limit","Holding: solution needs {0}, mount maximum is {1}"
+sim.hold.elevation_limit,"Mount hold reason; {0} elevation needed, {1} mount limit","Holding: solution needs {0} elevation, maximum {1}"
+sim.hold.masked,Mount hold reason,Holding: own structure blocks the line of fire
+sim.hold.slewing,Mount hold reason,Holding: mount training onto the target
+sim.hold.reloading,Mount hold reason; {0} seconds to reload,"Holding: reloading, {0}"
+sim.hold.no_ammunition,Mount hold reason,Holding: no ammunition
+sim.hold.unpowered,Mount hold reason,Holding: mount has no power
+sim.hold.shed,Mount hold reason; the Engineer shed the mount's load,Holding: load shed by the Engineer
+sim.hold.damaged,Mount hold reason,Holding: mount damaged
+sim.hold.friend_in_line,Mount hold reason; {0} Friend track number,Holding: Friend {0} in the line of fire
+sim.hold.salvo_in_flight,Mount hold reason; second missile only after a miss,"Holding: salvo in flight, waiting for result"
+sim.hold.permission_withheld,"Mount hold reason; a player, rule, node or script withheld fire",Holding: fire permission withheld
+sim.hold.player_control,Mount hold reason; the player holds the mount,Holding: you hold this mount
+sim.hold.emcon_silent,Mount hold reason; emission control keeps fire-control radar off,Holding: fire-control radar silent by EMCON
+sim.hold.no_solution,Mount hold reason,Holding: no fire-control solution
+sim.hold.shore_site,Mount hold reason; an anti-ship missile cannot home on a shore site,Holding: no seeker lock on a shore site
+sim.fire.doctrine,Mount fire reason,Firing: doctrine allows this target
+sim.fire.point_defence,Mount fire reason,"Firing: weapon inbound, point defence"
+sim.fire.self_defence,Mount fire reason,Firing: Suspect inside self-defence range
+sim.fire.designated,Mount fire reason; the player designated the track,Firing: designated target
+sim.fire.rule,Mount fire reason; {0} rule number in the rules table,Firing: rule {0}
+sim.fire.manual,Mount fire reason; the player fires by hand,Firing: by hand
+sim.fire.graph,Mount fire reason; a graph node or script allowed fire,Firing: permission from a graph node
+sim.fire.local_control,Mount fire reason; data link lost,"Firing: local control, own sensor"
+sim.rung.none,Track card ID evidence,No identification evidence
+sim.rung.altitude_measured,Track card ID evidence,Altitude measured
+sim.rung.depth_measured,Track card ID evidence,Depth measured
+sim.rung.emitter_match,Track card ID evidence,Emitter matches the library
+sim.rung.acoustic_match,Track card ID evidence,Acoustic signature matches the library
+sim.rung.rcs_and_speed,Track card ID evidence,Radar size and speed fit one type
+sim.rung.emitter_unique_to_class,Track card ID evidence,Emitter unique to one class
+sim.rung.visual_sighting,Track card ID evidence,Visual sighting
+sim.rung.close_visual_sighting,Track card ID evidence,Close visual sighting
+sim.rung.photograph,Track card ID evidence,Photographed
+sim.rung.briefing,Track card ID evidence,Named in the briefing
+sim.rung.datalink,Track card ID evidence,Identified over the datalink
+sim.rung.player_override,Track card ID evidence,Set by you
+sim.stance.default,Track card stance reason; no evidence yet,No evidence either way
+sim.stance.datalink,Track card stance reason,Own side on the datalink
+sim.stance.fired_on_own_side,Track card stance reason,Fired on our side
+sim.stance.combine_emitter,Track card stance reason,Combine military emitter heard
+sim.stance.briefing_hostile,Track card stance reason,Briefing declares it Hostile
+sim.stance.briefing_neutral,Track card stance reason,Briefing declares it Neutral
+sim.stance.lobby_opposing_side,Track card stance reason; PvP,Opposing side in this lobby
+sim.stance.player_override,Track card stance reason,Set by you
+sim.stance.graph_override,Track card stance reason,Set by a graph node
+sim.alert.weapon_inbound,Alarm; {0} weapon track number,Weapon inbound: track {0}
+sim.alert.torpedo_inbound,Alarm; {0} torpedo track number,Torpedo inbound: track {0}
+sim.alert.flooding,"Alarm; {0} the compartment, such as compartment 3",Flooding in {0}
+sim.alert.flooding_severe,"Alarm; {0} the compartment, such as compartment 3; patching stops at half full",Flooded past patching in {0}
+sim.alert.fire,"Alarm; {0} the compartment, such as compartment 3",Fire in {0}
+sim.alert.magazine_fire,"Alarm; {0} magazine part, {1} seconds to cook-off","Magazine fire at {0}: cook-off in {1}"
+sim.alert.magazine_fire_critical,"Emergency; {0} magazine part, {1} seconds to cook-off","Magazine cook-off in {1} at {0}"
+sim.alert.capsize_imminent,Emergency; ship loss imminent,Capsize imminent
+sim.alert.sinking_imminent,Emergency; ship loss imminent,Sinking: reserve buoyancy nearly gone
+sim.alert.propulsion_lost,Warning,Propulsion lost
+sim.alert.steering_lost,Warning,Steering lost
+sim.alert.power_shortage,Caution or Warning; {0} consumers shed,"Power short, {0} consumers shed"
+sim.alert.conduit_cut,Caution; {0} conduit number,Conduit {0} cut
+sim.alert.part_heavy_damage,Caution; {0} part name,{0} heavily damaged: output halved
+sim.alert.part_destroyed,Caution; {0} part name,{0} destroyed
+sim.alert.part_on_buffer,"Caution or Warning; {0} part name, {1} seconds of buffer","{0} on its local buffer, {1} left"
+sim.alert.part_local_control,Caution; {0} part name,{0} on local control: data link lost
+sim.alert.fuel_low,Caution or Warning; {0} percent of fuel left,"Fuel low, {0} left"
+sim.alert.ammunition_low,Caution; {0} part name,{0} ammunition low
+sim.alert.esm_warning,Caution; player knowledge only,Enemy ESM has probably detected you
+sim.alert.hostile_track,Caution; {0} track number of a fresh Hostile contact,Hostile contact: track {0}
+sim.alert.shoal_ahead,Warning,Shoal water ahead
+sim.alert.grounded,Warning,Aground
+sim.alert.crew_casualties,Caution; berths lost,Crew casualties: berths lost
+sim.alert.passengers_lost,Warning; {0} passengers,{0} passengers lost
+sim.alert.action_interrupted,Caution; station action,Station action interrupted
+sim.alert.script_greyed_out,Caution; L4 script node,Script stopped and greyed out
+sim.alert.host_overload,Caution; {0} overload ladder rung,Host overload: ladder rung {0}
+sim.alert.hunter_group_approaching,Warning; theatre,Hunter group approaching
+sim.action.too_fast,Station action block,Too fast for the action
+sim.action.too_far,Station action block,Too far from the target
+sim.action.under_fire,Station action block,Under fire
+sim.action.target_under_way,Station action block,Target still under way
+sim.action.no_line_of_sight,Station action block,No line of sight
+sim.action.outside_field_of_view,Station action block; camera,Outside the camera's field of view
+sim.action.beyond_visibility,Station action block,Beyond visibility
+sim.action.off_line,Station action block; mine line,Off the planned line
+sim.action.too_slow,Station action block,Too slow for the action
+sim.action.no_mines_left,Station action block,No mines left
+sim.action.part_lost,Station action block,The part for the action is lost
+sim.action.cancelled,Station action block,Cancelled
+sim.action.target_lost,Station action block,Target lost
+sim.compress.weapon_inbound,Time compression block,Time held at 1x: weapon inbound
+sim.compress.threat_in_own_envelope,Time compression block,Time held at 1x: contact inside our weapon range
+sim.compress.inside_threat_envelope,Time compression block,Time held at 1x: inside a threat's weapon range
+sim.compress.host_load,Time compression block,Time held at 1x: host is overloaded
+sim.compress.time_scale_degraded,Time compression block,Time held at 1x: simulation running slow
+sim.compress.not_all_players,Time compression block; co-op,Time held at 1x: not every player asked
+sim.compress.mode_forbids,Time compression block,Time compression is off in this mode
+sim.reject.not_allowed_in_mode,Command refused,Not allowed in this mode
+sim.reject.not_allowed_by_ruleset,Command refused,Not allowed by this lobby's ruleset
+sim.reject.only_in_dry_dock_or_splash,Command refused,Only in dry dock or during a splash
+sim.reject.no_such_part,Command refused,That part is not on this hull
+sim.reject.no_such_track,Command refused,That track no longer exists
+sim.reject.friend_cannot_be_engaged,Command refused,A Friend track cannot be engaged
+sim.reject.role_not_held,Command refused,You do not hold that role
+sim.reject.hull_lost,Command refused,Your hull is lost
+sim.reject.too_many_rules,Command refused,Too many rules on this ship
+sim.reject.invalid_value,Command refused,Value out of range
+sim.reject.single_player_only,Command refused,Only in single-player
+sim.reject.conditions_not_met,Command refused,Conditions for that are not met
+sim.reject.duplicate,Command refused,Already done
+sim.script.error,Script node fault,Script stopped: runtime error
+sim.script.memory,Script node fault,Script stopped: memory limit
+sim.script.budget,Script node fault,Script stopped: interrupt budget spent
+sim.script.backstop,Script node fault; not reproducible,Script stopped by the time backstop
+sim.emcon.silent_ordered,Sensors reason,Silent by order
+sim.emcon.passive_no_trigger,Sensors reason,Passive: no contact inside trigger range
+sim.emcon.burst_track_inside,"Sensors reason; {0} track number, {1} range","Burst: track {0} at {1}, inside trigger range"
+sim.emcon.burst_weapon_inbound,Sensors reason,Burst: weapon inbound
+sim.emcon.burst_refresh_for_weapon,Sensors reason; a track with a weapon assigned is below Lock,Burst: refreshing a track for a weapon
+sim.emcon.holding_lock_weapons_in_flight,Sensors reason,Holding lock: own weapons in flight
+sim.emcon.active_ordered,Sensors reason,Radiating by order
+sim.emcon.point_defence_exception,Sensors reason; Silent exception,Point-defence radar on: weapon inbound
+sim.emcon.self_defence,Sensors reason; Silent exception,Fire-control radar on: under fire
+sim.word.stance.friend,Glossary stance word,Friend
+sim.word.stance.neutral,Glossary stance word,Neutral
+sim.word.stance.suspect,Glossary stance word,Suspect
+sim.word.stance.hostile,Glossary stance word,Hostile
+sim.word.rung.unknown,Glossary ID rung word,Unknown
+sim.word.rung.domain,Glossary ID rung word,Domain
+sim.word.rung.type,Glossary ID rung word,Type
+sim.word.rung.class,Glossary ID rung word,Class
+sim.word.rung.exact,Glossary ID rung word,Exact
+sim.word.grade.bearing,Glossary track grade word,Bearing
+sim.word.grade.coarse,Glossary track grade word,Coarse
+sim.word.grade.fine,Glossary track grade word,Fine
+sim.word.grade.lock,Glossary track grade word,Lock
+sim.word.officer.helm,Officer billet,Helm
+sim.word.officer.engineer,Officer billet,Engineer
+sim.word.officer.sensors,Officer billet,Sensors
+sim.word.officer.gunnery,Officer billet,Gunnery
+sim.word.officer.damage_control,Officer billet,Damage control

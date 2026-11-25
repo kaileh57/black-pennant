@@ -1,0 +1,74 @@
+// Vec<PartDef>: parts Act 4 adds to the build (DESIGN.md L541-553, L565-570, L801-807, L866-875). Unit `data-act4`.
+// Licensed CC BY 4.0.
+//
+// Act 4 opens no new tier: it adds parts to the existing ones (L807), all in tier 5, the tier Act 3 opened, so they
+// are on the tray from the first day of the act. They are the plant and the weapons a 1,800 t hull wants and a
+// 900 t hull cannot carry, so a player who grows the 60 m corvette or refits the 90 m destroyer has something to
+// grow into, and the Combine's Act 4 line is built from the same rows:
+//
+// The twin 130 mm turret: two of Act 3's 130 mm guns in one 52 t mount, firing from the common 130 mm magazine
+// through the hoist (L283). It fires 1.6 times the single mount's rounds a minute from one mount position and one
+// magazine for 1.7 times its weight: the dual-purpose main battery of a destroyer. The 155 mm twin stays the heavier
+// hitter per round.
+//
+// The large vertical launcher: sixteen surface-to-air cells in an 11.5 t module, twice the 8-cell launcher's load
+// for under twice its weight, firing the same missile (weapons.ron `missile.sam`). An air-defence destroyer carries
+// two.
+//
+// The long-range search radar: 60 km against 100 m^2 (the 40 km frigate set reaches two thirds of that, L432) on a
+// large, slower antenna (15 rpm against 24), so it sees further and refreshes less often. Its emitter is its own,
+// so ESM tells a capital ship's radar from a frigate's.
+//
+// The large gas turbine: 30 MW on one shaft line for 30 t, a 1,800 t hull's sprint plant. Each small screw absorbs
+// 3.5 MW and the large one 15 MW, so it wants two large screws or nine small ones. 222 g/kWh, a little better than
+// the 20 MW set.
+//
+// The gas-turbine generator: 2 MW in 8 t for the power a large radar and two launchers draw, at a worse burn
+// (249 g/kWh) than the 800 kW diesel set.
+//
+// Units and conventions as parts/act1.ron: dry mass in kg (ammunition comes from the magazine rows and munitions),
+// cost in Salvage, footprints in 0.5 m cells along (bow, up, starboard), power priorities from L287-295.
+[
+    (
+        id: "gun.130mm.twin", name: "part.gun.130mm.twin.name", description: "part.gun.130mm.twin.desc",
+        category: Gun, tier: T5, phase: Act4, size: (12, 7, 12), placement: Weather, mass_kg: 52000.0, cost: 720,
+        ports: [(network: Power, role: Consume, rate: 180.0), (network: Data, role: Link)], power_priority: 3,
+        rcs_factor: 0.7,
+        function: Gun((calibre_mm: 130, band: Heavy, barrels: 2, rof_rpm: 20.0, muzzle_mps: 850.0, shell_kg: 33.4,
+            train_rate_dps: 22.0, elevation_rate_dps: 12.0, elevation_min_deg: -5.0, elevation_max_deg: 55.0,
+            dispersion_mrad: 0.6, ready_rounds: 40)),
+        model: (generator: "gun.turret", params: [130.0, 2.0, 1.0]), icon: "part_gun",
+    ),
+    // Vertical launch cells are sealed boxes sunk through the deck, so they are watertight structure.
+    (
+        id: "launcher.sam.large", name: "part.launcher.sam.large.name", description: "part.launcher.sam.large.desc",
+        category: Missile, tier: T5, phase: Act4, size: (5, 10, 6), placement: Weather, mass_kg: 11500.0, cost: 280,
+        ports: [(network: Power, role: Consume, rate: 18.0), (network: Data, role: Link)], power_priority: 3,
+        watertight: true, flammable: Ammunition, standard_limit: 2,
+        function: Launcher((kind: Missile, munition: "missile.sam", cells: 16, interval_s: 1.0, reload_s: 0.0)),
+        model: (generator: "launcher.vls", params: [4.0, 4.0, 0.6]), icon: "part_missile",
+    ),
+    (
+        id: "radar.search.long", name: "part.radar.search.long.name", description: "part.radar.search.long.desc",
+        category: Sensor, tier: T5, phase: Act4, size: (10, 4, 4), placement: Weather, mass_kg: 9000.0, cost: 320,
+        ports: [(network: Power, role: Consume, rate: 140.0), (network: Data, role: Link)], power_priority: 4,
+        function: Sensor((kind: SearchRadar, r_ref_m: 60000.0, rate_hz: 5.0, rpm: 15.0, fov_half_deg: 180.0, emitter: "radar.search.l")),
+        model: (generator: "radar.search", params: [5.0, 2.0, 1.0]), icon: "part_sensor",
+    ),
+    (
+        id: "engine.turbine.large", name: "part.engine.turbine.large.name", description: "part.engine.turbine.large.desc",
+        category: Propulsion, tier: T5, phase: Act4, size: (16, 7, 7), placement: Internal, mass_kg: 30000.0, cost: 640,
+        ports: [(network: Fuel, role: Consume, rate: 2.2), (network: Data, role: Link)],
+        flammable: Fuel, tags: [Propulsion],
+        function: Engine((kind: GasTurbine, shaft_kw: 30000.0, fuel_lps: 2.2, spool_s: 30.0)),
+        model: (generator: "fit.internal", params: [0.0]), icon: "part_propulsion",
+    ),
+    (
+        id: "gen.turbine", name: "part.gen.turbine.name", description: "part.gen.turbine.desc",
+        category: Power, tier: T5, phase: Act4, size: (8, 3, 3), placement: Internal, mass_kg: 8000.0, cost: 140,
+        ports: [(network: Power, role: Supply, rate: 2000.0), (network: Fuel, role: Consume, rate: 0.165), (network: Data, role: Link)],
+        flammable: Fuel, tags: [Generation],
+        function: Generator(kw: 2000.0, fuel_lps: 0.165),
+        model: (generator: "fit.internal", params: [0.0]), icon: "part_power",
+    ),
+]

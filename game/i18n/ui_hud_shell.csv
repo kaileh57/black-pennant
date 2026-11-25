@@ -1,0 +1,32 @@
+keys,?context,en
+hud_shell.access.left_dock,Screen-reader name of the left dock of the sortie HUD,Track list and track card
+hud_shell.access.right_dock,Screen-reader name of the right dock of the sortie HUD,Bridge Board and stations
+hud_shell.access.station,Screen-reader name of the station panel opened in the centre of the HUD,Station panel
+hud_shell.station.log,Button that opens the log panel,Log
+hud_shell.station.damage,Button that opens the damage control panel,Damage control
+hud_shell.station.networks,"Button that opens the power, fuel and data networks panel",Networks
+hud_shell.station.control,Button that opens the doctrine and control layers panel,Control
+hud_shell.station.close,Accessible name and tooltip of the button that closes the station panel,Close the panel
+hud_shell.station_title.log,Title of the log station panel,Log
+hud_shell.station_title.damage,Title of the damage control station panel,Damage control
+hud_shell.station_title.networks,Title of the networks station panel,Networks
+hud_shell.station_title.control,Title of the control layers station panel,Doctrine and control
+hud_shell.role.player,"Role strip entry while the player holds a role; {0} the role name, such as Helm",{0}: player control
+hud_shell.role.officer,Role strip entry for 10 s after a role went back to its officer; {0} the role name,{0}: officer control
+hud_shell.group.name,Name of a weapons group; {0} its number,Weapons group {0}
+hud_shell.group.current,Role strip entry naming the weapons group the current-group key takes; {0} the group name,Takes {0}
+hud_shell.status.loading,Status box while a sortie loads with no loading screen over the HUD,Loading the sortie
+hud_shell.status.waiting,Status box before the own ship first reports in a sortie,Waiting for the first picture
+hud_shell.status.paused,Status box title while single-player time is paused,Paused
+hud_shell.status.paused_body,Status box text while paused; {0} the key that resumes,Orders given now apply when time resumes. {0} resumes.
+hud_shell.unbound,Shown in place of a key name when an action has no binding,Not bound
+hud_shell.kill_cam.title,Kill cam panel title after the own ship is lost,Ship lost
+hud_shell.kill_cam.playing_title,Kill cam panel title while the clip plays,Kill cam
+hud_shell.kill_cam.by_track,Kill cam line naming the track that fired the killing shot; {0} track number,Hit by track {0}
+hud_shell.kill_cam.offer,"Kill cam line offering the clip; {0} its length, such as 20 s",The last {0} before the loss can be replayed.
+hud_shell.kill_cam.playing,Kill cam line while the clip plays and the killer is not a known track,Replaying the moments before the loss
+hud_shell.kill_cam.watch,Button that plays the kill cam clip,Watch the kill cam
+hud_shell.kill_cam.watch_again,Button that plays the kill cam clip again,Watch again
+hud_shell.kill_cam.return,Button that stops the kill cam and returns to the live picture,Return to the live picture
+hud_shell.kill_cam.dismiss,Button that closes the kill cam panel,Dismiss
+hud_shell.kill_cam.unavailable,Kill cam line when the clip could not be played,The clip is no longer available.

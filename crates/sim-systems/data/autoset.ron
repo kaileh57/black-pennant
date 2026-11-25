@@ -1,0 +1,3 @@
+// Auto-set values dropped to Suggest this release (DESIGN.md L212). Rewritten by the CI fallback; empty means
+// every auto-set value is in force. Unit `sys-suggest` reads it.
+(dropped: [])

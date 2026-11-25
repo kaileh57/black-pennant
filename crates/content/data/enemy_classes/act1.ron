@@ -1,0 +1,70 @@
+// Vec<EnemyClassDef>: the Meridian Combine's Act 1 classes (DESIGN.md L756-758, L866-875). Unit `data-enemy-act1`.
+// Licensed CC BY 4.0.
+//
+// Every class is a stock blueprint under blueprints/combine/act1/, built by the editor's steps in
+// crates/content/tests/combine/ (loft, decks and bulkheads, houses, stock kits, trim ballast) and validated in
+// enemy-class mode by crates/content/tests/combine_act1.rs. Full-load tonnages, for fleet and commitment arithmetic:
+//   T1  launch 26 t, patrol boat 44 t, trawler 74 t, coaster 220 t, tanker 256 t
+//   T2  torpedo boat 54 t, minesweeper 88 t, gunboat 90 t, picket 101 t, supply tender 309 t
+//   T3  gunboat batch 2 93 t, missile boat 131 t, fast attack craft 173 t, corvette 252 t
+//   T4  Arrears 122 t, corvette batch 2 273 t, escort corvette 291 t, missile corvette 319 t
+//   T5  frigate 554 t, frigate batch 2 679 t, Covenant 756 t
+// Tiers rank the Combine's own ladder, not the player's part tiers: a T5 class may carry tier 4 parts. The first
+// T5 combat class in this file (the frigate) fills the Alert 5 hunter group (L749).
+//
+// Behaviour keys are the set sim-systems' `behaviour_from_key` reads: picket (report and shadow, fight only in
+// self-defence), striker (close to launch range, fire, open), escort (stay between threat and charge), merchant
+// (hold course, flee when attacked); "combatant" is the default captain. Pickets keep a doctrine range wider than
+// their guns so they shadow rather than close. Surrender: every class strikes under the Combine rule (`Combine`, the campaign's strike_cells_lost) except the aces, which never strike (`surrender: Never`, L537). Variants are
+// the batch-2 hulls the generator swaps in for co-op and the use-variants doctrine cards (L834).
+[
+    // ---- Tier 1 -------------------------------------------------------------------------------------------------
+    (id: "class.launch", name: "class.launch.name", blueprint: "combine/act1/launch.bp.ron", role: PatrolBoat, tier: T1, act: Act1,
+        behaviour: "picket", engagement_range_m: Some(6000.0)),
+    (id: "class.patrol_boat", name: "class.patrol_boat.name", blueprint: "combine/act1/patrol_boat.bp.ron", role: PatrolBoat, tier: T1, act: Act1,
+        behaviour: "picket", engagement_range_m: Some(8000.0)),
+    (id: "class.trawler", name: "class.trawler.name", blueprint: "combine/act1/trawler.bp.ron", role: Civilian, tier: T1, act: Act1,
+        behaviour: "merchant"),
+    (id: "class.coaster", name: "class.coaster.name", blueprint: "combine/act1/coaster.bp.ron", role: Freighter, tier: T1, act: Act1,
+        behaviour: "merchant"),
+    (id: "class.tanker", name: "class.tanker.name", blueprint: "combine/act1/tanker.bp.ron", role: Tanker, tier: T1, act: Act1,
+        behaviour: "merchant"),
+    // ---- Tier 2 -------------------------------------------------------------------------------------------------
+    (id: "class.torpedo_boat", name: "class.torpedo_boat.name", blueprint: "combine/act1/torpedo_boat.bp.ron", role: FastAttack, tier: T2, act: Act1,
+        behaviour: "striker"),
+    (id: "class.minesweeper", name: "class.minesweeper.name", blueprint: "combine/act1/minesweeper.bp.ron", role: Minesweeper, tier: T2, act: Act1,
+        behaviour: "picket", engagement_range_m: Some(6000.0)),
+    (id: "class.gunboat", name: "class.gunboat.name", blueprint: "combine/act1/gunboat.bp.ron", role: FastAttack, tier: T2, act: Act1,
+        behaviour: "combatant", variants: ["class.gunboat_b"]),
+    (id: "class.picket", name: "class.picket.name", blueprint: "combine/act1/picket.bp.ron", role: Picket, tier: T2, act: Act1,
+        behaviour: "picket", engagement_range_m: Some(14000.0)),
+    (id: "class.supply_tender", name: "class.supply_tender.name", blueprint: "combine/act1/supply_tender.bp.ron", role: Tender, tier: T2, act: Act1,
+        behaviour: "merchant"),
+    // ---- Tier 3 -------------------------------------------------------------------------------------------------
+    (id: "class.gunboat_b", name: "class.gunboat_b.name", blueprint: "combine/act1/gunboat_b.bp.ron", role: FastAttack, tier: T3, act: Act1,
+        behaviour: "combatant"),
+    (id: "class.missile_boat", name: "class.missile_boat.name", blueprint: "combine/act1/missile_boat.bp.ron", role: FastAttack, tier: T3, act: Act1,
+        behaviour: "striker"),
+    (id: "class.fac", name: "class.fac.name", blueprint: "combine/act1/fac.bp.ron", role: FastAttack, tier: T3, act: Act1,
+        behaviour: "combatant"),
+    (id: "class.patrol_corvette", name: "class.patrol_corvette.name", blueprint: "combine/act1/patrol_corvette.bp.ron", role: Corvette, tier: T3, act: Act1,
+        behaviour: "combatant", variants: ["class.patrol_corvette_b"]),
+    // ---- Tier 4 -------------------------------------------------------------------------------------------------
+    (id: "class.patrol_corvette_b", name: "class.patrol_corvette_b.name", blueprint: "combine/act1/patrol_corvette_b.bp.ron", role: Corvette, tier: T4, act: Act1,
+        behaviour: "combatant"),
+    (id: "class.escort_corvette", name: "class.escort_corvette.name", blueprint: "combine/act1/escort_corvette.bp.ron", role: Corvette, tier: T4, act: Act1,
+        behaviour: "escort"),
+    (id: "class.missile_corvette", name: "class.missile_corvette.name", blueprint: "combine/act1/missile_corvette.bp.ron", role: Corvette, tier: T4, act: Act1,
+        behaviour: "striker"),
+    // The Auditor's ship: a Margin hull rebuilt in composite with an enclosed low-signature mast.
+    (id: "class.ace_arrears", name: "class.ace_arrears.name", blueprint: "combine/act1/ace_arrears.bp.ron", role: FastAttack, tier: T4, act: Act1,
+        behaviour: "striker", surrender: Never),
+    // ---- Tier 5 -------------------------------------------------------------------------------------------------
+    (id: "class.frigate", name: "class.frigate.name", blueprint: "combine/act1/frigate.bp.ron", role: Frigate, tier: T5, act: Act1,
+        behaviour: "combatant", variants: ["class.frigate_b"]),
+    (id: "class.frigate_b", name: "class.frigate_b.name", blueprint: "combine/act1/frigate_b.bp.ron", role: Frigate, tier: T5, act: Act1,
+        behaviour: "combatant"),
+    // The Bailiff's ship: a lengthened Charter with a second missile battery, a second close-in mount and armour.
+    (id: "class.ace_covenant", name: "class.ace_covenant.name", blueprint: "combine/act1/ace_covenant.bp.ron", role: Frigate, tier: T5, act: Act1,
+        behaviour: "combatant", surrender: Never),
+]

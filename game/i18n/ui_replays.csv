@@ -1,0 +1,65 @@
+keys,?context,en
+replays.title,Replay browser screen title,Replays
+replays.back,Button that closes the replay browser,Close replays
+replays.list,Accessible name of the replay table,Recorded replays
+replays.col.recorded,Replay table column: local date and time the replay was recorded,Recorded
+replays.col.mode,Replay table column: game mode,Mode
+replays.col.what,Replay table column: operation name or the players,Operation or players
+replays.col.length,Replay table column: sortie length as a clock,Length
+replays.col.size,Replay table column: file size,Size
+replays.group.pinned,Replay table group of pinned replays,Pinned
+replays.group.recent,Replay table group of the most recent replays,Recent
+replays.size_mb,File size in megabytes; {0} is the number,{0} MB
+replays.loading,Replay browser while the replay folder is read,Reading the replay folder.
+replays.empty,Replay browser with no replays yet,No replays yet. Each sortie you finish records one here.
+replays.error,Replay browser when the replay folder cannot be read,The replay folder could not be read.
+replays.open_failed,Shown under the table when a replay did not open,That replay did not open.
+replays.none_selected,Detail panel title with no replay selected,No replay selected
+replays.mode_unknown,Mode column when the replay names no known mode,Unknown mode
+replays.recorded_unknown,Recorded column when the file has no date,Date not known
+replays.players_none,Players column when the replay lists no names,No names recorded
+replays.detail_title,"Detail panel title; {0} mode, {1} operation or players","{0}: {1}"
+replays.fact.recorded,Detail line; {0} local date and time,Recorded {0}
+replays.fact.length,Detail line; {0} duration such as 12 min,Length {0}
+replays.fact.players,Detail line; {0} comma-separated player names,Players: {0}
+replays.fact.size,Detail line; {0} size such as 4.2 MB,File size {0}
+replays.fact.pinned,Detail line for a pinned replay,Pinned: kept until you unpin it.
+replays.fact.recent,Detail line for a replay that is not pinned,Not pinned: removed once 20 newer replays exist.
+replays.count,"Footer; {0} recent replays kept, {1} the limit (20), {2} pinned replays","{0} of the {1} most recent replays kept, plus {2} pinned."
+replays.unplayable,Detail line when a replay cannot be played and gives no reason,This build cannot play this replay.
+replays.watch,Button that plays the selected replay,Watch replay
+replays.pin,Button that pins the selected replay so it is kept,Pin replay
+replays.unpin,Button that unpins the selected replay,Unpin replay
+replays.delete,Button that deletes the selected replay,Delete replay
+replays.delete_title,Confirmation dialog title before deleting a replay,Delete this replay?
+replays.delete_body,Confirmation dialog body; {0} the replay's title,{0} will be removed from the replay folder.
+replays.delete_keep,Dialog button that keeps the replay,Keep replay
+replays.delete_confirm,Dialog button that deletes the replay,Delete replay
+replays.delete_failed_title,Dialog title when a replay could not be deleted,Replay not deleted
+replays.delete_failed_body,Dialog body when a replay could not be deleted,The file could not be removed. It may be open in another program.
+replays.pin_failed_title,Dialog title when pinning failed,Pin not changed
+replays.pin_failed_body,Dialog body when pinning failed,The replay folder could not be written.
+replay.controls,Accessible name of the replay control bar,Replay controls
+replay.pause,Button that pauses the replay,Pause
+replay.play,Button that plays the replay,Play
+replay.seek,Accessible name of the seek bar,Replay position
+replay.clock,"Replay clock; {0} position, {1} length",{0} of {1}
+replay.rate,Accessible name of the playback rate choice,Playback rate
+replay.rate_row,Playback rate choice; {0} the multiple,{0}x speed
+replay.viewer,Label of the viewer choice,Watch as
+replay.viewer.truth,Viewer choice: everything as it happened,Ground truth
+replay.viewer.side,Viewer choice: one side's picture; {0} side number,Side {0}
+replay.camera,Label of the camera choice,Camera
+replay.camera.default,Camera choice: the normal orbit camera,Orbit camera
+replay.camera.free,Camera choice: the free camera,Free camera
+replay.camera.follow,Camera choice; {0} a player's name,Follow {0}
+replay.camera.ally,Name for an allied hull with no player name,allied hull
+replay.camera.follow_track,Camera choice; {0} track number,Follow track {0}
+replay.free_hint,Help while the free camera is on,"Helm controls move the camera. Look left and right turn it, look up and down lift and lower it."
+replay.pin,Button that pins the open replay,Pin
+replay.unpin,Button that unpins the open replay,Unpin
+replay.leave,Button that leaves the replay,Leave replay
+replay.kill_cam,Title of the kill-cam frame,Kill cam
+replay.kill_window,"Kill-cam clock; {0} position in the clip, {1} clip length",{0} of {1} before the loss
+replay.kill_back,Button that leaves the kill cam in a replay,Back to the replay
+replay.kill_back_live,Button that leaves the kill cam over a live sortie,Back to the sortie

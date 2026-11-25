@@ -1,0 +1,83 @@
+keys,?context,en
+briefing.accessible_name,Accessible name of the briefing screen,Operation briefing
+briefing.accessible_orders,Accessible name of the scrolling orders column,Orders
+briefing.accessible_chart,Accessible name of the briefing route chart,Route chart
+briefing.title.none,Briefing screen title when no briefing is open,No briefing open
+briefing.title.unnamed,Briefing title when the operation has no name,Operation
+briefing.empty,Body text when no briefing is open,No operation is being briefed. Go back to the chart table and open one from the operations on offer.
+briefing.marker.situation,"Marker word that starts the situation part of an orders-format briefing text; must match the operation briefings exactly, colon included",Situation:
+briefing.marker.mission,"Marker word that starts the mission part of an orders-format briefing text; must match the operation briefings exactly, colon included",Mission:
+briefing.marker.execution,"Marker word that starts the execution part of an orders-format briefing text; must match the operation briefings exactly, colon included",Execution:
+briefing.section.situation,Orders-format section title,Situation
+briefing.section.mission,Orders-format section title,Mission
+briefing.section.execution,Orders-format section title,Execution
+briefing.section.fit,Panel title of the Fit Check summary; Fit Check is the editor tool's name,Fit Check result
+briefing.section.coop,Panel title of the co-op acceptance list,Crews
+briefing.area.both,"Where the operation is; {0} theatre node name, {1} region name","Off {0}, {1}."
+briefing.area.node,Where the operation is; {0} theatre node name,Off {0}.
+briefing.area.region,Where the operation is; {0} region name,In {0}.
+briefing.forecast.weather,Forecast table term,Weather
+briefing.forecast.light,"Forecast table term; the time of day (night, dusk, day)",Light
+briefing.forecast.sea,Forecast table term,Sea state
+briefing.forecast.wind,Forecast table term,Wind
+briefing.forecast.visibility,Forecast table term,Visibility
+briefing.forecast.unknown,Forecast value when the briefing has no weather,No forecast
+briefing.forecast.sea_value,"Forecast value; {0} WMO sea state code, {1} wave height with unit","{0}, waves {1}"
+briefing.forecast.wind_value,"Forecast value; {0} bearing the wind blows from (three digits), {1} speed with unit",From {0} at {1}
+briefing.forecast.calm,Forecast wind value when there is no wind,Calm
+briefing.threat.lead,Line before the threat table,Threat picture by confidence:
+briefing.threat.none,Shown when the briefing lists no threats,No Combine units are expected.
+briefing.threat.col_confidence,Threat table column heading,Confidence
+briefing.threat.col_count,Threat table column heading; number of hulls,Hulls
+briefing.threat.col_type,Threat table column heading; class or role of the hulls,Type
+briefing.threat.range,"Uncertain hull count; {0} fewest, {1} most",{0} to {1}
+briefing.threat.with_ace,"Threat type with an ace in command; {0} class name, {1} ace name","{0}, {1} in command"
+briefing.threat.committed,"Combine force committed to the operation; {0} number of hulls, {1} tonnage with unit","The Combine has committed {0} hulls, {1} in all."
+briefing.threat.committed_one,"Combine force committed to the operation; {0} is 1, {1} tonnage with unit","The Combine has committed {0} hull, {1}."
+briefing.tags.lead,Line before the constraint tags,Constraints:
+briefing.tags.unchecked,Constraint tag verdict before Fit Check has run,Not checked
+briefing.ghosts.lead,Line before the table of optional ghost conditions and their rewards,Optional conditions and what they pay:
+briefing.exec.approach,Execution table term; distance from the start to the first objective,Approach
+briefing.exec.actions,Execution table term; station actions the operation uses,Station actions
+briefing.exec.weapons_only,Execution value when the operation uses no station action,Weapons only
+briefing.exec.emcon,Execution table term; recommended emission control,Emissions
+briefing.exec.emcon_value,Execution value; {0} emission control word,{0} recommended
+briefing.exec.clock,Execution table term; the act's operation clock,Clock
+briefing.exec.clock_value,Execution value; {0} theatre days the clock is pushed back on success,Success pushes it back {0} days
+briefing.exec.clock_value_one,Execution value; {0} is 1 theatre day,Success pushes it back {0} day
+briefing.exec.offer,Execution table term; how long the offer stands,Offer
+briefing.exec.forced,Execution value for an operation that cannot be declined,Cannot be declined
+briefing.exec.lapses,Execution value; {0} date-time group the offer lapses at,Lapses at {0}
+briefing.fit.no_briefing,Fit Check summary when no briefing is open,Fit Check needs an open briefing.
+briefing.fit.unavailable,Fit Check summary when no result can be read,Fit Check runs in the dry dock against this briefing's sea and tags.
+briefing.fit.idle,Fit Check summary before it has run on the fielded design,Not run on the fielded design yet. Open the dry dock to run it.
+briefing.fit.running,Fit Check summary while it runs; {0} WMO sea state code,Running a 30 s trial in sea state {0}.
+briefing.fit.failed,Fit Check summary when the run failed,Fit Check could not finish. Open the dry dock to run it again.
+briefing.fit.stale,Fit Check summary line when the design changed since the run,"Out of date: the design changed after this run."
+briefing.fit.no_tags,Fit Check verdict when the briefing has no tags,No constraint tags to check.
+briefing.fit.passes,Fit Check verdict when every tag passes,The design passes every tag.
+briefing.fit.fails,"Fit Check verdict; {0} tags failed, {1} tags in all",The design fails {0} of {1} tags.
+briefing.fit.speed,Fit Check result; {0} speed with unit,Top speed {0}.
+briefing.fit.turn,Fit Check result; {0} seconds with unit,Turns through 180° in {0}.
+briefing.fit.no_turn,Fit Check result when the 180 degree turn did not finish,Did not finish the 180° turn in the trial.
+briefing.fit.range,Fit Check result; {0} range with unit,Range {0}.
+briefing.fit.detect,"Fit Check detection result; {0} threat type, {1} our detection range, {2} theirs","{0}: we detect at {1}, it detects us at {2}."
+briefing.fit.estimated,Fit Check note when the values come from gauges only,Values are gauge estimates; the trial did not run.
+briefing.coop.unnamed,Player with no name; {0} seat number,Player {0}
+briefing.coop.accepted,Co-op acceptance row; {0} player name,{0} has accepted.
+briefing.coop.waiting,Co-op acceptance row; {0} player name,{0} has not answered.
+briefing.coop.away,Co-op acceptance row for a disconnected player; {0} player name,{0} is not connected.
+briefing.coop.all,Co-op note when no acceptance is pending,Every crew has accepted the operation.
+briefing.coop.accept,Button; accept the operation in co-op,Accept the operation
+briefing.coop.confirm,Button; the host commits the operation without waiting,Confirm for every crew
+briefing.back,Button; return to the chart table keeping the operation,Back to the chart table
+briefing.decline,Button; decline the operation,Decline
+briefing.dock,"Button; open the dry dock, where Fit Check runs",Open the dry dock
+briefing.launch,Button; start the sortie,Launch sortie
+briefing.status.member,Status line on a co-op member's briefing,The host launches the sortie when every crew is ready.
+briefing.status.launch_failed,Status line when launching failed without a reason,The sortie could not launch.
+briefing.status.dock_failed,Status line when the dry dock could not open without a reason,The dry dock could not open here.
+briefing.decline.title,Dialog title before declining an operation,Decline this operation?
+briefing.decline.body,Dialog body before declining an operation,The operation leaves the chart table. The same template is not offered twice in a row.
+briefing.decline.keep,Dialog button; keep the operation,Keep it
+briefing.decline.confirm,Dialog button; decline the operation,Decline

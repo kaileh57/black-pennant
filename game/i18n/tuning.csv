@@ -1,0 +1,40 @@
+keys,?context,en
+tuning.override.burst_trigger_range,"Bridge Board override diff row; {0} is a part, compartment, slider or row number",Burst trigger range
+tuning.override.doctrine,"Bridge Board override diff row; {0} is a part, compartment, slider or row number",Doctrine row {0}
+tuning.override.door,"Bridge Board override diff row; {0} is a part, compartment, slider or row number",{0} set by hand
+tuning.override.emcon,"Bridge Board override diff row; {0} is a part, compartment, slider or row number",EMCON setting
+tuning.override.flood_valve,"Bridge Board override diff row; {0} is a part, compartment, slider or row number",Flood valve in {0} set by hand
+tuning.override.mount_doctrine,"Bridge Board override diff row; {0} is a part, compartment, slider or row number","Doctrine for {0}, row {1}"
+tuning.override.mount_preset,"Bridge Board override diff row; {0} is a part, compartment, slider or row number",Preset for {0}
+tuning.override.power_priority,"Bridge Board override diff row; {0} is a part, compartment, slider or row number",Power priority of {0}
+tuning.override.preset,"Bridge Board override diff row; {0} is a part, compartment, slider or row number",Ship preset
+tuning.override.pump,"Bridge Board override diff row; {0} is a part, compartment, slider or row number",{0} set by hand
+tuning.override.repair_order,"Bridge Board override diff row; {0} is a part, compartment, slider or row number",Repair order
+tuning.override.self_defence_range,"Bridge Board override diff row; {0} is a part, compartment, slider or row number",Self-defence range
+tuning.override.slider,"Bridge Board override diff row; {0} is a part, compartment, slider or row number",{0}
+tuning.preset.aggressive,L0 doctrine preset name,Aggressive
+tuning.preset.aggressive.description,L0 preset description,Engages early at full effective range and radiates continuously.
+tuning.preset.cautious,L0 doctrine preset name,Cautious
+tuning.preset.cautious.description,L0 preset description,Engages confirmed threats and radiates in short bursts. The default.
+tuning.preset.silent_running,L0 doctrine preset name,Silent running
+tuning.preset.silent_running.description,L0 preset description,Keeps every emitter off and holds fire until threats close.
+tuning.slider.dc.door_discipline,L1 slider label,Door discipline
+tuning.slider.dc.magazine_flood_s,L1 slider label,Magazine flood margin
+tuning.slider.dc.pump_threshold_m,L1 slider label,Pump start depth
+tuning.slider.engineer.fuel_reserve,L1 slider label,Fuel reserve
+tuning.slider.engineer.reserve_margin,L1 slider label,Power reserve
+tuning.slider.engineer.restore_delay_s,L1 slider label,Restore delay
+tuning.slider.gunnery.aggression,L1 slider label,Aggression
+tuning.slider.gunnery.converge_m,L1 slider label,Solver convergence
+tuning.slider.gunnery.iteration_cap,L1 slider label,Solver iteration cap
+tuning.slider.gunnery.open_fire_range,L1 slider label,Open fire range
+tuning.slider.gunnery.pn_air,L1 slider label,"Missile navigation, air targets"
+tuning.slider.gunnery.pn_surface,L1 slider label,"Missile navigation, surface targets"
+tuning.slider.helm.cruise_speed,L1 slider label,Cruise speed
+tuning.slider.helm.evasion,L1 slider label,Evasion
+tuning.slider.helm.lookahead,L1 slider label,Route lookahead
+tuning.slider.helm.responsiveness,L1 slider label,Helm responsiveness
+tuning.slider.helm.station_radius_m,L1 slider label,Station radius
+tuning.slider.sensors.burst_repeat_s,L1 slider label,Burst repeat interval
+tuning.slider.sensors.burst_rotations,L1 slider label,Burst length
+tuning.slider.sensors.pd_radar_range_m,L1 slider label,Point-defence radar range in Silent

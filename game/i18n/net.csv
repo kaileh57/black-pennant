@@ -1,0 +1,75 @@
+keys,?context,en
+net.refusal.protocol_mismatch,"Join refused before admission; {0} is the host's protocol version, {1} ours",The host runs protocol version {0} and this game runs version {1}. Both players need the same version.
+net.refusal.lobby_full,Join refused; {0} is the most players the lobby takes with the host's upload,This lobby is full. It takes {0} players.
+net.refusal.host_saturated,Join refused while the host's upload is saturated,The host's connection is saturated. Try again in a minute.
+net.refusal.banned,Join refused: the host banned this install for the session,The host has banned you from this session.
+net.refusal.operation_in_progress,Join refused: co-op players join between operations,The crew is out on an operation. Join again when it ends.
+net.refusal.match_in_progress,Join refused: a PvP or skirmish match has started,This match has already started.
+net.refusal.duplicate_client,Join refused: this install is already in the lobby,This copy of the game is already in that lobby.
+net.refusal.bad_hello,Join refused: the first message was malformed or late,The host did not understand this game's greeting.
+net.refusal.shutting_down,Join refused: the host is closing the session,The host is closing the session.
+net.drop.kicked,The host removed this player,The host removed you from the session.
+net.drop.banned,The host removed and banned this player,The host removed you and banned you from this session.
+net.drop.high_ping,Dropped by the connection rule: round trip above 500 ms for 15 s,Your connection was too slow to play: over 500 ms for 15 seconds.
+net.drop.packet_loss,Dropped by the connection rule: loss above 20% for 15 s,Your connection lost too many packets to play: over 20% for 15 seconds.
+net.drop.falling_behind,Dropped by the connection rule: more than 1 s behind for 15 s,Your game fell more than a second behind the host for 15 seconds.
+net.drop.timed_out,No packets arrived for the netcode timeout,The connection timed out.
+net.drop.left,"The connection closed by leaving: the host stopped hosting over UDP, or this player left",The session closed.
+net.drop.secret_regenerated,"The host made a new lobby key, which drops players connected with the old one",The host made a new lobby key. Ask the host for the new join code.
+net.end.host_quit,The host closed the session,The host closed the session.
+net.end.host_lost,The host stopped answering,The connection to the host was lost.
+net.end.refused,The session ended because the join was refused,The host refused the join.
+net.end.match_over,The match is over and the host closed the lobby,The match is over.
+net.join_code.bad_character,Join code check: a character outside the code alphabet,That join code has a character that codes never use.
+net.join_code.wrong_length,Join code check: too short or too long,That join code is the wrong length. Copy the whole code.
+net.join_code.checksum,Join code check: a character is wrong (checksum mismatch),That join code has a mistake in it. Copy it again.
+net.join_code.unknown_format,Join code check; {0} is the code's format number,This game cannot read join code format {0}.
+net.join_code.protocol_mismatch,"Join code check; {0} is the code's protocol version, {1} ours",The code is for protocol version {0} and this game runs version {1}. Both players need the same version.
+net.join_code.bad_address,Join code or address check: no usable address or port,That address cannot be joined. Use a number such as 192.168.1.20:47610.
+net.portmap.trying,Host panel: automatic port mapping is in progress,Opening the port on your router.
+net.portmap.mapped,Host panel: the router opened the port; {0} is the external address,The router opened the port. Players outside your network reach you at {0}.
+net.portmap.double_nat,Host panel: mapped but the outside address is private; {0} is that address,"The router opened the port, but this network sits behind another one ({0}). Players outside it cannot reach you."
+net.portmap.failed,Host panel: neither UPnP nor NAT-PMP or PCP worked,The router did not open the port. Players on your network can still join.
+net.portmap.renew_failed,Host panel: a lease renewal failed after an earlier success,The router stopped renewing the port. Players may lose the connection when the lease runs out.
+net.warning.high_ping,Connection panel warning after 5 s of round trip above 500 ms,Slow connection
+net.warning.packet_loss,Connection panel warning after 5 s of loss above 20%,Losing packets
+net.warning.falling_behind,Connection panel warning after 5 s of falling more than 1 s behind,Falling behind
+net.error.io,A network socket failed,The network connection failed.
+net.error.transport,The transport could not be set up,The connection could not be set up.
+net.error.decode,Data from the other end could not be read,Data from the host could not be read.
+net.error.not_connected,An action needed a connection that is not there,You are not connected.
+net.error.wrong_phase,An action does not fit the session's current phase,That cannot be done at this point in the session.
+net.error.other,Any other network failure,Something went wrong with the connection.
+net.host.firewall,"Shown before hosting binds the port; {0} is the UDP port","Hosting opens UDP port {0}. Your system may ask whether Black Pennant can accept incoming connections. Allow it, or players cannot join."
+net.host.busy,Hosting refused while another session runs,Leave the current session first.
+net.host.port_in_use,Hosting refused; {0} is the UDP port another program holds,Port {0} is already in use. Close the program using it or choose another UDP port.
+net.host.port_bad,Hosting refused; {0} is the port the player typed,"Port {0} cannot be used. Choose a UDP port from 1024 to 65535."
+net.host.bind_failed,The clock thread could not open the port after hosting started; {0} is the port,"Port {0} could not be opened, so other players cannot join. Leave and host again."
+net.host.bad_mode,Hosting refused: no hostable mode chosen,Choose a mode to host.
+net.host.bad_ruleset,Hosting refused: the ruleset name is unknown,Choose a ruleset.
+net.host.no_campaign,Hosting a co-op campaign refused: no campaign is loaded,Load a campaign before hosting it.
+net.host.manual.forward,"Manual step when mapping fails; {0} is the UDP port, {1} this computer's LAN address","In your router's settings, forward UDP port {0} to this computer at {1}."
+net.host.manual.public,Manual step: outside players need the public address,"Then give players this network's public address and the lobby key, and they join by address."
+net.host.manual.vpn,Manual step: the mesh VPN alternative,"Or install a mesh VPN such as Tailscale or ZeroTier on every computer, then share the VPN join code."
+net.host.manual.vpn_found,Manual step: a mesh VPN is already running; {0} is its address,"A mesh VPN is running here at {0}. Players on it can join with the VPN join code."
+net.join.busy,Joining refused while another session runs,Leave the current session first.
+net.join.no_answer,The host never answered the join,The host did not answer. Check the code and ask the host whether the port is open.
+net.lobby.not_in_lobby,A lobby action outside any lobby,Join or host a lobby first.
+net.lobby.no_blueprint,Design choice refused: no file given,Choose a ship to field.
+net.lobby.design_missing,Design choice refused: the file is gone,That design file is no longer there.
+net.lobby.issue.too_many_players,Lobby issue; {0} is the mode's player limit,This mode takes at most {0} players.
+net.lobby.issue.teams_uneven,Lobby issue: PvP teams differ in size,Both teams need the same number of players.
+net.lobby.issue.team_size_not_offered,Lobby issue; {0} is the team size,This mode does not offer {0} against {0}.
+net.lobby.issue.player_not_ready,Lobby issue; {0} is the player's name,{0} is not ready.
+net.lobby.issue.no_blueprint,Lobby issue; {0} is the player's name,{0} has not chosen a ship.
+net.lobby.issue.you_not_ready,Lobby issue about the local player,You are not ready.
+net.lobby.issue.you_no_blueprint,Lobby issue about the local player,You have not fielded a ship.
+net.lobby.issue.blueprint,Lobby issue about another player's design; {0} is that player's name,{0}'s ship breaks the lobby rules.
+net.lobby.issue.lobby_over_complexity,"Lobby issue; {0} is the lobby's total complexity, {1} the lobby cap",The ships in this lobby total {0} complexity points. The lobby cap is {1}.
+net.lobby.issue.complexity_unknown,Lobby issue: a design's complexity is not a finite number,A ship's complexity could not be measured.
+net.lobby.issue.mode_not_in_build,Lobby issue: this build does not offer the mode,This build does not offer this mode.
+net.lobby.issue.luau_in_pvp,Lobby issue: the ruleset allows scripts in PvP,Luau scripts never run in a PvP lobby.
+net.lobby.refused.not_entitled,Host refused a design transfer: not entitled,The host will not send that ship's plans.
+net.lobby.refused.unknown,Host refused a design transfer: it does not hold it,The host does not have that ship.
+net.lobby.refused.too_large,Host refused an uploaded design: over 8 MiB compressed,The host refused your ship. It is over 8 MiB compressed.
+net.lobby.refused.invalid,Host refused an uploaded design: it fails the lobby's rules,The host refused your ship. It breaks this lobby's rules.

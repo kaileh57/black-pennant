@@ -1,0 +1,114 @@
+keys,?context,en
+blueprints.title,Blueprint browser screen title,Blueprints
+blueprints.back,Button that closes the browser,Close blueprints
+blueprints.import,Button that imports a blueprint or kit file,Import file
+blueprints.paste,Button that imports a pasted share string,Paste share string
+blueprints.folders,Panel title of the folder tree,Folders
+blueprints.folder.mine,Folder tree root of the player's own designs,My designs
+blueprints.folder.stock,Folder tree group of the read-only stock designs,Stock designs
+blueprints.folder.starters,Stock folder of the starter hulls,Starter hulls
+blueprints.folder.classes,Stock folder of the enemy classes,Enemy classes
+blueprints.folder.imported,The folder imported designs land in,Imported
+blueprints.new_folder,Button that makes a folder,New folder
+blueprints.new_folder_label,Prompt for a folder name,Name of the new folder
+blueprints.new_folder_confirm,Button that makes the folder,Make folder
+blueprints.new_folder_failed,Prompt after the folder could not be made,That folder could not be made. The name may be in use.
+blueprints.designs,Panel title of the file list,Designs
+blueprints.col.name,File list column,Name
+blueprints.col.length,File list column: overall length,Length
+blueprints.col.tonnage,File list column: displacement,Displacement
+blueprints.col.saved,File list column: when the file was saved,Saved
+blueprints.loading,File list while a folder is read,Reading the folder.
+blueprints.empty,An empty folder of the player's,No designs here yet. Save one from the dry dock or import a file or share string.
+blueprints.empty_stock,An empty stock folder,This stock folder is empty.
+blueprints.error,A folder that cannot be read,This folder could not be read.
+blueprints.unnamed,A design with no name,Unnamed design
+blueprints.unreadable,Saved column for a file that does not read,Does not load
+blueprints.none_selected,Detail title with nothing selected,No design selected
+blueprints.no_info,Detail text for a file that does not read,This file could not be read as a blueprint.
+blueprints.fact.kit,Detail line for a kit file,"A kit: a group of parts with its own settings."
+blueprints.fact.size,"Detail line; {0} length, {1} beam, {2} displacement","{0} long, {1} beam, {2}"
+blueprints.fact.cost,"Detail line; {0} cost in salvage, {1} part count","{0} to build, {1} parts"
+blueprints.fact.complexity,Detail line; {0} complexity points,{0} complexity points
+blueprints.fact.author,Detail line; {0} author display name,By {0}
+blueprints.fact.lineage,"Detail line; {0} ancestors kept, {1} the oldest one's author","Derived through {0} earlier versions, first by {1}"
+blueprints.unknown_author,Lineage author with no name,an unnamed author
+blueprints.fact.saved,Detail line; {0} local date and time,Saved {0}
+blueprints.fact.format,"Detail line; {0} blueprint format number, {1} game version that wrote it","Format {0}, written by version {1}"
+blueprints.fact.stock,Detail line for a stock design,"A stock design: read-only. Copy it to My designs to change it."
+blueprints.problem.unreadable,Load problem,This file does not read as a blueprint.
+blueprints.problem.newer,Load problem; {0} the version that wrote the file,This design was saved by version {0}. Update the game to open it.
+blueprints.problem.migrate,Load note,This design is from an older format. It is updated when it opens.
+blueprints.problem.too_long,"Load note; {0} the design's length, {1} the 90 m limit",This hull is {0} long. Player modes take hulls up to {1}.
+blueprints.open,Main action: open the design in the dry dock,Open in dry dock
+blueprints.choose,Main action when a screen asked for a design,Choose this design
+blueprints.copy_share,Button that copies the design as a share string,Copy share string
+blueprints.rename,Button,Rename
+blueprints.rename_label,Prompt for a new file name,New name
+blueprints.rename_confirm,Button that renames,Rename design
+blueprints.rename_failed,Prompt after a failed rename,That name could not be used. It may be taken.
+blueprints.renamed,Note after renaming; {0} new name,Renamed to {0}.
+blueprints.move,Button,Move
+blueprints.move_label,Prompt for the destination folder,Move to folder
+blueprints.move_confirm,Button that moves the design,Move design
+blueprints.move_failed,Prompt after a failed move,The design could not be moved there.
+blueprints.move_nowhere,Note when there is no other folder,There is no other folder. Make one first.
+blueprints.moved,Note after moving,Design moved.
+blueprints.duplicate,Button that copies a player design,Duplicate
+blueprints.duplicate_stock,Button that copies a stock design into My designs,Copy to my designs
+blueprints.duplicated,Note after duplicating,Copy made.
+blueprints.duplicate_failed,Note after a failed copy,The copy could not be made.
+blueprints.export,Button that writes the file somewhere else,Export
+blueprints.filter,File dialog filter name,Black Pennant blueprints
+blueprints.exported,Note after exporting; {0} file name,Exported as {0}.
+blueprints.export_failed,Note after a failed export,The file could not be written there.
+blueprints.delete,Button,Delete
+blueprints.delete_title,Dialog title,Delete this design?
+blueprints.delete_body,Dialog body; {0} design name,{0} goes to the trash. You can restore it from there.
+blueprints.delete_keep,Dialog button,Keep design
+blueprints.delete_confirm,Dialog button,Move to trash
+blueprints.deleted,Note after deleting,Design moved to the trash.
+blueprints.delete_failed,Note after a failed delete,The design could not be moved to the trash.
+blueprints.cancel,Button that closes a prompt,Cancel
+blueprints.name_empty,Prompt when the name is empty,Type a name.
+blueprints.name_bad,Prompt when the name cannot be a file name,"That name cannot be a file name. Leave out / \ : * ? "" < > | and a leading dot."
+blueprints.discard_title,Dialog title before replacing an unsaved design,Discard unsaved changes?
+blueprints.discard_body,Dialog body,The design in the dry dock has changes that are not saved. Opening another design discards them.
+blueprints.keep_editing,Dialog button,Keep editing
+blueprints.discard_open,Dialog button,Discard and open
+blueprints.open_failed,Note when the design did not open,The design did not open.
+blueprints.open_failed_title,Dialog title,Design not opened
+blueprints.imported,Note after an import; {0} design name,{0} imported.
+blueprints.import_failed,Import failed with no reason given,The file was not imported.
+blueprints.import_failed_title,Dialog title,Not imported
+blueprints.drop_not_blueprint,A dropped file that is not a blueprint; {0} file name,{0} is not a .bp.ron or .kit.ron file.
+blueprints.drop_failed,"A dropped file that failed; {0} file name, {1} reason",{0}: {1}
+blueprints.dropped,Note after dropping files; {0} count,{0} imported into Imported.
+share.title_copy,Share dialog title when copying,Share design
+share.title_import,Share dialog title when importing,Import a share string
+share.copy_help,Copy mode help,Anyone can paste this string into the blueprint browser or the dry dock.
+share.copy_named,Copy mode help; {0} design name,Share string of {0}. Anyone can paste it into the blueprint browser or the dry dock.
+share.string,Accessible name of the share string field,Share string
+share.length,Length of the string; {0} characters,{0} characters.
+share.long,Added when the string is long,"Long strings can be cut by chat programs, so you can also save the design as a file."
+share.unavailable,When no share string could be made,This design could not be turned into a share string.
+share.copy,Button that copies the string,Copy to clipboard
+share.copied,Note after copying,Share string copied.
+share.save_file,Button that saves the design as a file,Save as file
+share.filter,File dialog filter name,Black Pennant blueprints
+share.saved,Note after saving; {0} file name,Saved as {0}.
+share.save_failed,Note after a failed save,The file could not be written there.
+share.import_help,Import mode help,Paste a share string that starts with BPN1. Line breaks and spaces inside it do not matter.
+share.paste_here,Placeholder in the paste field,Paste the share string here
+share.not_a_string,Under text that is not a share string,This is not a share string. It should start with BPN1.
+share.import,Button that imports the pasted string,Import
+share.import_file,Button that imports a file,Import file
+share.ship,Imported item kind,design
+share.kit,Imported item kind,kit
+share.imported,"Import result; {0} name, {1} design or kit, {2} folder",{0} was imported as a {1} into {2}.
+share.import_failed,Import refused,This share string could not be imported.
+share.open,Button that opens the imported design,Open in dry dock
+share.open_failed,When the imported design did not open,The design did not open.
+share.close,Button,Close
+share.cancel,Button,Cancel
+share.done,Button after an import,Done

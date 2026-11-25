@@ -1,0 +1,63 @@
+keys,?context,en
+card.armoured_hulls.name,Doctrine card name on the doctrine bulletin,Armoured hulls
+card.armoured_hulls.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Batch 2 hulls with armoured topsides replace older ships in the region.
+card.stand_off_gunnery.name,Doctrine card name on the doctrine bulletin,Stand-off gunnery
+card.stand_off_gunnery.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Combine ships open fire 30% farther out and keep their distance.
+card.point_defence_screen.name,Doctrine card name on the doctrine bulletin,Point-defence screen
+card.point_defence_screen.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",An escort with a close-in gun joins every operation in the region.
+card.inside_the_minimum.name,Doctrine card name on the doctrine bulletin,Inside the minimum
+card.inside_the_minimum.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Combine ships close fast and fight at 70% of their usual range.
+card.torpedo_watch.name,Doctrine card name on the doctrine bulletin,Torpedo watch
+card.torpedo_watch.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Combine ships keep radars and sonars transmitting and hold the range open.
+card.doubled_escorts.name,Doctrine card name on the doctrine bulletin,Doubled escorts
+card.doubled_escorts.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",A corvette and two gunboats join every operation in the region.
+card.sweep_patrols.name,Doctrine card name on the doctrine bulletin,Sweep patrols
+card.sweep_patrols.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Patrols on the region's lanes run 30% denser.
+card.lane_watch.name,Doctrine card name on the doctrine bulletin,Lane watch
+card.lane_watch.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",A patrol of launches and gunboats joins every operation in the region.
+card.deep_running.name,Doctrine card name on the doctrine bulletin,Deep running
+card.deep_running.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Combine ships keep 20% farther from their contacts.
+card.damage_control_drill.name,Doctrine card name on the doctrine bulletin,Damage control drill
+card.damage_control_drill.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does","Batch 2 hulls replace older ships, and crews fight on when hurt."
+card.hold_fast_orders.name,Doctrine card name on the doctrine bulletin,Hold-fast orders
+card.hold_fast_orders.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does","Combine crews no longer break off when hurt, so boarding is harder."
+card.boarding_guard.name,Doctrine card name on the doctrine bulletin,Boarding guard
+card.boarding_guard.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",A harbour garrison joins every operation in the region.
+card.keep_clear.name,Doctrine card name on the doctrine bulletin,Keep clear
+card.keep_clear.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Combine ships keep 20% farther away and hold their ground.
+card.close_escort.name,Doctrine card name on the doctrine bulletin,Close escort
+card.close_escort.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",An escort with gunboats joins every operation in the region.
+card.open_the_range.name,Doctrine card name on the doctrine bulletin,Open the range
+card.open_the_range.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Combine ships fight from 40% farther out.
+card.gun_line.name,Doctrine card name on the doctrine bulletin,Gun line
+card.gun_line.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Batch 2 hulls with heavier guns replace older ships in the region.
+card.press_the_attack.name,Doctrine card name on the doctrine bulletin,Press the attack
+card.press_the_attack.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Combine captains close in and fight harder.
+card.close_at_speed.name,Doctrine card name on the doctrine bulletin,Close at speed
+card.close_at_speed.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Combine ships close to 60% of their usual range before they fight.
+card.radar_net.name,Doctrine card name on the doctrine bulletin,Radar net
+card.radar_net.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does","Combine ships transmit radar continuously, and patrols run 20% denser."
+card.picket_line.name,Doctrine card name on the doctrine bulletin,Picket line
+card.picket_line.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Two radar pickets and a patrol boat join every operation in the region.
+card.silent_ships.name,Doctrine card name on the doctrine bulletin,Silent ships
+card.silent_ships.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Combine ships keep their radars off and approach unseen.
+card.radar_pickets.name,Doctrine card name on the doctrine bulletin,Radar pickets
+card.radar_pickets.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Radar pickets join every operation in the region to watch the dark.
+card.night_watch.name,Doctrine card name on the doctrine bulletin,Night watch
+card.night_watch.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does","Combine ships transmit radar continuously, and patrols run 25% denser."
+card.dusk_patrols.name,Doctrine card name on the doctrine bulletin,Dusk patrols
+card.dusk_patrols.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Patrols in the region run 30% denser.
+card.hold_the_line.name,Doctrine card name on the doctrine bulletin,Hold the line
+card.hold_the_line.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Combine ships stand and fight instead of breaking off when hurt.
+card.daylight_escorts.name,Doctrine card name on the doctrine bulletin,Daylight escorts
+card.daylight_escorts.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",An escort with gunboats joins every operation in the region.
+card.wide_search.name,Doctrine card name on the doctrine bulletin,Wide search
+card.wide_search.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Patrols run 20% denser and Combine ships engage 20% farther out.
+card.active_search.name,Doctrine card name on the doctrine bulletin,Active search
+card.active_search.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does","Combine ships transmit radar continuously, and patrols run 15% denser."
+card.close_search.name,Doctrine card name on the doctrine bulletin,Close search
+card.close_search.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",A patrol joins every operation in the region and closes on every contact.
+card.esm_watch.name,Doctrine card name on the doctrine bulletin,ESM watch
+card.esm_watch.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Combine ships keep their radars off and stalk your emissions.
+card.emission_hunters.name,Doctrine card name on the doctrine bulletin,Emission hunters
+card.emission_hunters.desc,"Doctrine card description on the doctrine bulletin; one line, what the counter does",Combine ships run silent and attack hard when you transmit.

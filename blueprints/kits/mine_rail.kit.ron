@@ -1,0 +1,26 @@
+// Stock kit (DESIGN.md L140). Unit `data-kits-act1`. Licensed CC BY 4.0.
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.mine_rail",
+    version: 1,
+    hash: "",
+    name: "Mine rail",
+    name_key: "kit.mine_rail.name",
+    description_key: "kit.mine_rail.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "rail.mine", offset: (x: 0, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "edge", offset: (x: 8, y: 0, z: 1), face: YNeg),
+    ],
+    settings: [],
+    graph: (),
+    officer: None,
+    tags: [MineRail],
+    tray_order: 42,
+)

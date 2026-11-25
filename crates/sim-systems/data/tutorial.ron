@@ -1,0 +1,164 @@
+// Tutorial scripts, one per fallback level: "The first ten minutes", DESIGN.md L252-275. Unit
+// `data-tutorial` owns this file and `game/i18n/tutorial.csv`; the state machine is
+// `crates/sim-systems/src/tutorial/mod.rs`, whose notes define every trigger.
+//
+// Level 0 is the full tutorial. Levels 1 to 4 are the spec's fallbacks, each including the ones before it:
+// (1) the hull starts with Float at Pass and the beam step is a 20 s demonstration; (2) the engine and fuel
+// tank start fitted, so the player drops the gun and radar mast; (3) the blocked-arc Fix is applied for the
+// player after its ghost preview plays as a demonstration; (4) one drag: the fully fitted craft minus its
+// gun, drop the gun kit, splash.
+//
+// Stock files these scripts name (unit `data-starter-hulls` authors the hulls, `data-kits-act1` the kits):
+//   tutorial/fac22_tutorial.bp.ron        22 m FAC at 0.76 of the fitted beam: afloat, Float at Fail
+//                                         (under-beamed), no gun, no radar, no engine, no fuel tank (level 0)
+//   tutorial/fac22_tutorial_float.bp.ron  the same at 0.88 of the fitted beam, Float at Pass (level 1, and
+//                                         level 0 from its kit step on)
+//   tutorial/fac22_tutorial_drive.bp.ron  0.96 of the fitted beam with the engine and fuel tank kits fitted
+//                                         (levels 2, 3)
+//   tutorial/fac22_tutorial_nogun.bp.ron  starters/fac22.bp.ron without its gun kit (level 4)
+//   starters/fac22.bp.ron                 the fully fitted 22 m FAC: the reward at every level
+//   kit.gun, kit.radar_mast, kit.engine, kit.fuel_tank   the four tutorial kits; a placed kit also counts
+//                                         when its id is a dotted variant (kit.gun.20mm counts as kit.gun)
+//
+// Level 0's kit step loads the level 1 hull on entry: when Float first shows Pass the dock settles the hull on
+// the tutorial's design beam. The beam handle moves one station (the widest), and the hull a newcomer has when
+// Float first reads Pass (GM about 4% of beam) cannot carry the four kits: they double its displacement, and
+// on every such hull they take Float back to Fail (the ship capsizes in the basin). Every hull where the bare
+// craft reads Pass and the kitted craft does not read Fail is close to the level 1 hull (0.86 to 0.9 of the
+// fitted beam, uniformly), and no single station reaches it. The load also covers a player who overshoots,
+// and the beam step's 240 s escape.
+//
+// Kit spots (`spots`, see `KitSpot`): in the tutorial dock a lesson kit settles on the valid pose nearest its
+// spot wherever it is dropped on the hull, so a newcomer never hunts for the one column inside the hull where
+// an engine fits. A spot is the kit's deck cell; a mount's magazine hangs three cells under it. The gun's spot
+// (x 37, y 7) seats it a deck low in the bow, where the hull's own structure blocks about 70% of its arc: that
+// is the Ship's Notes lesson in step 4 (note id `arc_blocked`, see `note_id`), and the note's Fix raises the
+// gun clear. Level 4 has no Fix step, so its gun goes where its arc is clear and its conduits connect on the
+// fitted hull (x 36, y 9: the fitted craft's own gun pose). The radar mast's spot sits one cell to port of the
+// middle (`dz: -1`), as on the fitted craft: its director and fire-control radar stand on one side of the pole,
+// and centred a cell further to starboard they heeled the ship 8 to 16 degrees.
+//
+// `crates/sim-systems/tests/tutorial_levels.rs` plays every level as its cards direct, with the dock's own
+// pose search, in both kit orders, and fights the basins over four seeds. Finished designs (after the Fix):
+// levels 0 and 1 Float Caution (GM 0.14 m, heel 1.6 degrees), levels 2 and 3 Pass (GM 0.33 m, heel 0.7),
+// level 4 Pass (GM 0.46 m); every consumer keeps its conduit. Level 0 is the settings default
+// (`editor.tutorial_level`), as the spec freezes it.
+//
+// `lesson` numbers the spec's six steps (L254-259) for the card's "Step n of 6"; several script steps make one
+// lesson. `done` is the line the card shows after the step, when the player did it (not on a timed escape).
+//
+// Control ids are the client's stable dotted ids; an allow entry enables the control and everything under
+// it. `tutorial.*`, `editor.camera.*`, `sortie.camera.*` and `menu.*` are always enabled. An empty allow
+// list enables everything: every step from the first splash on uses it, so the player can always return to
+// the design and repair it.
+//   editor.handle.beam   beam handle           editor.tray   kit tray (editor.tray.kit.<name>; editor.tray.place
+//                                              is the click in the view that places the picked kit). A kit step
+//                                              allows only its lesson kits' rows, so other tray rows read as off.
+//   editor.notes         Ship's Notes panel     editor.notes.fix.<note id>   a note's Fix and Accept buttons
+//   editor.launch        Splash (Space)         editor.officers.slider.gunnery.aggression   the L1 Aggression slider in the dock's Officers tab
+//   tutorial.continue    the step's Continue button
+//
+// Every step a player could fail has a timed escape inside `Any`, so nobody is held in place: the step
+// moves on (and an unmet Fix is applied for the player) after a generous wait. A kit step that times out
+// loads the fully fitted craft (`on_escape`), so the player still has a gun for the drones and the patrol
+// boat; the Fix step then ends at once on the client's "no notes open" report. Gate stamps are taken from
+// the guns' first shot and the first enemy destroyed, never from an escape. The patrol boat's escape is 300 s:
+// the boat starts 3.5 km off and meets a closing ship on the beam, so a fight that lasts that long is one the
+// player is not winning, and a longer wait only holds them in it.
+[
+    (
+        id: "first_ten_minutes",
+        fallback_level: 0,
+        blueprint: "tutorial/fac22_tutorial.bp.ron",
+        reward: "starters/fac22.bp.ron",
+        spots: [(kit: "kit.gun", x: 37, y: 7), (kit: "kit.radar_mast", x: 21, y: 14, dz: -1), (kit: "kit.engine", x: 17, y: 3, dz: 2), (kit: "kit.fuel_tank", x: 25, y: 2, dz: 2)],
+        steps: [
+            (id: "open", text: "tutorial.open", lesson: 1, allow: ["tutorial.continue"], on_enter: [LoadBlueprint("tutorial/fac22_tutorial.bp.ron")], complete: Continue),
+            (id: "beam", text: "tutorial.beam", lesson: 2, done: Some("tutorial.done.beam"), point_at: "editor.handle.beam", allow: ["editor.handle.beam"], complete: Any([GaugePass("float"), After(seconds: 240)])),
+            (id: "kits", text: "tutorial.kits", lesson: 3, done: Some("tutorial.done.kits"), point_at: "editor.tray", allow: ["editor.tray.kit.gun", "editor.tray.kit.radar_mast", "editor.tray.kit.engine", "editor.tray.kit.fuel_tank", "editor.tray.place"], on_enter: [LoadBlueprint("tutorial/fac22_tutorial_float.bp.ron")], on_escape: [LoadBlueprint("starters/fac22.bp.ron")], complete: Any([KitsPlaced(["kit.gun", "kit.radar_mast", "kit.engine", "kit.fuel_tank"]), After(seconds: 360)])),
+            (id: "fix_arc", text: "tutorial.fix_arc", lesson: 4, done: Some("tutorial.done.fix_arc"), point_at: "editor.notes.fix.arc_blocked", allow: ["editor.notes"], complete: Any([NoteFixed("arc_blocked"), After(seconds: 150)])),
+            (id: "launch", text: "tutorial.launch", lesson: 5, point_at: "editor.launch", allow: ["editor.launch"], on_enter: [SplashOptions((water: 0, target: Drones))], complete: SplashStarted),
+            (id: "drones", text: "tutorial.drones", lesson: 5, done: Some("tutorial.done.drones"), complete: Any([All([PlayerGunsFired, Any([HelmInput, After(seconds: 20)]), Any([EnemyDestroyed, Dwell(seconds: 30)])]), After(seconds: 300)]), marks_first_fight: true),
+            (id: "patrol_launch", text: "tutorial.patrol_launch", lesson: 6, point_at: "editor.launch", on_enter: [SplashOptions((water: 0, target: PatrolBoat))], complete: SplashStarted),
+            (id: "patrol_boat", text: "tutorial.patrol_boat", lesson: 6, done: Some("tutorial.done.patrol_boat"), complete: Any([EnemyDestroyed, After(seconds: 300)]), marks_first_kill: true),
+            (id: "aggression", text: "tutorial.aggression", lesson: 6, done: Some("tutorial.done.aggression"), point_at: "editor.officers.slider.gunnery.aggression", complete: Any([SliderMoved("gunnery.aggression"), After(seconds: 120)])),
+            (id: "splash_again", text: "tutorial.splash_again", lesson: 6, point_at: "editor.launch", complete: Any([SplashStarted, After(seconds: 120)])),
+            (id: "done", text: "tutorial.done", lesson: 0, complete: Continue),
+        ],
+    ),
+    (
+        id: "first_ten_minutes_fallback_1",
+        fallback_level: 1,
+        blueprint: "tutorial/fac22_tutorial_float.bp.ron",
+        reward: "starters/fac22.bp.ron",
+        spots: [(kit: "kit.gun", x: 37, y: 7), (kit: "kit.radar_mast", x: 21, y: 14, dz: -1), (kit: "kit.engine", x: 17, y: 3, dz: 2), (kit: "kit.fuel_tank", x: 25, y: 2, dz: 2)],
+        steps: [
+            (id: "open", text: "tutorial.open_float", lesson: 1, allow: ["tutorial.continue"], on_enter: [LoadBlueprint("tutorial/fac22_tutorial_float.bp.ron")], complete: Continue),
+            (id: "beam", text: "tutorial.beam_demo", lesson: 2, point_at: "editor.handle.beam", allow: ["tutorial.continue"], on_enter: [Demo("tutorial.demo.beam_handle")], complete: Any([Continue, After(seconds: 20)])),
+            (id: "kits", text: "tutorial.kits", lesson: 3, done: Some("tutorial.done.kits"), point_at: "editor.tray", allow: ["editor.tray.kit.gun", "editor.tray.kit.radar_mast", "editor.tray.kit.engine", "editor.tray.kit.fuel_tank", "editor.tray.place"], on_escape: [LoadBlueprint("starters/fac22.bp.ron")], complete: Any([KitsPlaced(["kit.gun", "kit.radar_mast", "kit.engine", "kit.fuel_tank"]), After(seconds: 360)])),
+            (id: "fix_arc", text: "tutorial.fix_arc", lesson: 4, done: Some("tutorial.done.fix_arc"), point_at: "editor.notes.fix.arc_blocked", allow: ["editor.notes"], complete: Any([NoteFixed("arc_blocked"), After(seconds: 150)])),
+            (id: "launch", text: "tutorial.launch", lesson: 5, point_at: "editor.launch", allow: ["editor.launch"], on_enter: [SplashOptions((water: 0, target: Drones))], complete: SplashStarted),
+            (id: "drones", text: "tutorial.drones", lesson: 5, done: Some("tutorial.done.drones"), complete: Any([All([PlayerGunsFired, Any([HelmInput, After(seconds: 20)]), Any([EnemyDestroyed, Dwell(seconds: 30)])]), After(seconds: 300)]), marks_first_fight: true),
+            (id: "patrol_launch", text: "tutorial.patrol_launch", lesson: 6, point_at: "editor.launch", on_enter: [SplashOptions((water: 0, target: PatrolBoat))], complete: SplashStarted),
+            (id: "patrol_boat", text: "tutorial.patrol_boat", lesson: 6, done: Some("tutorial.done.patrol_boat"), complete: Any([EnemyDestroyed, After(seconds: 300)]), marks_first_kill: true),
+            (id: "aggression", text: "tutorial.aggression", lesson: 6, done: Some("tutorial.done.aggression"), point_at: "editor.officers.slider.gunnery.aggression", complete: Any([SliderMoved("gunnery.aggression"), After(seconds: 120)])),
+            (id: "splash_again", text: "tutorial.splash_again", lesson: 6, point_at: "editor.launch", complete: Any([SplashStarted, After(seconds: 120)])),
+            (id: "done", text: "tutorial.done", lesson: 0, complete: Continue),
+        ],
+    ),
+    (
+        id: "first_ten_minutes_fallback_2",
+        fallback_level: 2,
+        blueprint: "tutorial/fac22_tutorial_drive.bp.ron",
+        reward: "starters/fac22.bp.ron",
+        spots: [(kit: "kit.gun", x: 37, y: 7), (kit: "kit.radar_mast", x: 21, y: 14, dz: -1)],
+        steps: [
+            (id: "open", text: "tutorial.open_drive", lesson: 1, allow: ["tutorial.continue"], on_enter: [LoadBlueprint("tutorial/fac22_tutorial_drive.bp.ron")], complete: Continue),
+            (id: "beam", text: "tutorial.beam_demo", lesson: 2, point_at: "editor.handle.beam", allow: ["tutorial.continue"], on_enter: [Demo("tutorial.demo.beam_handle")], complete: Any([Continue, After(seconds: 20)])),
+            (id: "kits", text: "tutorial.kits_two", lesson: 3, done: Some("tutorial.done.kits_two"), point_at: "editor.tray", allow: ["editor.tray.kit.gun", "editor.tray.kit.radar_mast", "editor.tray.place"], on_escape: [LoadBlueprint("starters/fac22.bp.ron")], complete: Any([KitsPlaced(["kit.gun", "kit.radar_mast"]), After(seconds: 240)])),
+            (id: "fix_arc", text: "tutorial.fix_arc", lesson: 4, done: Some("tutorial.done.fix_arc"), point_at: "editor.notes.fix.arc_blocked", allow: ["editor.notes"], complete: Any([NoteFixed("arc_blocked"), After(seconds: 150)])),
+            (id: "launch", text: "tutorial.launch", lesson: 5, point_at: "editor.launch", allow: ["editor.launch"], on_enter: [SplashOptions((water: 0, target: Drones))], complete: SplashStarted),
+            (id: "drones", text: "tutorial.drones", lesson: 5, done: Some("tutorial.done.drones"), complete: Any([All([PlayerGunsFired, Any([HelmInput, After(seconds: 20)]), Any([EnemyDestroyed, Dwell(seconds: 30)])]), After(seconds: 300)]), marks_first_fight: true),
+            (id: "patrol_launch", text: "tutorial.patrol_launch", lesson: 6, point_at: "editor.launch", on_enter: [SplashOptions((water: 0, target: PatrolBoat))], complete: SplashStarted),
+            (id: "patrol_boat", text: "tutorial.patrol_boat", lesson: 6, done: Some("tutorial.done.patrol_boat"), complete: Any([EnemyDestroyed, After(seconds: 300)]), marks_first_kill: true),
+            (id: "aggression", text: "tutorial.aggression", lesson: 6, done: Some("tutorial.done.aggression"), point_at: "editor.officers.slider.gunnery.aggression", complete: Any([SliderMoved("gunnery.aggression"), After(seconds: 120)])),
+            (id: "splash_again", text: "tutorial.splash_again", lesson: 6, point_at: "editor.launch", complete: Any([SplashStarted, After(seconds: 120)])),
+            (id: "done", text: "tutorial.done", lesson: 0, complete: Continue),
+        ],
+    ),
+    (
+        id: "first_ten_minutes_fallback_3",
+        fallback_level: 3,
+        blueprint: "tutorial/fac22_tutorial_drive.bp.ron",
+        reward: "starters/fac22.bp.ron",
+        spots: [(kit: "kit.gun", x: 37, y: 7), (kit: "kit.radar_mast", x: 21, y: 14, dz: -1)],
+        steps: [
+            (id: "open", text: "tutorial.open_drive", lesson: 1, allow: ["tutorial.continue"], on_enter: [LoadBlueprint("tutorial/fac22_tutorial_drive.bp.ron")], complete: Continue),
+            (id: "beam", text: "tutorial.beam_demo", lesson: 2, point_at: "editor.handle.beam", allow: ["tutorial.continue"], on_enter: [Demo("tutorial.demo.beam_handle")], complete: Any([Continue, After(seconds: 20)])),
+            (id: "kits", text: "tutorial.kits_two", lesson: 3, done: Some("tutorial.done.kits_two"), point_at: "editor.tray", allow: ["editor.tray.kit.gun", "editor.tray.kit.radar_mast", "editor.tray.place"], on_escape: [LoadBlueprint("starters/fac22.bp.ron")], complete: Any([KitsPlaced(["kit.gun", "kit.radar_mast"]), After(seconds: 240)])),
+            // The Fix is applied for the player when the demonstration ends (Continue) or after 12 s.
+            (id: "fix_arc", text: "tutorial.fix_arc_demo", lesson: 4, done: Some("tutorial.done.fix_arc"), point_at: "editor.notes.fix.arc_blocked", allow: ["tutorial.continue"], on_enter: [Demo("tutorial.demo.fix_ghost_preview")], complete: Any([NoteFixed("arc_blocked"), Continue, After(seconds: 12)])),
+            (id: "launch", text: "tutorial.launch", lesson: 5, point_at: "editor.launch", allow: ["editor.launch"], on_enter: [SplashOptions((water: 0, target: Drones))], complete: SplashStarted),
+            (id: "drones", text: "tutorial.drones", lesson: 5, done: Some("tutorial.done.drones"), complete: Any([All([PlayerGunsFired, Any([HelmInput, After(seconds: 20)]), Any([EnemyDestroyed, Dwell(seconds: 30)])]), After(seconds: 300)]), marks_first_fight: true),
+            (id: "patrol_launch", text: "tutorial.patrol_launch", lesson: 6, point_at: "editor.launch", on_enter: [SplashOptions((water: 0, target: PatrolBoat))], complete: SplashStarted),
+            (id: "patrol_boat", text: "tutorial.patrol_boat", lesson: 6, done: Some("tutorial.done.patrol_boat"), complete: Any([EnemyDestroyed, After(seconds: 300)]), marks_first_kill: true),
+            (id: "aggression", text: "tutorial.aggression", lesson: 6, done: Some("tutorial.done.aggression"), point_at: "editor.officers.slider.gunnery.aggression", complete: Any([SliderMoved("gunnery.aggression"), After(seconds: 120)])),
+            (id: "splash_again", text: "tutorial.splash_again", lesson: 6, point_at: "editor.launch", complete: Any([SplashStarted, After(seconds: 120)])),
+            (id: "done", text: "tutorial.done", lesson: 0, complete: Continue),
+        ],
+    ),
+    (
+        id: "first_ten_minutes_fallback_4",
+        fallback_level: 4,
+        blueprint: "tutorial/fac22_tutorial_nogun.bp.ron",
+        reward: "starters/fac22.bp.ron",
+        spots: [(kit: "kit.gun", x: 36, y: 9)],
+        steps: [
+            (id: "open", text: "tutorial.open_nogun", lesson: 1, allow: ["tutorial.continue"], on_enter: [LoadBlueprint("tutorial/fac22_tutorial_nogun.bp.ron")], complete: Continue),
+            (id: "kits", text: "tutorial.kits_gun", lesson: 2, done: Some("tutorial.done.kits_gun"), point_at: "editor.tray.kit.gun", allow: ["editor.tray.kit.gun", "editor.tray.place"], on_escape: [LoadBlueprint("starters/fac22.bp.ron")], complete: Any([KitsPlaced(["kit.gun"]), After(seconds: 180)])),
+            (id: "launch", text: "tutorial.launch", lesson: 3, point_at: "editor.launch", allow: ["editor.launch"], on_enter: [SplashOptions((water: 0, target: Drones))], complete: SplashStarted),
+            (id: "drones", text: "tutorial.drones", lesson: 3, done: Some("tutorial.done.drones"), complete: Any([All([PlayerGunsFired, Any([HelmInput, After(seconds: 20)]), Any([EnemyDestroyed, Dwell(seconds: 30)])]), After(seconds: 300)]), marks_first_fight: true),
+            (id: "done", text: "tutorial.done_short", lesson: 0, complete: Continue),
+        ],
+    ),
+]

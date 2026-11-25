@@ -1,0 +1,82 @@
+// Vec<PartDef>: parts Act 3 adds to the build (DESIGN.md L541-553, L565-570, L595, L618, L801-807, L866-875). Unit
+// `data-act3`. Licensed CC BY 4.0.
+//
+// Act 3 opens part tier 5 (the tier 5 rows of parts/act1.ron, and the heavy guns here) and brings two families the
+// first release lacks:
+//
+// Heavy guns, 130 to 155 mm (band Heavy: 150 mm at 1 km, 100 mm at 18 km, a 5-cell burst). They defeat the 80 mm
+// armour tier at every range and reach 18 km, half again past the 127 mm. Mount weight and the 900 t cap gate them,
+// with no hull-length rule (L551): the 130 mm single is a 30 t mount a 60 m corvette can carry forward, the 155 mm
+// single 46 t and the twin 78 t, a tenth of a 900 t hull before its magazine. The 130 mm fires fastest of the three;
+// the 155 mm mounts trade rate for weight of fire per hit and the tightest groups at range. Each feeds from its own
+// calibre's magazine through the common hoist (L283). Rounds weigh shell plus charge (130 mm 50 kg, 155 mm 70 kg).
+//
+// The depth-charge rack, with the AI-only submarines (L551, L595): ten 180 kg charges rolled off the stern at 2 s
+// intervals, two 5-charge patterns (the L618 gate's pattern) per rack, reloaded at the tender. A charge sinks at
+// 3 m/s to its set depth (10 to 150 m, the Weapons officer sets it from the track) and bursts with B 8 and r 6
+// cells. The rack sits at tier 4 so a player can fit one from the first day of the act, before any submarine is
+// met. If submarines are cut from Act 3 (L875), this row goes with them.
+//
+// Units and conventions as parts/act1.ron: dry mass in kg (ammunition comes from the magazine rows and munitions),
+// cost in Salvage, footprints in 0.5 m cells along (bow, up, starboard), power priorities from L287-295.
+[
+    // ---------------------------------------------------------------------------------------------------
+    // Heavy guns
+    (
+        id: "gun.130mm.single", name: "part.gun.130mm.single.name", description: "part.gun.130mm.single.desc",
+        category: Gun, tier: T5, phase: Act3, size: (10, 6, 10), placement: Weather, mass_kg: 30000.0, cost: 440,
+        ports: [(network: Power, role: Consume, rate: 100.0), (network: Data, role: Link)], power_priority: 3,
+        rcs_factor: 0.7,
+        function: Gun((calibre_mm: 130, band: Heavy, barrels: 1, rof_rpm: 25.0, muzzle_mps: 850.0, shell_kg: 33.4,
+            train_rate_dps: 25.0, elevation_rate_dps: 15.0, elevation_min_deg: -5.0, elevation_max_deg: 55.0,
+            dispersion_mrad: 0.6, ready_rounds: 20)),
+        model: (generator: "gun.turret", params: [130.0, 1.0, 1.0]), icon: "part_gun",
+    ),
+    (
+        id: "gun.155mm.single", name: "part.gun.155mm.single.name", description: "part.gun.155mm.single.desc",
+        category: Gun, tier: T5, phase: Act3, size: (12, 7, 10), placement: Weather, mass_kg: 46000.0, cost: 600,
+        ports: [(network: Power, role: Consume, rate: 130.0), (network: Data, role: Link)], power_priority: 3,
+        rcs_factor: 0.7,
+        function: Gun((calibre_mm: 155, band: Heavy, barrels: 1, rof_rpm: 10.0, muzzle_mps: 880.0, shell_kg: 46.0,
+            train_rate_dps: 18.0, elevation_rate_dps: 10.0, elevation_min_deg: -5.0, elevation_max_deg: 50.0,
+            dispersion_mrad: 0.45, ready_rounds: 12)),
+        model: (generator: "gun.turret", params: [155.0, 1.0, 1.0]), icon: "part_gun",
+    ),
+    (
+        id: "gun.155mm.twin", name: "part.gun.155mm.twin.name", description: "part.gun.155mm.twin.desc",
+        category: Gun, tier: T5, phase: Act3, size: (14, 7, 12), placement: Weather, mass_kg: 78000.0, cost: 960,
+        ports: [(network: Power, role: Consume, rate: 220.0), (network: Data, role: Link)], power_priority: 3,
+        rcs_factor: 0.7,
+        function: Gun((calibre_mm: 155, band: Heavy, barrels: 2, rof_rpm: 8.0, muzzle_mps: 880.0, shell_kg: 46.0,
+            train_rate_dps: 15.0, elevation_rate_dps: 8.0, elevation_min_deg: -5.0, elevation_max_deg: 45.0,
+            dispersion_mrad: 0.45, ready_rounds: 24)),
+        model: (generator: "gun.turret", params: [155.0, 2.0, 1.0]), icon: "part_gun",
+    ),
+    // Magazines: watertight, count as ammunition for fire, and cook off by stored mass (L666); both reach the
+    // 24-cell cap.
+    (
+        id: "magazine.130mm", name: "part.magazine.130mm.name", description: "part.magazine.130mm.desc",
+        category: Gun, tier: T5, phase: Act3, size: (6, 3, 4), placement: Internal, mass_kg: 2600.0, cost: 50,
+        watertight: true, flammable: Ammunition, tags: [Magazine],
+        function: Magazine(calibre_mm: 130, rounds: 240, ammo_kg: 12000.0),
+        model: (generator: "fit.internal", params: [2.0]), icon: "part_gun",
+    ),
+    (
+        id: "magazine.155mm", name: "part.magazine.155mm.name", description: "part.magazine.155mm.desc",
+        category: Gun, tier: T5, phase: Act3, size: (6, 3, 5), placement: Internal, mass_kg: 3000.0, cost: 60,
+        watertight: true, flammable: Ammunition, tags: [Magazine],
+        function: Magazine(calibre_mm: 155, rounds: 160, ammo_kg: 11200.0),
+        model: (generator: "fit.internal", params: [2.0]), icon: "part_gun",
+    ),
+
+    // ---------------------------------------------------------------------------------------------------
+    // Depth charges
+    (
+        id: "rack.depth_charge", name: "part.rack.depth_charge.name", description: "part.rack.depth_charge.desc",
+        category: Underwater, tier: T4, phase: Act3, size: (6, 2, 2), placement: DeckEdge, mass_kg: 1500.0, cost: 40,
+        ports: [(network: Power, role: Consume, rate: 1.0), (network: Data, role: Link)], power_priority: 3,
+        flammable: Ammunition, standard_limit: 2,
+        function: Launcher((kind: DepthChargeRack, munition: "charge.depth", cells: 10, interval_s: 2.0, reload_s: 0.0)),
+        model: (generator: "launcher.dc_rack", params: [10.0]), icon: "part_underwater",
+    ),
+]

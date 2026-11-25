@@ -1,0 +1,85 @@
+keys,?context,en
+chart.ops.act,"Operations panel act line; {0} act word, {1} act title",{0}: {1}.
+chart.ops.story,"Operations panel act line; {0} story operations done, {1} story operations in the act",Story operations done: {0} of {1}.
+chart.ops.capstone_open,Operations panel act line when the capstone can be offered,The capstone is open.
+chart.ops.open_theatre,Operations panel act line once Open Theatre has begun,"The theatre is open, with no operation clock."
+chart.ops.cap,Operations panel act line; {0} hull tonnage cap with unit,Hull cap {0}.
+chart.ops.retreat,Operations panel act line in a retreat act,In retreat.
+chart.ops.empty,Operations panel empty state,"No operations on offer. Wait or move SEXTANT, and new ones arrive as the theatre changes."
+chart.ops.no_campaign,Operations panel with no campaign loaded,No campaign is loaded.
+chart.ops.line,"Operation row line; {0} kind word, {1} place (chart.ops.where), {2} LANTERN's one-way passage hours with unit","{0} at {1}. {2} each way."
+chart.ops.line_short,"Operation row line for a template operation named after its template; {0} place (chart.ops.where), {1} LANTERN's one-way passage hours with unit","{0}. {1} each way."
+chart.ops.where,"Where an operation is; {0} chart place name, {1} region name","{0}, {1}"
+chart.ops.forced,Operation row mark for a forced operation,Cannot be declined.
+chart.ops.kind.template,Operation kind word for a template operation with no known template,Operation
+chart.ops.kind.story,Operation kind word,Story operation
+chart.ops.kind.ace_duel,Operation kind word,Ace duel
+chart.ops.kind.capstone,Operation kind word,Capstone
+chart.ops.kind.tutorial,Operation kind word,Training operation
+chart.ops.forecast,"Operation summary line; {0} weather word, {1} sea state, {2} time of day word, {3} visibility with unit","Forecast: {0}, sea state {1}, {2}, visibility {3}."
+chart.ops.threat,Operation summary line; {0} expected hull count or range,Expected opposition: {0} hulls.
+chart.ops.range,"A count range in an operation summary; {0} least, {1} most",{0} to {1}
+chart.ops.tags,Operation summary line; {0} the briefing's constraint tags as sentences,Constraints: {0}
+chart.ops.pushback,Operation summary line; {0} theatre days the operation clock moves back on success,Success pushes the operation clock back {0} days.
+chart.ops.expires,Operation summary line; {0} date-time group the offer leaves the chart,Leaves the chart at {0}.
+chart.ops.brief,Button: open the selected operation's briefing,Open briefing
+chart.ops.brief_named,"Button: open the selected operation's briefing; {0} operation name",Open the briefing for {0}
+chart.ops.brief_tip,Tooltip of Open briefing,Accept the operation and read its briefing; refit before launch
+chart.ops.brief_tip_coop,Co-op tooltip of Open briefing,Read the briefing and propose accepting the operation
+chart.ops.decline,Button: decline the selected operation,Decline
+chart.ops.decline_propose,Co-op button: propose declining the selected operation,Propose decline
+chart.ops.decline_tip,Tooltip of Decline,Take the operation off the chart
+chart.ops.forced_tip,Tooltip of Decline on a forced operation,This operation cannot be declined; fight it next
+chart.ops.decline_title,Dialog title: decline an operation,Decline the operation
+chart.ops.decline_body,Dialog body; {0} operation name,{0} leaves the chart. It may not be offered again this act.
+chart.ops.decline_confirm,Dialog button: decline the operation,Decline operation
+chart.ops.keep,Dialog button: keep the operation on offer,Keep on offer
+chart.bulletin.no_campaign,Bulletin panel with no campaign loaded,No campaign is loaded.
+chart.bulletin.pool,Bulletin panel line; {0} Intel in the shared pool with unit,Pool: {0}.
+chart.bulletin.cards,Section title: doctrine counter cards in force and queued,Doctrine bulletin
+chart.bulletin.no_cards,Bulletin empty state,No counters in force or queued. The Combine has not adapted to LANTERN yet.
+chart.bulletin.in_force,Card status; {0} region name,In force in {0}.
+chart.bulletin.arrives,"Card status; {0} region name, {1} arrival date-time group, {2} hours until then","Reaches {0} at {1}, in {2}."
+chart.bulletin.delay,Button: spend Intel to delay a card 72 h; {0} Intel cost with unit,"Delay 72 h, {0}"
+chart.bulletin.cancel,Button: spend Intel to cancel a card; {0} Intel cost with unit,"Cancel card, {0}"
+chart.bulletin.tallies,Section title: Combine win-method tallies,Combine tallies
+chart.bulletin.tally_note,Tallies explanation; {0} the tally value that queues a counter,A tally that reaches {0} queues a counter card 72 h ahead. Tallies halve every 120 theatre hours.
+chart.bulletin.no_tallies,Tallies empty state,Nothing tallied yet.
+chart.bulletin.no_trend,Gauge note: tallies change only between operations,Changes between operations
+chart.bulletin.intel,Section title: other Intel spends,Intel
+chart.bulletin.reveal_convoys,"Button: locate a region's convoys; {0} region name, {1} Intel cost","Locate convoys in {0} for 4 days, {1}"
+chart.bulletin.reveal_ace,"Button: locate an ace; {0} ace name, {1} Intel cost","Locate {0}, {1}"
+chart.bulletin.no_spends,Intel spends empty state,No Intel spends on offer now.
+chart.bulletin.propose,Co-op button text wrapper for an Intel spend; {0} the spend,Propose: {0}
+chart.bulletin.short,"Tooltip of an Intel spend the pool cannot pay; {0} cost, {1} pool",Needs {0}; the pool holds {1}
+chart.bulletin.spend_tip,Tooltip of an Intel spend,Spend Intel from SEXTANT's shared pool
+chart.res.name,Accessible name of the shared resource bar,SEXTANT's pool
+chart.res.fuel,Resource readout; {0} litres with unit,{0} fuel
+chart.res.ammo,Resource readout; {0} tonnes of munitions with unit,{0} munitions
+chart.res.salvage_tip,Tooltip of Salvage,"Spent on parts, refits, repairs, rebuilds and stock shortfalls"
+chart.res.intel_tip,Tooltip of Intel,Delays or cancels doctrine cards and locates convoys and aces
+chart.res.fuel_tip,Tooltip of fuel,SEXTANT's fuel stock; refuelling draws on it before Salvage
+chart.res.ammo_tip,Tooltip of munitions,SEXTANT's munitions stock; rearming draws on it before Salvage
+chart.coop.title,Section title: open co-op proposals,Proposals
+chart.coop.made,"Proposal line; {0} player name, {1} date-time group",Proposed by {0} at {1}.
+chart.coop.accepted,Proposal line; {0} names of players who accepted,Accepted: {0}.
+chart.coop.waiting,Proposal line; {0} names of players the vote waits for,Waiting for {0}.
+chart.coop.accept,Button: accept a proposal,Accept
+chart.coop.accept_tip,Tooltip of Accept,Commits when every connected player accepts
+chart.coop.decline,Button: decline a proposal,Decline
+chart.coop.decline_tip,Tooltip of Decline on a proposal,Vote against; the proposal stays open until withdrawn
+chart.coop.withdraw,Button: withdraw your own proposal,Withdraw
+chart.coop.withdraw_tip,Tooltip of Withdraw,Take your proposal back
+chart.coop.confirm,Button: the host commits a proposal,Confirm as host
+chart.coop.confirm_tip,Tooltip of Confirm as host,Commit now without waiting for every answer
+chart.log.filter_name,Accessible name of the log filter,Log filter
+chart.log.filter.all,Log filter entry,All events
+chart.log.filter.own,"Log filter entry: LANTERN, SEXTANT, hulls and stores",LANTERN
+chart.log.filter.combine,"Log filter entry: Combine logistics, Alert, cards and sightings",Combine
+chart.log.filter.operations,"Log filter entry: operations, acts and the clock",Operations and acts
+chart.log.time,Log column title,Time
+chart.log.event,Log column title,Event
+chart.log.unread,Tooltip of the unread mark on a log row,New since you last read the log
+chart.log.empty,Log empty state,Nothing has happened in the theatre yet.
+chart.log.empty_filter,Log empty state under a filter,No events of this type.
+chart.log.no_campaign,Log with no campaign loaded,No campaign is loaded.

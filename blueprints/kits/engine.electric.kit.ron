@@ -1,0 +1,29 @@
+// Stock kit (DESIGN.md L140). Unit `data-kits-act1`. Licensed CC BY 4.0.
+// Quiet running: an electric motor on the Power network, a battery and the generator that charges it.
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.engine.electric",
+    version: 1,
+    hash: "",
+    name: "Electric drive",
+    name_key: "kit.engine.electric.name",
+    description_key: "kit.engine.electric.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "motor.electric", offset: (x: 0, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+        (part: "battery", offset: (x: 3, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+        (part: "gen.diesel.large", offset: (x: 6, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "floor", offset: (x: 1, y: 0, z: 1), face: YNeg),
+    ],
+    settings: [],
+    graph: (),
+    officer: None,
+    tags: [Propulsion, Generation],
+    tray_order: 6,
+)

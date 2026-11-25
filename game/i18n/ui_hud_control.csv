@@ -1,0 +1,95 @@
+keys,?context,en
+hud_control.waiting,Control station before the own ship first reports in,Control layers open once the ship reports in.
+hud_control.page.doctrine,Control station page: L0 doctrine presets and engagement doctrine,Doctrine
+hud_control.page.tuning,Control station page: L1 sliders per officer,Tuning
+hud_control.page.rules,Control station page: L2 when/then rules table,Rules
+hud_control.page.emissions,Control station page: emission control,Emissions
+hud_control.page.power,Control station page: power shedding priorities,Power
+hud_control.page.not_allowed,Tooltip of a control page the sortie's ruleset does not allow,This sortie's ruleset does not allow this layer
+hud_control.status.sent,Status line after a control change went to the ship,Sent to the officers.
+hud_control.status.not_sent,Status line when a control change could not be sent,Not sent: no live sortie.
+hud_control.status.rules_sent,Status line after the rules table was sent; {0} number of rules,Rules table sent: {0} rules.
+hud_control.status.rules_refused,Status line when the rules table was refused; {0} the problems,Rules table not sent. {0}
+hud_control.doctrine.ship,Doctrine page row for the whole ship's preset,Ship
+hud_control.doctrine.mounts,Doctrine page heading over the per-mount presets,Mounts
+hud_control.doctrine.as_ship,First choice of a mount's preset: follow the ship; {0} the ship's preset,Ship's: {0}
+hud_control.doctrine.rows,Doctrine page heading over the engagement doctrine rows,Engagement doctrine
+hud_control.doctrine.scope,Screen-reader name of the choice between the ship's doctrine rows and one mount's,Doctrine of
+hud_control.doctrine.scope_ship,Doctrine rows choice: the ship's rows,Ship
+hud_control.doctrine.scope_tip,Tooltip of the doctrine rows choice,Ship rows apply to every mount without its own
+hud_control.doctrine.rows_note,Note under the engagement doctrine heading,Nothing auto-engages a Neutral or Friend track.
+hud_control.doctrine.no_rows,Doctrine page when the ship or mount has no doctrine rows,No weapon here has doctrine rows.
+hud_control.doctrine.pair,Doctrine row title; {0} weapon class and {1} target category,{0} against {1}
+hud_control.doctrine.stance_suspect,Doctrine row choice: the weapon engages Suspect and Hostile tracks,Suspect or Hostile
+hud_control.doctrine.stance_hostile,Doctrine row choice: the weapon engages Hostile tracks only,Hostile only
+hud_control.doctrine.stance_other,"Doctrine row choice shown as it stands when a row starts lower than Suspect (inbound weapons); {0} the stance word",From {0}
+hud_control.doctrine.stance_tip,Tooltip of the stance choice,Lowest stance this weapon engages without orders
+hud_control.doctrine.rung,Doctrine row choice of the lowest identification rung; {0} the rung word,ID {0} or better
+hud_control.doctrine.rung_tip,Tooltip of the identification choice,Identification a track needs before this weapon fires
+hud_control.doctrine.grade,Doctrine row choice of the lowest track grade; {0} the grade word,Grade {0} or better
+hud_control.doctrine.grade_tip,Tooltip of the grade choice,Track quality needed before this weapon fires
+hud_control.doctrine.salvo_prefix,Label before the salvo size field,Salvo
+hud_control.doctrine.salvo_tip,Tooltip of the salvo size field,"Rounds or missiles fired at one target at once. At 0 the mount fires only at a track you designate"
+hud_control.doctrine.range_default,Check box: use the mount's default effective range,Default range
+hud_control.doctrine.range_default_tip,Tooltip of the default range check box,Punch gauge effective range clamped to the class cap
+hud_control.doctrine.range_suffix,Unit after the effective range field,km
+hud_control.doctrine.range_tip,Tooltip of the effective range field,Farthest range this weapon opens fire at
+hud_control.tuning.all,Button that shows every other parameter of the officer; {0} how many,All parameters ({0})
+hud_control.tuning.none,Tuning page for an officer with no sliders,This officer has no sliders.
+hud_control.tip.helm.evasion,Slider tooltip,How hard the helm turns away from inbound weapons
+hud_control.tip.helm.responsiveness,Slider tooltip,How fast the helm answers course and speed orders
+hud_control.tip.helm.cruise_speed,Slider tooltip,Share of top speed the helm holds on passage
+hud_control.tip.helm.lookahead,Slider tooltip,"How far ahead the helm plans turns, in turning radii"
+hud_control.tip.helm.station_radius_m,Slider tooltip,Drift from the station point allowed before the helm corrects
+hud_control.tip.gunnery.aggression,Slider tooltip,Higher engages more targets sooner; lower waits for better solutions
+hud_control.tip.gunnery.open_fire_range,Slider tooltip,Share of effective range at which mounts open fire
+hud_control.tip.gunnery.pn_surface,Slider tooltip,Missile navigation gain against ships; higher turns harder late
+hud_control.tip.gunnery.pn_air,Slider tooltip,Missile navigation gain against aircraft; higher turns harder late
+hud_control.tip.gunnery.iteration_cap,Slider tooltip,Most solver passes per firing solution
+hud_control.tip.gunnery.converge_m,Slider tooltip,Miss distance at which the solver accepts a solution
+hud_control.tip.sensors.burst_rotations,Slider tooltip,Antenna rotations per Burst sweep; one rotation takes 2.5 s
+hud_control.tip.sensors.burst_repeat_s,Slider tooltip,Time between Burst sweeps while the trigger holds
+hud_control.tip.sensors.pd_radar_range_m,Slider tooltip,In Silent point-defence radars radiate for weapons inside this range
+hud_control.tip.engineer.reserve_margin,Slider tooltip,Spare generation kept before the engineer sheds load
+hud_control.tip.engineer.restore_delay_s,Slider tooltip,Time with spare power before shed consumers come back
+hud_control.tip.engineer.fuel_reserve,Slider tooltip,Fuel share the engineer keeps for the passage home
+hud_control.tip.dc.pump_threshold_m,Slider tooltip,Water depth in a compartment at which pumps start
+hud_control.tip.dc.door_discipline,Slider tooltip,Higher keeps watertight doors shut; lower lets teams through faster
+hud_control.tip.dc.magazine_flood_s,Slider tooltip,Cook-off time left when the officer floods a burning magazine
+hud_control.rules.intro,Rules page first line,"Rules run top to bottom 30 times a second; the higher rule wins a contested order."
+hud_control.rules.none,Rules page when the ship has no rules,No rules on this ship.
+hud_control.rules.note,Rules page note under the table,New rules are written in the dry dock.
+hud_control.rules.sentence,One rule in the table; {0} its place from the top and {1} the rule as a sentence,{0}. {1}
+hud_control.rules.enabled,Screen-reader name of a rule's on and off check box; {0} its place and {1} the rule,"Rule {0} on: {1}"
+hud_control.rules.enabled_tip,Tooltip of a rule's on and off check box,Switches this rule on or off
+hud_control.rules.active,Rule status while its condition holds this tick,Active now
+hud_control.rules.waiting,Rule status while its condition does not hold,Waiting for its condition
+hud_control.rules.off,Rule status while switched off,Off
+hud_control.rules.invalid,Rule status when the rule cannot run on this ship,Not valid on this ship
+hud_control.rules.up,Tooltip and screen-reader name of the button that moves a rule up,Move up
+hud_control.rules.down,Tooltip and screen-reader name of the button that moves a rule down,Move down
+hud_control.rules.remove,Tooltip and screen-reader name of the button that removes a rule,Remove this rule
+hud_control.rules.restore,Button that sends the design's rules table again,Restore the design's rules
+hud_control.rules.restore_tip,Tooltip of the restore button,Puts back the table the ship sailed with
+hud_control.emcon.title,Emissions page heading,Emission control
+hud_control.emcon.tip_0,Tooltip of the Silent button,Every emitter off; passive sensors and drones only
+hud_control.emcon.tip_1,Tooltip of the Burst button,Passive until a threat is in trigger range; short sweeps then
+hud_control.emcon.tip_2,Tooltip of the Active button,Every radar radiates without pause
+hud_control.emcon.describe_0,What Silent does (L507),"Silent: every radar, jammer and active sonar stays off. Point-defence radars still radiate while a weapon is inbound inside 8 km."
+hud_control.emcon.describe_1,"What Burst does (L507-509); {0} the length of one sweep, {1} the time between sweeps","Burst: passive until a Suspect or Hostile track is inside the trigger range or a weapon is inbound, then {0} sweeps every {1}."
+hud_control.emcon.describe_2,What Active does (L507),Active: every radar radiates without pause.
+hud_control.emcon.recommended,Emissions page line naming the briefing's recommendation; {0} the state,The briefing recommends {0}.
+hud_control.emcon.trigger,Emissions page line with the burst trigger range; {0} the range,Burst trigger range {0}
+hud_control.emcon.self_defence,Emissions page line with the self-defence range; {0} the range,Self-defence range {0}
+hud_control.emcon.ranges_note,Note under the two ranges,Both ranges are set in the dry dock; the hand glyph reverts a change.
+hud_control.power.intro,Power page first line,The engineer sheds priority 5 first and priority 1 last.
+hud_control.power.summary,Power page summary; {0} generation and {1} demand,"Generation {0}, demand {1}"
+hud_control.power.shed_count,Added to the power summary; {0} how many consumers are shed,{0} shed
+hud_control.power.none,Power page when the ship has no power consumers,This ship has no power consumers.
+hud_control.power.shed,Power row state while the consumer is shed,Shed
+hud_control.power.demand,Tooltip of a consumer's name; {0} its demand,Draws {0}
+hud_control.power.priority_1,Power priority choice 1,"1, shed last"
+hud_control.power.priority_2,Power priority choice 2,2
+hud_control.power.priority_3,Power priority choice 3,3
+hud_control.power.priority_4,Power priority choice 4,4
+hud_control.power.priority_5,Power priority choice 5,"5, shed first"

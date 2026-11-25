@@ -1,0 +1,25 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/chart/theatre_log.gd" id="1"]
+
+[node name="TheatreLog" type="VBoxContainer"]
+size_flags_vertical = 3
+script = ExtResource("1")
+
+[node name="Filter" type="OptionButton" parent="."]
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Tree" type="Tree" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+columns = 2
+column_titles_visible = true
+hide_root = true
+select_mode = 1
+
+[node name="Empty" type="Label" parent="."]
+visible = false
+layout_mode = 2
+theme_type_variation = &"Body"
+autowrap_mode = 3

@@ -1,0 +1,21 @@
+keys,?context,en
+validate.too_long,"Blueprint refused; {0} is the hull length in metres, {1} the limit for this mode",Hull is {0} m long; this mode allows {1} m
+validate.too_short,"Blueprint refused; {0} is the hull length in metres, {1} the shortest allowed",Hull is {0} m long; the shortest allowed is {1} m
+validate.grid_out_of_bounds,Blueprint refused; cells lie outside the 384-cell build frame,Some cells lie outside the build frame
+validate.over_tonnage,"Blueprint refused; {0} is full-load tonnage, {1} the lobby or act cap, both in tonnes",Full load is {0} t; the cap is {1} t
+validate.over_complexity,"Blueprint refused; {0} is the vessel's complexity points, {1} the cap",Complexity is {0} points; the cap is {1}
+validate.unknown_part,Blueprint refused; {0} is a part id this build does not have,Unknown part {0}
+validate.part_not_available,Blueprint refused; {0} is a part name the player may not field here,{0} is not available here
+validate.part_over_limit,"Blueprint refused; {0} is a part name, {1} the copies fitted, {2} the ruleset limit",{1} copies of {0} fitted; the ruleset allows {2}
+validate.part_out_of_bounds,Blueprint refused; {0} is a part label,{0} lies outside the build frame
+validate.parts_overlap,"Blueprint refused; {0} and {1} are part labels",{0} and {1} occupy the same cells
+validate.part_bad_placement,Blueprint refused; {0} is a part label whose placement rule fails (open sky; inside the hull; below the waterline; at the deck edge),{0} cannot go where it is placed
+validate.disconnected,Blueprint refused; {0} is a cell position not joined to the rest of the ship,The structure is in more than one piece; a loose cell sits at {0}
+validate.bad_paint_index,Blueprint refused; {0} is a cell position whose paint entry does not exist,Cell {0} uses a paint entry the table does not have
+validate.too_many_paint_entries,"Blueprint refused; {0} is the number of paint entries, the limit is 16",The paint table has {0} entries; the limit is 16
+validate.too_many_rules,"Blueprint refused; {0} is the number of rules, the limit is 32",The rules table has {0} rules; the limit is 32
+validate.layer_not_allowed,Blueprint refused under the standard PvP ruleset,Forked officers and graph edits are allowed only under the open ruleset
+validate.scripts_not_allowed,Blueprint refused; the lobby does not run Luau scripts,This lobby does not run scripts
+validate.bad_graph,Blueprint refused; {0} is a technical detail about the stored control graph,The control graph is damaged: {0}
+validate.bad_kit_binding,Blueprint refused; {0} is a technical detail about a placed kit,A placed kit does not match its definition: {0}
+validate.bad_shell,Blueprint refused; {0} is a technical detail about the hull shell parameters,The hull shell is out of range: {0}

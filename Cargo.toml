@@ -1,0 +1,105 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/sim-core",
+    "crates/sim-systems",
+    "crates/content",
+    "crates/net",
+    "crates/hull-mesh",
+    "crates/audio",
+    "crates/server",
+    "crates/xtask",
+    "crates/gdclient",
+]
+# The cargo-fuzz crate (DESIGN.md L2125-2142) is its own workspace on a pinned nightly.
+exclude = ["fuzz"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.99.1"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/kaileh57/black-pennant"
+
+[workspace.dependencies]
+# Pinned per DESIGN.md "Dependencies". Upgrade only behind the full CI matrix.
+godot = { version = "=0.5.5", features = ["api-4-7"] }
+rapier3d-f64 = { version = "=0.36.1", features = ["parallel", "enhanced-determinism"] }
+renet2 = "=1.0.0"
+# memory_transport: the in-memory backend for single-player and the host's own client (L986).
+renet2_netcode = { version = "=1.0.0", features = ["memory_transport"] }
+# DESIGN.md L996: port mapping. igd-next uses its tokio backend because the sync backend's HTTP client
+# (attohttpc) is MPL-2.0; crab_nat is async-only. Both run on a private current-thread tokio runtime in net.
+igd-next = { version = "=0.18.0", default-features = false, features = ["aio_tokio"] }
+crab_nat = "=0.8.1"
+tokio = { version = "1", default-features = false, features = ["rt", "net", "time"] }
+# Default gateway (crab_nat needs it), LAN address for the host panel, VPN interface detection (L999, L1001).
+netdev = "=0.47.0"
+binary-greedy-meshing = "=0.6.2"
+fundsp = "=0.23.0"
+
+# DESIGN.md L441: libm pinned exactly; an upgrade is replay-breaking.
+libm = "=0.2.16"
+rayon = "1"
+serde = { version = "1", features = ["derive"] }
+ron = "0.10"
+bincode = "1"
+base64 = "0.22"
+miniz_oxide = "0.8"
+zstd = "0.13"
+indexmap = { version = "2", features = ["serde"] }
+bitflags = { version = "2", features = ["serde"] }
+thiserror = "2"
+hound = "3"
+glam = { version = "0.33", features = ["serde", "libm"] }
+# DESIGN.md L2079: blueprint content hash. "pure" keeps the build free of C and assembly.
+blake3 = { version = "1", default-features = false, features = ["std", "pure"] }
+# DESIGN.md L764-766: enemy pathing. A* on the 50 m sea grid, then Dubins turns (f64, libm for determinism).
+pathfinding = "=4.16.0"
+dubins_paths = { version = "=3.3.0", default-features = false, features = ["libm"] }
+# DESIGN.md L357: L4 scripts. Luau only, bytecode interpreter: luau-jit is never enabled. Optional in
+# sim-systems behind its `luau` feature, which also turns on mlua's `send` (the session's ScriptHost moves to
+# the sim thread and runs on the sim pool, so its VMs move between threads, L357).
+mlua = { version = "=0.12.2", features = ["luau"] }
+# DESIGN.md L1338: Rust panics reach Sentry after consent. No minidump, no release health.
+sentry = { version = "=0.49.5", default-features = false, features = ["panic", "backtrace", "contexts", "debug-images", "ureq", "rustls"] }
+
+sim-core = { path = "crates/sim-core" }
+sim-systems = { path = "crates/sim-systems" }
+content = { path = "crates/content" }
+net = { path = "crates/net" }
+hull-mesh = { path = "crates/hull-mesh" }
+audio = { path = "crates/audio" }
+
+[profile.dev]
+opt-level = 1
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+opt-level = 3
+
+# The simulation runs at full optimisation in dev builds as well: at opt-level 1 a single-player
+# sortie trips the host overload ladder, so windowed dev runs would not show the real game.
+[profile.dev.package.sim-core]
+opt-level = 3
+
+[profile.dev.package.sim-systems]
+opt-level = 3
+
+[profile.dev.package.content]
+opt-level = 3
+
+[profile.dev.package.net]
+opt-level = 3
+
+[profile.dev.package.hull-mesh]
+opt-level = 3
+
+[profile.dev.package.audio]
+opt-level = 3
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 16
+debug = "line-tables-only"

@@ -1,0 +1,61 @@
+keys,?context,en
+notes.arc_blocked,"Ship's Note, tier 3; {0} mount, {1} share of its arc blocked, {2} blocking part or own structure, {3} and {4} bearings from the bow",{0} cannot fire over {1} of its arc: {2} blocks {3} to {4}
+notes.autoset.conduit_routes,"Name of an auto-set value, inserted into notes.autoset_dropped",Conduit routes
+notes.autoset.kit_wiring,"Name of an auto-set value, inserted into notes.autoset_dropped",Kit wiring
+notes.autoset.mount_limits,"Name of an auto-set value, inserted into notes.autoset_dropped",Mount training and elevation limits
+notes.autoset.power_priorities,"Name of an auto-set value, inserted into notes.autoset_dropped",Default power priorities
+notes.autoset.solver_tables,"Name of an auto-set value, inserted into notes.autoset_dropped",Ballistic solver tables
+notes.autoset_dropped,"Ship's Note, advisory; {0} auto-set value name, {1} property test name, {2} failing corpus case","{0}: set by hand this release, {1} failed on {2}"
+notes.float_fail.gm,"Ship's Note, tier 1; {0} metacentric height","GM is {0}, at or below zero: the ship capsizes"
+notes.float_fail.sinks,"Ship's Note, tier 1; {0} displacement",The hull sinks under {0}: add buoyancy or shed weight
+notes.gauge.complexity,"Ship's Note, gauge at Caution; {0} complexity points, {1} caution level",Complexity {0} is over {1} points
+notes.gauge.endurance,"Ship's Note, gauge at Caution; {0} range at cruise, {1} caution level","Range at cruise is {0}, under {1}"
+notes.gauge.flood_one,"Ship's Note, gauge at Caution; {0} the compartment, such as compartment 3",Flooding {0} sinks or capsizes the ship
+notes.gauge.flood_two,"Ship's Note, gauge at Caution; {0} share of two-compartment cases survived",Only {0} of two-compartment floods leave the ship afloat and upright
+notes.gauge.gm_high,"Ship's Note, gauge at Caution; {0} metacentric height, {1} upper limit",GM {0} is over {1}: the roll is snappy and spoils gunnery
+notes.gauge.gm_low,"Ship's Note, gauge at Caution; {0} metacentric height, {1} lower limit",GM {0} is under {1}: the ship rolls far in a beam sea
+notes.gauge.over_tonnage,"Ship's Note, gauge at Caution; {0} displacement, {1} tonnage cap",Displacement {0} is over the {1} cap
+notes.gauge.power,"Ship's Note, gauge at Caution; {0} combat demand, {1} generation",Combat demand {0} is more than the {1} generated
+notes.gauge.punch,"Ship's Note, gauge at Caution",No weapon is fitted
+notes.gauge.sight_blind,"Ship's Note, gauge at Caution; {0} count of blind 10 degree sectors",Radar is blind in {0} of 36 sectors
+notes.gauge.sight_none,"Ship's Note, gauge at Caution",No search or navigation radar is fitted
+notes.gauge.turning,"Ship's Note, gauge at Caution; {0} turning circle, {1} caution level",Turning circle {0} is wider than {1}
+notes.graph.cycle,"Ship's Note, advisory; {0} graph node number",Node {0} is in a loop and is skipped
+notes.graph.layer,"Ship's Note, advisory; {0} graph node number",Node {0} uses a control layer this ruleset bans
+notes.graph.rule_sink,"Ship's Note, advisory; {0} rule number",Rule {0} writes to a sink this ship lacks
+notes.graph.script_disabled,"Ship's Note, advisory; {0} script number",Script {0} is off until you enable it
+notes.graph.too_many_rules,"Ship's Note, advisory; {0} rule count, {1} limit","{0} rules, over the limit of {1}"
+notes.graph.type_mismatch,"Ship's Note, advisory; {0} graph node number",Node {0} has an input of the wrong type
+notes.no_director,Ship's Note; {0} mount,{0} has no director: it cannot use a fire-control lock
+notes.no_generation,"Ship's Note, tier 1; {0} combat power demand",Nothing generates power for {0} of consumers
+notes.no_magazine,"Ship's Note, tier 3 or 5; {0} mount, {1} ready rounds on the mount","{0} has no magazine feeding it: {1} ready, then silent"
+notes.no_propulsion,"Ship's Note, tier 1",No engine drives a propeller or waterjet: the ship cannot move
+notes.no_steering,"Ship's Note, tier 1",No rudder or steerable waterjet: the ship cannot turn
+notes.part_removed,"Ship's Note, advisory; {0} retired part id, {1} cell coordinates",An update retired {0} at cell {1}: refit the space
+notes.pinned_node,"Ship's Note, tier 3; {0} graph node number, {1} input port number",Pinned node {0} lost input {1}: its officer stage takes over
+notes.pinned_route,"Ship's Note, tier 3; {0} pinned route number",Pinned route {0} no longer fits the design
+notes.sea.rolls_over,"Ship's Note, briefing fails; {0} sea state code, {1} bearing of the sea off the bow in degrees, 0 is from ahead","Can roll over at full power in sea state {0}, with the sea {1} off the bow"
+notes.tag.draft,"Ship's Note, briefing tag fails; {0} draft, {1} limit",Draft {0} is over the briefing limit of {1}
+notes.tag.passengers,"Ship's Note, briefing tag fails; {0} passenger berths fitted, {1} needed","Berths for {0} passengers, the briefing needs {1}"
+notes.tag.range,"Ship's Note, briefing tag fails; {0} range, {1} needed",Range {0} is short of the briefing's {1}
+notes.tag.rcs,"Ship's Note, briefing tag fails; {0} radar cross-section in square metres, {1} limit",Radar cross-section {0} m² is over the briefing limit of {1} m²
+notes.tag.requires,"Ship's Note, briefing tag fails; {0} required fitting, a notes.tag_word row",The briefing needs a {0} and none is fitted
+notes.tag.speed,"Ship's Note, briefing tag fails; {0} top speed, {1} needed",Top speed {0} is under the briefing's {1}
+notes.tag_word.boarding_kit,Fitting named in notes.tag.requires,boarding kit
+notes.tag_word.camera_mast,Fitting named in notes.tag.requires,camera mast
+notes.tag_word.crane,Fitting named in notes.tag.requires,crane
+notes.tag_word.fuel_store,Fitting named in notes.tag.requires,fuel store
+notes.tag_word.generation,Fitting named in notes.tag.requires,generator
+notes.tag_word.low_signature,Fitting named in notes.tag.requires,low-signature mast
+notes.tag_word.magazine,Fitting named in notes.tag.requires,magazine
+notes.tag_word.mine_rail,Fitting named in notes.tag.requires,mine rail
+notes.tag_word.passenger_berths,Fitting named in notes.tag.requires,passenger berth
+notes.tag_word.point_defence,Fitting named in notes.tag.requires,point-defence weapon
+notes.tag_word.propulsion,Fitting named in notes.tag.requires,propulsion plant
+notes.tag_word.recovery_net,Fitting named in notes.tag.requires,recovery net
+notes.tag_word.rhib_davit,Fitting named in notes.tag.requires,RHIB davit
+notes.tag_word.steering,Fitting named in notes.tag.requires,steering gear
+notes.unconnected,"Ship's Note, tier 3; {0} part",{0} has no conduit to its network
+notes.no_console,"Ship's Note, tier 3; the ship has no console, so weapons and sensors have no data source",No bridge console: weapons and sensors have no data network to work from
+notes.unpowered,"Ship's Note, tier 3; {0} part shed by the Engineer at combat load, {1} generation shortfall","{0} loses power in action: generation is {1} short"
+notes.word.structure,Blocker named in notes.arc_blocked when no part blocks,own structure

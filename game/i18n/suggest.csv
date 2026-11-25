@@ -1,0 +1,13 @@
+keys,?context,en
+suggest.aggression,Suggest button result; {0} Aggression slider value,"Aggression {0} suits this armament, speed and size"
+suggest.armour,"Suggest button result; {0} cell count, {1} armour thickness",Armour {0} cells over the vital spaces at {1}
+suggest.ballast,"Suggest button result; {0} total ballast, {1} metacentric height after","Ballast {0} in total for GM {1}, level trim and heel"
+suggest.ballast_add,"Suggest button result; {0} ballast added, {1} metacentric height after",Add {0} of ballast low in the hull for GM {1}
+suggest.bulkhead,"Suggest button result; {0} distance from the stern, {1} longest compartment after",Bulkhead {0} from the stern splits the longest compartment to {1}
+suggest.emcon_trigger,Suggest button result; {0} burst trigger range,Burst trigger {0}: where passive sensors first find the threat
+suggest.engine_swap,"Suggest button result; {0} engine, {1} shaft power of the replacement",Swap {0} for a {1} engine to match the propellers
+suggest.fuel,"Suggest button result; {0} tank level, {1} fuel aboard","Tanks to {0}, {1} aboard, keeping reserve buoyancy"
+suggest.generator_add,"Suggest button result; {0} generation after, {1} combat demand",Add a generator: {0} for {1} of combat demand
+suggest.generator_remove,"Suggest button result; {0} generation after, {1} combat demand",Remove a spare generator: {0} still covers {1}
+suggest.power_and_engine,"Suggest button result; {0} generation after, {1} combat demand, {2} shaft power of the replacement engine","Generation {0} for {1} of demand, and a {2} engine"
+suggest.sensor,"Suggest button result; {0} radar, {1} antenna height after, {2} share of sectors clear",Move {0} to {1} above the water: {2} of sectors clear

@@ -1,0 +1,77 @@
+keys,?context,en
+editor_tray.name,Accessible name of the parts tray,Parts and kits
+editor_tray.search.placeholder,Placeholder of the tray search field,Search parts and kits
+editor_tray.search.name,Accessible name of the tray search field,Search parts and kits
+editor_tray.filter.all_categories,Category filter choice,All categories
+editor_tray.filter.category_tip,Tooltip of the category filter,Show single parts of one category only.
+editor_tray.filter.all_tiers,Tier filter choice,All tiers
+editor_tray.filter.tier_tip,Tooltip of the tier filter,Show one part tier only.
+editor_tray.filter.kind_all,Kind filter choice,Kits and parts
+editor_tray.filter.kind_kits,Kind filter choice,Kits
+editor_tray.filter.kind_parts,Kind filter choice,Single parts
+editor_tray.filter.kind_tip,Tooltip of the kind filter,Kits come wired and ready to fight; single parts are for fine work.
+editor_tray.section.kits,Tray section heading,Kits
+editor_tray.section.parts,Tray section heading,Single parts
+editor_tray.empty.closed,Tray text when no design is open,Open a design to see what it can carry.
+editor_tray.empty.none,Tray text when nothing may be placed,Nothing can be placed in this dock.
+editor_tray.empty.filtered,Tray text when the filters match nothing,Nothing matches the search and filters.
+editor_tray.empty.clear,Tray button,Clear search and filters
+editor_tray.row.of_limit,"Tray row: copies placed against the ruleset limit; {0} placed, {1} limit",{0} of {1}
+editor_tray.row.placed,Tray row; {0} copies in the design,{0} placed
+editor_tray.row.in_store,Tray row; {0} copies in the campaign parts store,{0} in store
+editor_tray.row.accessible,"Accessible name of a tray row; {0} name, {1} counts","{0}, {1}"
+editor_tray.row.locked,"Accessible name of a locked tray row; {0} name, {1} reason","{0}, locked: {1}"
+editor_tray.spec.tier,Spec sheet row label,Tier
+editor_tray.spec.category,Spec sheet row label,Category
+editor_tray.spec.mass,Spec sheet row label,Mass
+editor_tray.spec.cost,Spec sheet row label,Cost
+editor_tray.spec.size,Spec sheet row label: footprint in cells,Size
+editor_tray.spec.size_value,"Spec sheet size; {0} length, {1} height, {2} width in 0.5 m cells",{0} by {1} by {2} cells
+editor_tray.spec.power_draw,Spec sheet row label,Power draw
+editor_tray.spec.power_supply,Spec sheet row label,Power supply
+editor_tray.spec.placement,Spec sheet row label: where the part may go,Placement
+editor_tray.spec.parts,Spec sheet row label of a kit,Parts
+editor_tray.spec.version,Spec sheet row label of a kit,Version
+editor_tray.spec.author,Spec sheet row label of a player kit,Author
+editor_tray.spec.limit,Spec sheet row label: copies the ruleset allows,Ruleset limit
+editor_tray.spec.store,Spec sheet row label,In the parts store
+editor_tray.spec.locked,Spec sheet line when locked and no reason came back,This dock cannot place it.
+editor_tray.spec.how,Spec sheet hint,Click to place it in the view or drag it there. Esc stops placing.
+editor_tray.placement.anywhere,Where a part may go,Anywhere
+editor_tray.placement.weather,Where a part may go,On a weather deck
+editor_tray.placement.keel,Where a part may go,On the keel
+editor_tray.placement.internal,Where a part may go,Inside the hull
+editor_tray.placement.deck_edge,Where a part may go,At a deck edge
+editor_tray.inspector.name,Accessible name of the part inspector,Selected parts
+editor_tray.inspector.label,Inspector field: the part's own name,Name
+editor_tray.inspector.load,"Inspector field: fill of a tank, magazine or ballast",Load
+editor_tray.inspector.load_tip,Tooltip of the load slider,"Fill at launch. Fuller tanks add range and mass, and lower the ship."
+editor_tray.inspector.position,Inspector row heading: the part's cell,Position in cells
+editor_tray.inspector.cell_x,Inspector cell field prefix: along the hull,Fore
+editor_tray.inspector.cell_y,Inspector cell field prefix: height,Up
+editor_tray.inspector.cell_z,Inspector cell field prefix: across the hull,Across
+editor_tray.inspector.turn_left,Inspector button,Turn left
+editor_tray.inspector.turn_right,Inspector button,Turn right
+editor_tray.inspector.tilt,Inspector button,Tilt
+editor_tray.inspector.move_blocked,Inspector line when a move or turn would collide,There is no room for it there.
+editor_tray.inspector.why,Inspector button,Why?
+editor_tray.inspector.arcs,Inspector button,Show arcs
+editor_tray.inspector.arcs_tip,Tooltip,Show only these parts' firing arcs and blind sectors.
+editor_tray.inspector.link,Inspector button,Add data link
+editor_tray.inspector.link_tip,Tooltip,Link this part's data port to another part's. Experts only.
+editor_tray.inspector.remove,Inspector button,Remove part
+editor_tray.inspector.kit_line,"Inspector line; {0} kit name, {1} version",Part of {0}. Version {1}.
+editor_tray.inspector.kit_update,Inspector button; {0} newest version,Update to version {0}
+editor_tray.inspector.settings,Inspector heading of the kit settings sheet,Kit settings
+editor_tray.inspector.revert,Icon button; {0} the default value,Back to the default of {0}
+editor_tray.inspector.select_kit,Inspector button,Select kit
+editor_tray.inspector.remove_kit,Inspector button,Remove kit
+editor_tray.inspector.many,Inspector title; {0} number of parts,{0} parts selected
+editor_tray.inspector.many_line,"Inspector line; {0} mass, {1} cost","{0}, cost {1}"
+editor_tray.inspector.copy,Inspector button,Copy
+editor_tray.inspector.delete,Inspector button,Delete selection
+editor_tray.inspector.capture,Inspector heading: save the selection as a kit,Capture as kit
+editor_tray.inspector.capture_confirm,Inspector button,Save kit
+editor_tray.update.line,"Kit update offer; {0} kit name, {1} newest version, {2} placed copies, {3} their version",{0} has version {1}. {2} placed copies use version {3}.
+editor_tray.update.confirm,Kit update button; {0} copies,Update {0} copies
+editor_tray.update.later,Kit update button,Not now

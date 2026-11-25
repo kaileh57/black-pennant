@@ -1,0 +1,89 @@
+// Vec<DoctrineCardDef>: the Combine's 31 doctrine cards (DESIGN.md L772). Unit `data-aces-cards`. Licensed CC BY 4.0.
+//
+// A card queues when its tally reaches the threshold (campaign_rules.ron) and counters the way LANTERN has been
+// winning. Every card covers one of the 18 tallies (8 kill methods, 4 range bands, 3 times of day, 3 emission
+// states); most tallies have two different counters. Effects use only what the systems read: an added fleet and
+// heavier variants (operation generator), patrol density (Admiral), and emission control, engagement range and the
+// behaviour flags close_in, stand_off, hold_ground, silent_approach and aggressive (enemy captains and groups).
+[
+    // ---- Kill method: gunfire -----------------------------------------------------------------------------------
+    (id: "card.armoured_hulls", name: "card.armoured_hulls.name", description: "card.armoured_hulls.desc", counters: Method(Gunfire),
+        effect: (use_variants: true)),
+    (id: "card.stand_off_gunnery", name: "card.stand_off_gunnery.name", description: "card.stand_off_gunnery.desc", counters: Method(Gunfire),
+        effect: (engagement_range_factor: 1.3, behaviour_flags: ["stand_off"])),
+    // ---- Kill method: missile ("rely on missiles and point defence thickens") ----------------------------------
+    (id: "card.point_defence_screen", name: "card.point_defence_screen.name", description: "card.point_defence_screen.desc", counters: Method(Missile),
+        effect: (add_fleet: "fleet.act1.escort")),
+    (id: "card.inside_the_minimum", name: "card.inside_the_minimum.name", description: "card.inside_the_minimum.desc", counters: Method(Missile),
+        effect: (engagement_range_factor: 0.7, behaviour_flags: ["close_in"])),
+    // ---- Kill method: torpedo -----------------------------------------------------------------------------------
+    (id: "card.torpedo_watch", name: "card.torpedo_watch.name", description: "card.torpedo_watch.desc", counters: Method(Torpedo),
+        effect: (enemy_emcon: Active, behaviour_flags: ["stand_off"])),
+    (id: "card.doubled_escorts", name: "card.doubled_escorts.name", description: "card.doubled_escorts.desc", counters: Method(Torpedo),
+        effect: (add_fleet: "fleet.act1.patrol.heavy")),
+    // ---- Kill method: mine --------------------------------------------------------------------------------------
+    (id: "card.sweep_patrols", name: "card.sweep_patrols.name", description: "card.sweep_patrols.desc", counters: Method(Mine),
+        effect: (patrol_density_factor: 1.3)),
+    (id: "card.lane_watch", name: "card.lane_watch.name", description: "card.lane_watch.desc", counters: Method(Mine),
+        effect: (add_fleet: "fleet.act1.patrol")),
+    // ---- Kill method: depth charge (Act 3 submarines) --------------------------------------------------------------
+    (id: "card.deep_running", name: "card.deep_running.name", description: "card.deep_running.desc", counters: Method(DepthCharge),
+        effect: (engagement_range_factor: 1.2, behaviour_flags: ["stand_off"])),
+    // ---- Kill method: fire ----------------------------------------------------------------------------------------
+    (id: "card.damage_control_drill", name: "card.damage_control_drill.name", description: "card.damage_control_drill.desc", counters: Method(Fire),
+        effect: (use_variants: true, behaviour_flags: ["hold_ground"])),
+    // ---- Kill method: capture ---------------------------------------------------------------------------------------
+    (id: "card.hold_fast_orders", name: "card.hold_fast_orders.name", description: "card.hold_fast_orders.desc", counters: Method(Capture),
+        effect: (behaviour_flags: ["hold_ground"])),
+    (id: "card.boarding_guard", name: "card.boarding_guard.name", description: "card.boarding_guard.desc", counters: Method(Capture),
+        effect: (add_fleet: "fleet.act1.garrison")),
+    // ---- Kill method: collision -------------------------------------------------------------------------------------
+    (id: "card.keep_clear", name: "card.keep_clear.name", description: "card.keep_clear.desc", counters: Method(Collision),
+        effect: (engagement_range_factor: 1.2, behaviour_flags: ["stand_off", "hold_ground"])),
+    // ---- Range band: close ------------------------------------------------------------------------------------------
+    (id: "card.close_escort", name: "card.close_escort.name", description: "card.close_escort.desc", counters: Range(Close),
+        effect: (add_fleet: "fleet.act1.escort")),
+    (id: "card.open_the_range", name: "card.open_the_range.name", description: "card.open_the_range.desc", counters: Range(Close),
+        effect: (engagement_range_factor: 1.4, behaviour_flags: ["stand_off"])),
+    // ---- Range band: medium ---------------------------------------------------------------------------------------
+    (id: "card.gun_line", name: "card.gun_line.name", description: "card.gun_line.desc", counters: Range(Medium),
+        effect: (use_variants: true)),
+    (id: "card.press_the_attack", name: "card.press_the_attack.name", description: "card.press_the_attack.desc", counters: Range(Medium),
+        effect: (behaviour_flags: ["aggressive", "close_in"])),
+    // ---- Range band: long ----------------------------------------------------------------------------------------
+    (id: "card.close_at_speed", name: "card.close_at_speed.name", description: "card.close_at_speed.desc", counters: Range(Long),
+        effect: (engagement_range_factor: 0.6, behaviour_flags: ["close_in"])),
+    (id: "card.radar_net", name: "card.radar_net.name", description: "card.radar_net.desc", counters: Range(Long),
+        effect: (enemy_emcon: Active, patrol_density_factor: 1.2)),
+    // ---- Range band: beyond the horizon ----------------------------------------------------------------------------
+    (id: "card.picket_line", name: "card.picket_line.name", description: "card.picket_line.desc", counters: Range(BeyondHorizon),
+        effect: (add_fleet: "fleet.act1.pickets")),
+    (id: "card.silent_ships", name: "card.silent_ships.name", description: "card.silent_ships.desc", counters: Range(BeyondHorizon),
+        effect: (enemy_emcon: Silent, behaviour_flags: ["silent_approach"])),
+    // ---- Time of day: night ("raid at night and radar pickets appear") -----------------------------------------
+    (id: "card.radar_pickets", name: "card.radar_pickets.name", description: "card.radar_pickets.desc", counters: Time(Night),
+        effect: (add_fleet: "fleet.act1.pickets")),
+    (id: "card.night_watch", name: "card.night_watch.name", description: "card.night_watch.desc", counters: Time(Night),
+        effect: (enemy_emcon: Active, patrol_density_factor: 1.25)),
+    // ---- Time of day: dusk ----------------------------------------------------------------------------------------
+    (id: "card.dusk_patrols", name: "card.dusk_patrols.name", description: "card.dusk_patrols.desc", counters: Time(Dusk),
+        effect: (patrol_density_factor: 1.3)),
+    (id: "card.hold_the_line", name: "card.hold_the_line.name", description: "card.hold_the_line.desc", counters: Time(Dusk),
+        effect: (behaviour_flags: ["hold_ground"])),
+    // ---- Time of day: day -------------------------------------------------------------------------------------------
+    (id: "card.daylight_escorts", name: "card.daylight_escorts.name", description: "card.daylight_escorts.desc", counters: Time(Day),
+        effect: (add_fleet: "fleet.act1.escort")),
+    (id: "card.wide_search", name: "card.wide_search.name", description: "card.wide_search.desc", counters: Time(Day),
+        effect: (patrol_density_factor: 1.2, engagement_range_factor: 1.2)),
+    // ---- Emission state: silent ------------------------------------------------------------------------------------
+    (id: "card.active_search", name: "card.active_search.name", description: "card.active_search.desc", counters: Emission(Silent),
+        effect: (enemy_emcon: Active, patrol_density_factor: 1.15)),
+    (id: "card.close_search", name: "card.close_search.name", description: "card.close_search.desc", counters: Emission(Silent),
+        effect: (add_fleet: "fleet.act1.patrol", behaviour_flags: ["close_in"])),
+    // ---- Emission state: burst -------------------------------------------------------------------------------------
+    (id: "card.esm_watch", name: "card.esm_watch.name", description: "card.esm_watch.desc", counters: Emission(Burst),
+        effect: (enemy_emcon: Silent, behaviour_flags: ["silent_approach"])),
+    // ---- Emission state: active ------------------------------------------------------------------------------------
+    (id: "card.emission_hunters", name: "card.emission_hunters.name", description: "card.emission_hunters.desc", counters: Emission(Active),
+        effect: (enemy_emcon: Silent, behaviour_flags: ["silent_approach", "aggressive"])),
+]

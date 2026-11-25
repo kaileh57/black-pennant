@@ -1,0 +1,40 @@
+[package]
+name = "net"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[features]
+default = []
+# Phase 2 (DESIGN.md L1011): Steam Networking Sockets backend through renet2_steam. Off by default.
+steam = ["dep:renet2_steam", "dep:steamworks"]
+# Mock IGD and PCP gateways for the loopback port-mapping integration test (L1007).
+mock-gateway = []
+
+[dependencies]
+content.workspace = true
+sim-core.workspace = true
+sim-systems.workspace = true
+renet2.workspace = true
+renet2_netcode.workspace = true
+serde.workspace = true
+bincode.workspace = true
+ron.workspace = true
+thiserror.workspace = true
+glam.workspace = true
+# Presentation maths (interpolation decay, correction filter) without std transcendentals (clippy.toml).
+libm.workspace = true
+rayon.workspace = true
+blake3.workspace = true
+indexmap.workspace = true
+igd-next.workspace = true
+crab_nat.workspace = true
+tokio.workspace = true
+netdev.workspace = true
+# Steam backend (feature `steam` only). steamworks is pinned to the version renet2_steam builds against; its
+# build script links the redistributable from the crate package, nothing is committed here.
+renet2_steam = { version = "=1.0.0", optional = true }
+steamworks = { version = "=0.13.1", optional = true }

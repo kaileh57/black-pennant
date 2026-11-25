@@ -1,0 +1,77 @@
+# Patterns for the Godot-side UI lint (res://test/lint/ui_lint.gd). DESIGN.md L1578, L1593-1607,
+# L1728-1742. Kept here so no script carries the banned strings themselves. Format: `key: value`,
+# one value per line, `#` starts a comment. A key may repeat.
+
+# L1728: overrides banned in scenes (constants may use tokens) and as literal calls in scripts.
+override_property: theme_override_colors/
+override_property: theme_override_fonts/
+override_property: theme_override_font_sizes/
+override_property: theme_override_styles/
+override_call: add_theme_color_override(
+override_call: add_theme_font_override(
+override_call: add_theme_font_size_override(
+override_call: add_theme_stylebox_override(
+
+# L1593: colour literals outside the token files. Values are regular expressions.
+colour_regex: \bColor\s*\(
+colour_regex: \bColor8\s*\(
+colour_regex: \bColor\.(html|hex|hex64|from_hsv|from_ok_hsl|from_rgba8|from_rgbe9995|from_string)\s*\(
+colour_regex: \bColor\.[A-Z][A-Z_]+\b
+colour_regex: "#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?"
+# Folders whose colours come from a token file or that hold no shipped UI.
+colour_exempt_dir: res://ui/theme/
+colour_exempt_dir: res://world/
+colour_exempt_dir: res://test/
+colour_exempt_dir: res://_placeholder/
+colour_exempt_dir: res://addons/
+
+# L1737: banned transitions and eases; tweened layout properties; the sim-signal metadata key.
+banned_transition: TRANS_ELASTIC
+banned_transition: TRANS_BOUNCE
+banned_transition: TRANS_BACK
+banned_transition: TRANS_SPRING
+banned_ease: EASE_IN
+banned_ease: EASE_IN_OUT
+banned_ease: EASE_OUT_IN
+layout_property: position
+layout_property: global_position
+layout_property: size
+layout_property: custom_minimum_size
+layout_property: anchor_left
+layout_property: anchor_top
+layout_property: anchor_right
+layout_property: anchor_bottom
+layout_property: offset_left
+layout_property: offset_top
+layout_property: offset_right
+layout_property: offset_bottom
+sim_signal_meta: sim_signal
+
+# L1578: names no node or type may have, and the title variations a label may not sit above.
+eyebrow_name: Eyebrow
+eyebrow_name: Kicker
+eyebrow_name: Overline
+eyebrow_name: Tagline
+eyebrow_name: SectionLabel
+eyebrow_name: Pretitle
+title_variation: ScreenTitle
+title_variation: PanelTitle
+title_variation: MenuTitle
+meta_variation: Meta
+
+# L1729-1730: Label property that stays false.
+case_property: uppercase
+
+# L1606: emoji ranges as hexadecimal code point ranges (player-typed text is never linted).
+emoji_range: 1F000-1FAFF
+emoji_range: 2600-27BF
+emoji_range: 2300-23FF
+emoji_range: 2B00-2BFF
+emoji_range: 1F1E6-1F1FF
+emoji_range: FE0F-FE0F
+emoji_range: 200D-200D
+
+# Scene textures must come from the one icon set or from generated art (L1606).
+texture_dir: res://ui/icons/
+texture_dir: res://art/gen/
+texture_dir: res://_placeholder/

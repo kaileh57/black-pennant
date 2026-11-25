@@ -1,0 +1,384 @@
+// Vec<OperationDef>: Act 3 operations, Hollin (DESIGN.md L778-807, L85-102, L317-318, L451, L866-875). Unit
+// `data-act3`. Licensed CC BY 4.0.
+//
+// The eleven templates, four story operations, two ace duels and the capstone. Act 3 commits at least 5 hostile
+// combat hulls and 3,600 t per player (4 x the 900 t cap), and every operation meets that on its surface force's
+// worst draw (minimum count of the lightest class per slot; convoys, prizes, moored hulls, the defector, aircraft
+// and submarines do not count toward the floor), so a solo sortie never needs a reinforcement wave. The numbers per
+// operation are in the comments. The generator scopes templates to the latest act that has any, so these eleven
+// replace Act 2's from the Act 3 start: they name only Act 3 fleets (Act 2's air patrol excepted) and unlock at once.
+//
+// Act 3 brings the Combine's submarines (L451, L870). Submarine patrols sail beside the surface force in the convoy
+// raid, minelaying, hunter-group and photo-reconnaissance templates, in three story operations, the Actuary's duel
+// and the capstone; they are never an objective, so the act plays the same with them cut (L875). Boats hunt below
+// the 60 m Hollin layer where the water is deep enough (the sea nodes); in the 35 to 45 m water of coves, harbours
+// and bases there is no layer and a pinging hull sonar finds them. The depth-charge rack is a tier 4 part, open
+// from the first day of the act.
+//
+// Tier 5 (heavy guns, the gas turbine) opens when the first story operation, the Saltby lighter, is done (L805): the
+// player cuts out the ship carrying the yard's new mounts.
+//
+// Ghost conditions pay Intel. The dry dock offers every part of an open tier, and a blueprint unlocks only within
+// tiers already open (L815), so a blueprint reward would unlock nothing in Act 3: tier 4 is open from the first
+// day and tier 5 opens whole with Saltby. Capturing an ace pays 3 Intel, the price of finding one.
+//
+// Templates name map markers from the shared vocabulary every theatre node map carries (spawn, enemy, enemy_2,
+// objective, lane, exit, convoy_entry, convoy_exit, survivors, berth, landing, depot, radar). Story operations and
+// the capstone take place at their nodes in Hollin; the duels where the ace's ship lies.
+//
+// Constraint tags are set against the 60 m raiding corvette starter as the editor's gauges and sim-core's
+// projected areas measure it at its design draft: it floats at about 2.2 m, makes about 28 kn, runs about
+// 2,200 km at cruise and shows about 424 m^2 of radar cross-section on its worst aspect. Draft limits of 4.0 to
+// 4.5 m keep the deep 900 t designs out of shallow water and pass the starter as built. Cross-section limits of
+// 260 to 300 m^2 fail the stock starter on purpose, because a stealth insertion wants a specialised ship (L780):
+// the starter rebuilt with composite topsides (about 200 m^2) passes them all with a fifth to spare. Speed
+// minimums of 24 to 26 kn and range minimums of 350 to 450 km pass the starter.
+// crates/sim-systems/tests/briefing_tags_act3.rs checks these numbers. Approach distances are the authored values
+// the sortie-length fallback scales within 50% to 150% (L85-90).
+//
+// The Liquidator duel is the act's "defaults fail, sliders pass" operation (L318): Foreclosure keeps 16 km, inside
+// her 155 mm reach and outside a raider's guns, and runs silent in rain, so stock officers on the Cautious preset
+// hold their missiles for an identification that comes only once they have closed into her gun range. Its
+// reference setup is a committed blueprint, the 60 m starter with an L0 to L2 setup (Aggressive preset, burst radar
+// at 40 km, hard evasion, and rules that go active and engage when a hostile surface contact is inside 35 km),
+// which the winnability harness applies over each player hull's stored settings.
+[
+    // =========================================================================================================
+    // Templates
+    // =========================================================================================================
+    // Commitment: convoy escort 1,022 + 925 + 766 + 2 x 474 = 3,661 t, 5 hulls, plus a coastal boat on the route.
+    (
+        id: "op.act3.convoy_raid", kind: Template(ConvoyRaid), act: Act3,
+        name: "op.act3.convoy_raid.name", briefing: "op.act3.convoy_raid.briefing",
+        objective: DestroyGroup(tag: "convoy", fraction: 0.6),
+        tags: [MinSpeed(kn: 26.0), Range(min_km: 400.0)],
+        ghosts: [(kind: NoRadarEmissions, reward: Intel(1)), (kind: UnderTime(seconds: 1500), reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act3.convoy", marker: "convoy_entry", tag: "convoy"),
+            (fleet: "fleet.act3.escort.convoy", marker: "convoy_entry", tag: "escort"),
+            (fleet: "fleet.act3.sub", marker: "convoy_exit", tag: "submarine"),
+        ],
+        complications: [None, DecoyConvoy, AirPatrol, WeatherTurns(to: Rain, at_s: 900), Reinforcements(fleet: "fleet.act3.patrol", at_s: 1200), CivilianTraffic],
+        approach_m: 16000.0,
+        declared_hostile: ["class.dividend", "class.collateral"],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment: garrison 2 x 474 + 639 = 1,587 t (3 hulls) + gun task group 4,112 t (5) = 5,699 t, 8 hulls.
+    (
+        id: "op.act3.depot_strike", kind: Template(DepotStrike), act: Act3,
+        name: "op.act3.depot_strike.name", briefing: "op.act3.depot_strike.briefing",
+        objective: DestroySite(marker: "depot"),
+        tags: [Range(min_km: 450.0), DraftLimit(max_m: 4.5)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoHullDamage, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act3.garrison", marker: "depot", tag: "garrison"),
+            (fleet: "fleet.act3.tg.gun", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, AirPatrol, WeatherTurns(to: FogBank, at_s: 600), Minefield, Reinforcements(fleet: "fleet.act3.patrol.heavy", at_s: 900)],
+        approach_m: 14000.0,
+    ),
+    // Commitment: garrison 1,587 t (3) + anti-submarine task group 3,758 t (5) = 5,345 t, 8 hulls.
+    (
+        id: "op.act3.radar_decapitation", kind: Template(RadarDecapitation), act: Act3,
+        name: "op.act3.radar_decapitation.name", briefing: "op.act3.radar_decapitation.briefing",
+        objective: DestroySite(marker: "radar"),
+        tags: [RcsLimit(max_m2: 260.0), Range(min_km: 400.0)],
+        ghosts: [(kind: NoRadarEmissions, reward: Intel(1)), (kind: NeverDetected, reward: Intel(2))],
+        force: [
+            (fleet: "fleet.act3.garrison", marker: "radar", tag: "garrison"),
+            (fleet: "fleet.act3.tg.asw", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, AirPatrol, WeatherTurns(to: Haze, at_s: 600), CivilianTraffic, Reinforcements(fleet: "fleet.act3.patrol", at_s: 900)],
+        approach_m: 14000.0,
+        actions: [InsertOrExtract],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment: patrol 474 + 283 = 757 t (2) + gun task group 4,112 t (5) = 4,869 t, 7 hulls.
+    (
+        id: "op.act3.agent_extraction", kind: Template(AgentExtraction), act: Act3,
+        name: "op.act3.agent_extraction.name", briefing: "op.act3.agent_extraction.briefing",
+        objective: Extract(marker: "landing", passengers: 4),
+        tags: [Passengers(count: 4, allowed_losses: 0), Requires(RhibDavit), RcsLimit(max_m2: 300.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act3.patrol", marker: "enemy_2", tag: "patrol"),
+            (fleet: "fleet.act3.tg.gun", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: FogBank, at_s: 300), CivilianTraffic, AirPatrol],
+        approach_m: 12000.0,
+        actions: [InsertOrExtract, CarryPassengers],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment: heavy patrol 925 + 2 x 474 = 1,873 t (3) + strike task group 3,953 t (5) = 5,826 t, 8 hulls, plus
+    // a coastal boat guarding the lane.
+    (
+        id: "op.act3.minelaying", kind: Template(Minelaying), act: Act3,
+        name: "op.act3.minelaying.name", briefing: "op.act3.minelaying.briefing",
+        objective: LayMines(marker: "lane", count: 8),
+        tags: [Requires(MineRail), Range(min_km: 350.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act3.patrol.heavy", marker: "lane", tag: "patrol"),
+            (fleet: "fleet.act3.tg.strike", marker: "enemy", tag: "task_group"),
+            (fleet: "fleet.act3.sub", marker: "lane", tag: "submarine"),
+        ],
+        complications: [None, WeatherTurns(to: Rain, at_s: 600), DecoyConvoy, AirPatrol],
+        approach_m: 14000.0,
+        actions: [LayMines],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment: convoy escort 3,661 t, 5 hulls (the prize hulls do not count).
+    (
+        id: "op.act3.prize_capture", kind: Template(PrizeCapture), act: Act3,
+        name: "op.act3.prize_capture.name", briefing: "op.act3.prize_capture.briefing",
+        objective: Capture(tag: "prize"),
+        tags: [Requires(BoardingKit), Range(min_km: 350.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(1)), (kind: UnderTime(seconds: 1800), reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act3.convoy.prize", marker: "convoy_entry", tag: "prize"),
+            (fleet: "fleet.act3.escort.convoy", marker: "convoy_entry", tag: "escort"),
+        ],
+        complications: [None, DecoyConvoy, AirPatrol, WeatherTurns(to: Overcast, at_s: 600)],
+        approach_m: 14000.0,
+        actions: [BoardAndCapture],
+        declared_hostile: ["class.dividend", "class.collateral"],
+    ),
+    // Commitment: gun task group 4,112 t (5) + patrol 757 t (2) = 4,869 t, 7 hulls (the defector does not count).
+    (
+        id: "op.act3.defector_escort", kind: Template(DefectorEscort), act: Act3,
+        name: "op.act3.defector_escort.name", briefing: "op.act3.defector_escort.briefing",
+        objective: Escort(tag: "defector", exit: "exit"),
+        tags: [Passengers(count: 6, allowed_losses: 1), MinSpeed(kn: 24.0), Range(min_km: 400.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(1)), (kind: NeverDetected, reward: Intel(2))],
+        force: [
+            (fleet: "fleet.act3.convoy.defector", marker: "objective", tag: "defector", stance: Neutral),
+            (fleet: "fleet.act3.tg.gun", marker: "enemy", tag: "pursuit"),
+            (fleet: "fleet.act3.patrol", marker: "enemy_2", tag: "patrol"),
+        ],
+        complications: [None, WeatherTurns(to: Rain, at_s: 600), AirPatrol, Reinforcements(fleet: "fleet.act3.patrol", at_s: 900)],
+        approach_m: 12000.0,
+        actions: [CarryPassengers],
+    ),
+    // Commitment: gun task group 4,112 t (5) + patrol 757 t (2) = 4,869 t, 7 hulls. A coastal boat may join late.
+    (
+        id: "op.act3.feint", kind: Template(Feint), act: Act3,
+        name: "op.act3.feint.name", briefing: "op.act3.feint.briefing",
+        objective: Feint(hold_s: 300),
+        tags: [MinSpeed(kn: 26.0), Range(min_km: 400.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(1)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act3.tg.gun", marker: "enemy", tag: "task_group"),
+            (fleet: "fleet.act3.patrol", marker: "enemy_2", tag: "patrol"),
+        ],
+        complications: [None, WeatherTurns(to: Haze, at_s: 300), AirPatrol, Reinforcements(fleet: "fleet.act3.sub", at_s: 600), Reinforcements(fleet: "fleet.act3.patrol.heavy", at_s: 600)],
+        approach_m: 12000.0,
+    ),
+    // Commitment: garrison 1,587 t (3) + anti-submarine task group 3,758 t (5) = 5,345 t, 8 hulls; the target is the
+    // submarine pens, so a coastal boat lies off them.
+    (
+        id: "op.act3.photo_reconnaissance", kind: Template(PhotoReconnaissance), act: Act3,
+        name: "op.act3.photo_reconnaissance.name", briefing: "op.act3.photo_reconnaissance.briefing",
+        objective: Photograph(tag: "target", count: 3),
+        tags: [Requires(CameraMast), RcsLimit(max_m2: 260.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoRadarEmissions, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act3.garrison", marker: "objective", tag: "target"),
+            (fleet: "fleet.act3.tg.asw", marker: "enemy", tag: "task_group"),
+            (fleet: "fleet.act3.sub", marker: "objective", tag: "submarine"),
+        ],
+        complications: [None, WeatherTurns(to: Haze, at_s: 600), CivilianTraffic, AirPatrol],
+        approach_m: 15000.0,
+        actions: [Photograph],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment in the campaign: the hunter group's five top-tier hulls plus this screen and a pack of boats.
+    // Standalone (no theatre state) the screen alone is 757 t, and the generator's reinforcement waves make up the
+    // multiples.
+    (
+        id: "op.act3.hunter_survival", kind: Template(HunterGroupSurvival), act: Act3,
+        name: "op.act3.hunter_survival.name", briefing: "op.act3.hunter_survival.briefing",
+        objective: Survive(seconds: 900, exit: "exit"),
+        tags: [MinSpeed(kn: 26.0), Range(min_km: 400.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(1)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act3.patrol", marker: "enemy_2", tag: "screen"),
+            (fleet: "fleet.act3.sub.pack", marker: "exit", tag: "submarine"),
+        ],
+        complications: [None, WeatherTurns(to: Rain, at_s: 600), WeatherTurns(to: FogBank, at_s: 300), AirPatrol],
+        approach_m: 9000.0,
+    ),
+    // Commitment: garrison 1,587 t (3) + gun task group 4,112 t (5) = 5,699 t, 8 hulls (the moored prize does not
+    // count).
+    (
+        id: "op.act3.cutting_out", kind: Template(CuttingOut), act: Act3,
+        name: "op.act3.cutting_out.name", briefing: "op.act3.cutting_out.briefing",
+        objective: CutOut(tag: "prize", exit: "exit"),
+        tags: [DraftLimit(max_m: 4.0), Requires(BoardingKit)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act3.convoy.moored", marker: "berth", tag: "prize"),
+            (fleet: "fleet.act3.garrison", marker: "berth", tag: "harbour"),
+            (fleet: "fleet.act3.tg.gun", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: FogBank, at_s: 300), Reinforcements(fleet: "fleet.act3.patrol", at_s: 900)],
+        approach_m: 11000.0,
+        actions: [BoardAndCapture],
+        recommended_emcon: Some(Silent),
+    ),
+
+    // =========================================================================================================
+    // Story operations
+    // =========================================================================================================
+    // 1. The Saltby lighter: the bulk carrier that brought the Hollin yard its new heavy gun mounts lies at Saltby,
+    // waiting to unload. Cut her out and the mounts' drawings come with her: tier 5 opens. Commitment: garrison
+    // 1,587 t (3) + gun task group 4,112 t (5) = 5,699 t, 8 hulls (the lighter does not count).
+    (
+        id: "op.act3.story.saltby", kind: Story, act: Act3,
+        name: "op.act3.story.saltby.name", briefing: "op.act3.story.saltby.briefing",
+        node: Some("harbour.saltby"),
+        objective: CutOut(tag: "prize", exit: "exit"),
+        tags: [DraftLimit(max_m: 4.0), Requires(BoardingKit), RcsLimit(max_m2: 280.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1)), (kind: NoHullDamage, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act3.convoy.lighter", marker: "berth", tag: "prize"),
+            (fleet: "fleet.act3.garrison", marker: "berth", tag: "harbour"),
+            (fleet: "fleet.act3.tg.gun", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: FogBank, at_s: 300)],
+        approach_m: 11000.0,
+        actions: [BoardAndCapture],
+        recommended_emcon: Some(Silent),
+    ),
+    // 2. The Greywater channel: the boats from the Hollin yard reach open water through Greywater. Mine it under
+    // their noses, with a pack on patrol in the channel. The Actuary arrives. Needs Saltby or Supply under 70.
+    // Commitment: heavy patrol 1,873 t (3) + anti-submarine task group 3,758 t (5) = 5,631 t, 8 hulls, plus the pack
+    // and the Actuary.
+    (
+        id: "op.act3.story.greywater", kind: Story, act: Act3,
+        name: "op.act3.story.greywater.name", briefing: "op.act3.story.greywater.briefing",
+        unlock: Any([Completed(["op.act3.story.saltby"]), SupplyBelow(region: "region.hollin", value: 70.0)]),
+        node: Some("sea.greywater"),
+        objective: LayMines(marker: "lane", count: 10),
+        tags: [Requires(MineRail), Range(min_km: 350.0), RcsLimit(max_m2: 280.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1)), (kind: NoHullDamage, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act3.patrol.heavy", marker: "lane", tag: "patrol"),
+            (fleet: "fleet.act3.tg.asw", marker: "enemy", tag: "task_group"),
+            (fleet: "fleet.act3.sub.pack", marker: "objective", tag: "submarine"),
+        ],
+        complications: [AceArrives("ace.actuary")],
+        approach_m: 13000.0,
+        actions: [LayMines],
+        declared_hostile: ["class.dividend", "class.ace_contingency"],
+        recommended_emcon: Some(Silent),
+    ),
+    // 3. The Vell engineers: the yard engineers who know when Foreclosure sails come down to the shore by Vell
+    // depot. Take them off by boat. Needs Saltby, then the Greywater channel or Alert 2 in the region. Commitment:
+    // patrol 757 t (2) + gun task group 4,112 t (5) = 4,869 t, 7 hulls.
+    (
+        id: "op.act3.story.vell", kind: Story, act: Act3,
+        name: "op.act3.story.vell.name", briefing: "op.act3.story.vell.briefing",
+        unlock: All([Completed(["op.act3.story.saltby"]), Any([Completed(["op.act3.story.greywater"]), AlertAtLeast(region: "region.hollin", value: 2)])]),
+        node: Some("depot.vell"),
+        objective: Extract(marker: "landing", passengers: 6),
+        tags: [Passengers(count: 6, allowed_losses: 1), Requires(RhibDavit), RcsLimit(max_m2: 260.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1)), (kind: NoHullDamage, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act3.patrol", marker: "enemy_2", tag: "patrol"),
+            (fleet: "fleet.act3.tg.gun", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: FogBank, at_s: 300), AirPatrol],
+        approach_m: 12000.0,
+        actions: [InsertOrExtract, CarryPassengers],
+        recommended_emcon: Some(Silent),
+    ),
+    // 4. The Strand bunkers: the fleet tankers that will fuel Foreclosure for her first patrol cross the Spindle under
+    // a destroyer escort, with a boat ahead of them. The Liquidator arrives. Needs the Greywater channel, then the
+    // Vell engineers or Supply under 40. Commitment: convoy escort 3,661 t (5) + Foreclosure 2,038 t when she
+    // arrives = 5,699 t, 6 hulls, plus the boat.
+    (
+        id: "op.act3.story.strand", kind: Story, act: Act3,
+        name: "op.act3.story.strand.name", briefing: "op.act3.story.strand.briefing",
+        unlock: All([Completed(["op.act3.story.greywater"]), Any([Completed(["op.act3.story.vell"]), SupplyBelow(region: "region.hollin", value: 40.0)])]),
+        node: Some("sea.spindle"),
+        objective: DestroyGroup(tag: "convoy", fraction: 0.75),
+        tags: [MinSpeed(kn: 26.0), Range(min_km: 400.0)],
+        ghosts: [(kind: UnderTime(seconds: 1500), reward: Intel(1)), (kind: NoHullDamage, reward: Intel(1)), (kind: NoRadarEmissions, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act3.convoy.tankers", marker: "convoy_entry", tag: "convoy"),
+            (fleet: "fleet.act3.escort.convoy", marker: "convoy_entry", tag: "escort"),
+            (fleet: "fleet.act3.sub", marker: "convoy_exit", tag: "submarine"),
+        ],
+        complications: [AceArrives("ace.liquidator")],
+        approach_m: 16000.0,
+        declared_hostile: ["class.dividend", "class.collateral", "class.ace_foreclosure"],
+        recommended_emcon: Some(Silent),
+    ),
+
+    // =========================================================================================================
+    // Ace duels: the ace's flagship sails alone in its own group (tag "ace"); its consorts sail apart.
+    // =========================================================================================================
+    // Commitment: Contingency 1,016 t (1) + anti-submarine task group 3,758 t (5) = 4,774 t, 6 hulls, plus a pack of
+    // boats working with her.
+    (
+        id: "op.act3.duel.actuary", kind: AceDuel("ace.actuary"), act: Act3,
+        name: "op.act3.duel.actuary.name", briefing: "op.act3.duel.actuary.briefing",
+        unlock: Completed(["op.act3.story.greywater"]),
+        objective: DestroyGroup(tag: "ace", fraction: 1.0),
+        tags: [Range(min_km: 400.0), RcsLimit(max_m2: 260.0)],
+        ghosts: [(kind: CaptureTheAce, reward: Intel(3)), (kind: NeverDetected, reward: Intel(2))],
+        force: [
+            (fleet: "fleet.act3.ace.contingency", marker: "enemy", tag: "ace"),
+            (fleet: "fleet.act3.tg.asw", marker: "enemy_2", tag: "task_group"),
+            (fleet: "fleet.act3.sub.pack", marker: "objective", tag: "submarine"),
+        ],
+        complications: [None, WeatherTurns(to: Haze, at_s: 600), AirPatrol],
+        approach_m: 16000.0,
+        declared_hostile: ["class.ace_contingency"],
+    ),
+    // Commitment: Foreclosure 2,038 t (1) + gun task group 4,112 t (5) = 6,150 t, 6 hulls. The act's "defaults fail,
+    // sliders pass" operation; see the header for its reference setup. It waits on Saltby too, so the 155 mm turret
+    // its capture ghost pays out is in a tier already open.
+    (
+        id: "op.act3.duel.liquidator", kind: AceDuel("ace.liquidator"), act: Act3,
+        name: "op.act3.duel.liquidator.name", briefing: "op.act3.duel.liquidator.briefing",
+        unlock: Completed(["op.act3.story.saltby", "op.act3.story.strand"]),
+        objective: DestroyGroup(tag: "ace", fraction: 1.0),
+        tags: [MinSpeed(kn: 26.0), Range(min_km: 400.0)],
+        ghosts: [(kind: CaptureTheAce, reward: Intel(3)), (kind: NoHullDamage, reward: Intel(2))],
+        force: [
+            (fleet: "fleet.act3.ace.foreclosure", marker: "enemy", tag: "ace", emcon: Some(Silent)),
+            (fleet: "fleet.act3.tg.gun", marker: "enemy_2", tag: "task_group"),
+        ],
+        complications: [WeatherTurns(to: Rain, at_s: 300)],
+        approach_m: 16000.0,
+        declared_hostile: ["class.ace_foreclosure"],
+        reference_setup: Some("reference/act3/duel_liquidator.bp.ron"),
+    ),
+
+    // =========================================================================================================
+    // Capstone: the Hollin slipways. Open once the four story operations are done (the generator checks the act's
+    // list).
+    // =========================================================================================================
+    // Commitment: garrison 1,587 t (3) + heavy task group 5,008 t (5) + strike task group at 600 s 3,953 t (5)
+    // = 10,548 t, 13 hulls, plus a coastal boat off the yard, a four-aircraft raid at 300 s and the Liquidator if
+    // still at sea.
+    (
+        id: "op.act3.capstone", kind: Capstone, act: Act3,
+        name: "op.act3.capstone.name", briefing: "op.act3.capstone.briefing",
+        node: Some("yard.hollin"),
+        objective: DestroySite(marker: "depot"),
+        tags: [Range(min_km: 450.0), DraftLimit(max_m: 4.5), MinSpeed(kn: 26.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(2)), (kind: UnderTime(seconds: 1800), reward: Intel(2)), (kind: NeverDetected, reward: Intel(3))],
+        force: [
+            (fleet: "fleet.act3.garrison", marker: "depot", tag: "garrison"),
+            (fleet: "fleet.act3.tg.heavy", marker: "objective", tag: "task_group"),
+            (fleet: "fleet.act3.tg.strike", marker: "enemy", tag: "reinforcements", arrives_s: 600),
+            (fleet: "fleet.act3.sub", marker: "enemy_2", tag: "submarine"),
+            (fleet: "fleet.act2.air.strike", marker: "enemy_2", tag: "air", arrives_s: 300),
+        ],
+        complications: [AceArrives("ace.liquidator")],
+        approach_m: 15000.0,
+        declared_hostile: ["class.equity", "class.annuity"],
+    ),
+]

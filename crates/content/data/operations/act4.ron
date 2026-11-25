@@ -1,0 +1,367 @@
+// Vec<OperationDef>: Act 4 operations, the Meridian Roads (DESIGN.md L778-807, L85-102, L317-318, L126, L866-875).
+// Unit `data-act4`. Licensed CC BY 4.0.
+//
+// The eleven templates, four story operations, the one ace duel (L774: one arc in Act 4) and the final capstone.
+// Act 4 commits at least 5 hostile combat hulls and 7,200 t per player (4 x the 1,800 t cap, L747), and every
+// operation meets that on its surface force's worst draw (minimum count of the lightest class per slot; convoys,
+// prizes, moored hulls, the defector, aircraft and submarines do not count toward the floor), so a solo sortie
+// never needs a reinforcement wave. The numbers per operation are in the comments. The generator scopes templates
+// to the latest act that has any, so these eleven replace Act 3's from the Act 4 start: they name only Act 4 fleets
+// (Act 2's air patrol excepted) and are offered from the first day.
+//
+// Open Theatre (L873): after the capstone the campaign continues in the same save with every region open, no
+// clock, and template operations only. The generator draws those from the last act that has templates, so these
+// eleven are the Open Theatre set: they name no Meridian node, use only the shared marker vocabulary every node map
+// carries (spawn, enemy, enemy_2, objective, lane, exit, convoy_entry, convoy_exit, survivors, berth, landing,
+// depot, radar), and their groups (fleets/act4.ron) sail anywhere, so a convoy raid in the Gannet Banks meets the
+// Combine's 1,800 t-era escorts and the commitment floor of the 1,800 t cap. The repeat cap there counts per 40
+// theatre days (campaign_rules.ron).
+//
+// Act 4 adds no tier (L807): every tier is open from the first day and the dry dock offers every part of an open
+// tier, the Act 4 parts included, so a blueprint reward would unlock nothing. Act 4's ghost conditions therefore
+// pay Intel, the other currency the spec names for them (L780). Special-operations tags (rails, davits, the camera mast) ask the 90 m destroyer starter, which
+// carries none, for a refit from the stock kits: the act's editor lesson is growing a destroyer into a raider. The
+// story chain asks for one, the camera mast for the Castor photographs; the other three are gun and missile work.
+//
+// Capitals (L126): the cruiser squadron (fleets/act4.ron) appears in the Castor photographs, the capstone and no
+// template, and the Chairman's flagship in the Halden raid, his duel and the capstone, so no operation fields more
+// than two hulls over 90 m.
+//
+// Constraint tags are calibrated against the editor's gauges and sim-core's projected areas at the design draft
+// (crates/sim-systems/tests/briefing_tags_act4.rs). The 90 m destroyer starter measures 2.1 m draft, 29.3 kn,
+// 2,290 km range and 721 m^2 worst-aspect cross-section; rebuilt with composite topsides it measures 305 m^2. So
+// the draft limits of 5.0 to 5.5 m, the 26 to 28 kn speed minimums and the 450 to 550 km range minimums pass the
+// starter and keep the deepest, slowest or shortest-legged 1,800 t designs out, and the cross-section limits of
+// 400 to 450 m^2 fail the stock starter and pass a stealth refit with a fifth in hand. Approach distances are the
+// authored values the sortie-length fallback scales within 50% to 150% (L85-90).
+//
+// The Chairman duel is the act's "defaults fail, sliders pass" operation (L318). The Charter keeps 17 km (her
+// doctrine range, held by his stand-off card), inside her 155 mm reach and outside the starter's 127 mm, behind an 80
+// mm belt the 127 mm only pierces close in, and with 32 surface-to-air cells, two point-defence launchers and four
+// close-in guns. Stock officers on the Cautious preset fire their heavy missiles two at a time, which her air
+// defence takes one pair after another, then close into her gun range. Its reference setup is a committed
+// blueprint, the 90 m destroyer starter with an L0 to L2 setup (Aggressive preset, hard evasion, a radar burst out
+// to 60 km, and rules that ripple every heavy missile at a coarse hostile surface track inside 45 km and go active
+// once a contact closes or a weapon is inbound), which the winnability harness applies over each player hull's
+// stored settings.
+[
+    // =========================================================================================================
+    // Templates (and the Open Theatre set)
+    // =========================================================================================================
+    // Commitment: convoy escort 1,539 + 1,511 + 1,475 + 1,424 + 2,067 = 8,016 t, 5 hulls, plus a patrol boat on the
+    // route.
+    (
+        id: "op.act4.convoy_raid", kind: Template(ConvoyRaid), act: Act4,
+        name: "op.act4.convoy_raid.name", briefing: "op.act4.convoy_raid.briefing",
+        objective: DestroyGroup(tag: "convoy", fraction: 0.6),
+        tags: [MinSpeed(kn: 28.0), Range(min_km: 500.0)],
+        ghosts: [(kind: NoRadarEmissions, reward: Intel(1)), (kind: UnderTime(seconds: 1500), reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act4.convoy", marker: "convoy_entry", tag: "convoy"),
+            (fleet: "fleet.act4.escort.convoy", marker: "convoy_entry", tag: "escort"),
+            (fleet: "fleet.act4.sub", marker: "convoy_exit", tag: "submarine"),
+        ],
+        complications: [None, DecoyConvoy, AirPatrol, WeatherTurns(to: Rain, at_s: 900), Reinforcements(fleet: "fleet.act4.patrol", at_s: 1200), CivilianTraffic],
+        approach_m: 17000.0,
+        declared_hostile: ["class.margin", "class.consol"],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment: garrison 2 x 666 + 526 = 1,858 t (3 hulls) + gun task group 8,067 t (5) = 9,925 t, 8 hulls.
+    (
+        id: "op.act4.depot_strike", kind: Template(DepotStrike), act: Act4,
+        name: "op.act4.depot_strike.name", briefing: "op.act4.depot_strike.briefing",
+        objective: DestroySite(marker: "depot"),
+        tags: [Range(min_km: 550.0), DraftLimit(max_m: 5.5)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoHullDamage, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act4.garrison", marker: "depot", tag: "garrison"),
+            (fleet: "fleet.act4.tg.gun", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, AirPatrol, WeatherTurns(to: FogBank, at_s: 600), Minefield, Reinforcements(fleet: "fleet.act4.patrol.heavy", at_s: 900)],
+        approach_m: 15000.0,
+    ),
+    // Commitment: garrison 1,858 t (3) + air-defence task group 7,488 t (5) = 9,346 t, 8 hulls.
+    (
+        id: "op.act4.radar_decapitation", kind: Template(RadarDecapitation), act: Act4,
+        name: "op.act4.radar_decapitation.name", briefing: "op.act4.radar_decapitation.briefing",
+        objective: DestroySite(marker: "radar"),
+        tags: [RcsLimit(max_m2: 400.0), Range(min_km: 500.0)],
+        ghosts: [(kind: NoRadarEmissions, reward: Intel(1)), (kind: NeverDetected, reward: Intel(2))],
+        force: [
+            (fleet: "fleet.act4.garrison", marker: "radar", tag: "garrison"),
+            (fleet: "fleet.act4.tg.screen", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, AirPatrol, WeatherTurns(to: Haze, at_s: 600), CivilianTraffic, Reinforcements(fleet: "fleet.act4.patrol", at_s: 900)],
+        approach_m: 15000.0,
+        actions: [InsertOrExtract],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment: patrol 666 + 526 = 1,192 t (2) + gun task group 8,067 t (5) = 9,259 t, 7 hulls.
+    (
+        id: "op.act4.agent_extraction", kind: Template(AgentExtraction), act: Act4,
+        name: "op.act4.agent_extraction.name", briefing: "op.act4.agent_extraction.briefing",
+        objective: Extract(marker: "landing", passengers: 4),
+        tags: [Passengers(count: 4, allowed_losses: 0), Requires(RhibDavit), RcsLimit(max_m2: 450.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act4.patrol", marker: "enemy_2", tag: "patrol"),
+            (fleet: "fleet.act4.tg.gun", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: FogBank, at_s: 300), CivilianTraffic, AirPatrol],
+        approach_m: 13000.0,
+        actions: [InsertOrExtract, CarryPassengers],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment: heavy patrol 1,475 + 2 x 666 = 2,807 t (3) + strike task group 7,373 t (5) = 10,180 t, 8 hulls,
+    // plus a patrol boat guarding the lane.
+    (
+        id: "op.act4.minelaying", kind: Template(Minelaying), act: Act4,
+        name: "op.act4.minelaying.name", briefing: "op.act4.minelaying.briefing",
+        objective: LayMines(marker: "lane", count: 8),
+        tags: [Requires(MineRail), Range(min_km: 450.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act4.patrol.heavy", marker: "lane", tag: "patrol"),
+            (fleet: "fleet.act4.tg.strike", marker: "enemy", tag: "task_group"),
+            (fleet: "fleet.act4.sub", marker: "lane", tag: "submarine"),
+        ],
+        complications: [None, WeatherTurns(to: Rain, at_s: 600), DecoyConvoy, AirPatrol],
+        approach_m: 15000.0,
+        actions: [LayMines],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment: convoy escort 8,016 t, 5 hulls (the prize hulls do not count).
+    (
+        id: "op.act4.prize_capture", kind: Template(PrizeCapture), act: Act4,
+        name: "op.act4.prize_capture.name", briefing: "op.act4.prize_capture.briefing",
+        objective: Capture(tag: "prize"),
+        tags: [Requires(BoardingKit), Range(min_km: 450.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(1)), (kind: UnderTime(seconds: 1800), reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act4.convoy.prize", marker: "convoy_entry", tag: "prize"),
+            (fleet: "fleet.act4.escort.convoy", marker: "convoy_entry", tag: "escort"),
+        ],
+        complications: [None, DecoyConvoy, AirPatrol, WeatherTurns(to: Overcast, at_s: 600)],
+        approach_m: 15000.0,
+        actions: [BoardAndCapture],
+        declared_hostile: ["class.margin", "class.consol"],
+    ),
+    // Commitment: gun task group 8,067 t (5) + patrol 1,192 t (2) = 9,259 t, 7 hulls (the defector does not count).
+    (
+        id: "op.act4.defector_escort", kind: Template(DefectorEscort), act: Act4,
+        name: "op.act4.defector_escort.name", briefing: "op.act4.defector_escort.briefing",
+        objective: Escort(tag: "defector", exit: "exit"),
+        tags: [Passengers(count: 6, allowed_losses: 1), MinSpeed(kn: 26.0), Range(min_km: 500.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(1)), (kind: NeverDetected, reward: Intel(2))],
+        force: [
+            (fleet: "fleet.act4.convoy.defector", marker: "objective", tag: "defector", stance: Neutral),
+            (fleet: "fleet.act4.tg.gun", marker: "enemy", tag: "pursuit"),
+            (fleet: "fleet.act4.patrol", marker: "enemy_2", tag: "patrol"),
+        ],
+        complications: [None, WeatherTurns(to: Rain, at_s: 600), AirPatrol, Reinforcements(fleet: "fleet.act4.patrol", at_s: 900)],
+        approach_m: 13000.0,
+        actions: [CarryPassengers],
+    ),
+    // Commitment: gun task group 8,067 t (5) + patrol 1,192 t (2) = 9,259 t, 7 hulls. A patrol boat may join late.
+    (
+        id: "op.act4.feint", kind: Template(Feint), act: Act4,
+        name: "op.act4.feint.name", briefing: "op.act4.feint.briefing",
+        objective: Feint(hold_s: 300),
+        tags: [MinSpeed(kn: 28.0), Range(min_km: 500.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(1)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act4.tg.gun", marker: "enemy", tag: "task_group"),
+            (fleet: "fleet.act4.patrol", marker: "enemy_2", tag: "patrol"),
+        ],
+        complications: [None, WeatherTurns(to: Haze, at_s: 300), AirPatrol, Reinforcements(fleet: "fleet.act4.sub", at_s: 600), Reinforcements(fleet: "fleet.act4.patrol.heavy", at_s: 600)],
+        approach_m: 13000.0,
+    ),
+    // Commitment: garrison 1,858 t (3) + air-defence task group 7,488 t (5) = 9,346 t, 8 hulls, plus a patrol boat
+    // off the target.
+    (
+        id: "op.act4.photo_reconnaissance", kind: Template(PhotoReconnaissance), act: Act4,
+        name: "op.act4.photo_reconnaissance.name", briefing: "op.act4.photo_reconnaissance.briefing",
+        objective: Photograph(tag: "target", count: 3),
+        tags: [Requires(CameraMast), RcsLimit(max_m2: 400.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoRadarEmissions, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act4.garrison", marker: "objective", tag: "target"),
+            (fleet: "fleet.act4.tg.screen", marker: "enemy", tag: "task_group"),
+            (fleet: "fleet.act4.sub", marker: "objective", tag: "submarine"),
+        ],
+        complications: [None, WeatherTurns(to: Haze, at_s: 600), CivilianTraffic, AirPatrol],
+        approach_m: 16000.0,
+        actions: [Photograph],
+        recommended_emcon: Some(Silent),
+    ),
+    // Commitment in the campaign: the hunter group's five top-tier hulls plus this screen and a pack of boats.
+    // Standalone (no theatre state) the screen alone is 1,192 t, and the generator's reinforcement waves make up the
+    // multiples.
+    (
+        id: "op.act4.hunter_survival", kind: Template(HunterGroupSurvival), act: Act4,
+        name: "op.act4.hunter_survival.name", briefing: "op.act4.hunter_survival.briefing",
+        objective: Survive(seconds: 900, exit: "exit"),
+        tags: [MinSpeed(kn: 28.0), Range(min_km: 500.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(1)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act4.patrol", marker: "enemy_2", tag: "screen"),
+            (fleet: "fleet.act4.sub.pack", marker: "exit", tag: "submarine"),
+        ],
+        complications: [None, WeatherTurns(to: Rain, at_s: 600), WeatherTurns(to: FogBank, at_s: 300), AirPatrol],
+        approach_m: 9000.0,
+    ),
+    // Commitment: garrison 1,858 t (3) + gun task group 8,067 t (5) = 9,925 t, 8 hulls (the moored prize does not
+    // count).
+    (
+        id: "op.act4.cutting_out", kind: Template(CuttingOut), act: Act4,
+        name: "op.act4.cutting_out.name", briefing: "op.act4.cutting_out.briefing",
+        objective: CutOut(tag: "prize", exit: "exit"),
+        tags: [DraftLimit(max_m: 5.0), Requires(BoardingKit)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act4.convoy.moored", marker: "berth", tag: "prize"),
+            (fleet: "fleet.act4.garrison", marker: "berth", tag: "harbour"),
+            (fleet: "fleet.act4.tg.gun", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: FogBank, at_s: 300), Reinforcements(fleet: "fleet.act4.patrol", at_s: 900)],
+        approach_m: 12000.0,
+        actions: [BoardAndCapture],
+        recommended_emcon: Some(Silent),
+    ),
+
+    // =========================================================================================================
+    // Story operations
+    // =========================================================================================================
+    // 1. The Orrin depot: the fuel and shells for the Roads' groups lie at Orrin, the north depot behind the Roads
+    // chokepoint. Burn it. Commitment: garrison 1,858 t (3) + gun task group 8,067 t (5) = 9,925 t, 8 hulls.
+    (
+        id: "op.act4.story.orrin", kind: Story, act: Act4,
+        name: "op.act4.story.orrin.name", briefing: "op.act4.story.orrin.briefing",
+        node: Some("depot.orrin"),
+        objective: DestroySite(marker: "depot"),
+        tags: [Range(min_km: 550.0), DraftLimit(max_m: 5.5), RcsLimit(max_m2: 450.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: UnderTime(seconds: 1800), reward: Intel(1)), (kind: NoHullDamage, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act4.garrison", marker: "depot", tag: "garrison"),
+            (fleet: "fleet.act4.tg.gun", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: FogBank, at_s: 600), AirPatrol],
+        approach_m: 15000.0,
+        declared_hostile: ["class.consol"],
+    ),
+    // 2. Halden Rock: the listening station on Halden Rock cues the Charter's radar onto every contact in the Roads.
+    // Silence it. The Chairman arrives. Needs Orrin or Supply under 70. Commitment: garrison 1,858 t (3) +
+    // air-defence task group 7,488 t (5) = 9,346 t, 8 hulls, plus a patrol boat and the Charter.
+    (
+        id: "op.act4.story.halden", kind: Story, act: Act4,
+        name: "op.act4.story.halden.name", briefing: "op.act4.story.halden.briefing",
+        unlock: Any([Completed(["op.act4.story.orrin"]), SupplyBelow(region: "region.meridian", value: 70.0)]),
+        node: Some("esm.halden"),
+        objective: DestroySite(marker: "radar"),
+        tags: [RcsLimit(max_m2: 400.0), Range(min_km: 500.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoRadarEmissions, reward: Intel(1)), (kind: NoHullDamage, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act4.garrison", marker: "radar", tag: "garrison"),
+            (fleet: "fleet.act4.tg.screen", marker: "enemy", tag: "task_group"),
+            (fleet: "fleet.act4.sub", marker: "objective", tag: "submarine"),
+        ],
+        complications: [AceArrives("ace.chairman")],
+        approach_m: 15000.0,
+        actions: [InsertOrExtract],
+        declared_hostile: ["class.margin", "class.ace_charter"],
+        recommended_emcon: Some(Silent),
+    ),
+    // 3. The Castor slip: the cruiser squadron lies at Port Castor between patrols, at the berths the Charter uses.
+    // Photograph both ships at their moorings, and LANTERN learns when the flagship sails. Needs Orrin, then Halden Rock or
+    // Alert 2 in the region. Commitment: cruiser squadron 3,489 + 1,539 = 5,028 t (2) + air-defence task group
+    // 7,488 t (5) = 12,516 t, 7 hulls.
+    (
+        id: "op.act4.story.castor", kind: Story, act: Act4,
+        name: "op.act4.story.castor.name", briefing: "op.act4.story.castor.briefing",
+        unlock: All([Completed(["op.act4.story.orrin"]), Any([Completed(["op.act4.story.halden"]), AlertAtLeast(region: "region.meridian", value: 2)])]),
+        node: Some("harbour.castor"),
+        objective: Photograph(tag: "target", count: 2),
+        tags: [Requires(CameraMast), RcsLimit(max_m2: 400.0), DraftLimit(max_m: 5.0)],
+        ghosts: [(kind: NeverDetected, reward: Intel(2)), (kind: NoKills, reward: Intel(1)), (kind: NoRadarEmissions, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act4.squadron", marker: "objective", tag: "target"),
+            (fleet: "fleet.act4.tg.screen", marker: "enemy", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: Haze, at_s: 600)],
+        approach_m: 14000.0,
+        actions: [Photograph],
+        declared_hostile: ["class.principal", "class.margin"],
+        recommended_emcon: Some(Silent),
+    ),
+    // 4. Sentinel Reach: the fleet train that fuels and arms the Charter crosses Sentinel Reach from the Quay Nine
+    // depot under a destroyer escort, with a patrol boat ahead. Needs Halden Rock, then the Castor photographs or
+    // Supply under 40. Commitment: convoy escort 8,016 t (5), plus the boat.
+    (
+        id: "op.act4.story.sentinel", kind: Story, act: Act4,
+        name: "op.act4.story.sentinel.name", briefing: "op.act4.story.sentinel.briefing",
+        unlock: All([Completed(["op.act4.story.halden"]), Any([Completed(["op.act4.story.castor"]), SupplyBelow(region: "region.meridian", value: 40.0)])]),
+        node: Some("sea.sentinel"),
+        objective: DestroyGroup(tag: "convoy", fraction: 0.75),
+        tags: [MinSpeed(kn: 28.0), Range(min_km: 500.0)],
+        ghosts: [(kind: UnderTime(seconds: 1500), reward: Intel(1)), (kind: NoHullDamage, reward: Intel(1)), (kind: NoRadarEmissions, reward: Intel(1))],
+        force: [
+            (fleet: "fleet.act4.convoy.train", marker: "convoy_entry", tag: "convoy"),
+            (fleet: "fleet.act4.escort.convoy", marker: "convoy_entry", tag: "escort"),
+            (fleet: "fleet.act4.sub", marker: "convoy_exit", tag: "submarine"),
+        ],
+        complications: [None, WeatherTurns(to: Rain, at_s: 900), AirPatrol],
+        approach_m: 17000.0,
+        declared_hostile: ["class.margin", "class.consol"],
+        recommended_emcon: Some(Silent),
+    ),
+
+    // =========================================================================================================
+    // Ace duel: the Chairman's flagship sails alone in her own group (tag "ace"); her screen sails apart.
+    // =========================================================================================================
+    // Commitment: Charter 4,651 t (1) + air-defence task group 7,488 t (5) = 12,139 t, 6 hulls. The act's "defaults
+    // fail, sliders pass" operation; see the header for its reference setup. It waits on the Castor photographs,
+    // which tell LANTERN when she sails.
+    (
+        id: "op.act4.duel.chairman", kind: AceDuel("ace.chairman"), act: Act4,
+        name: "op.act4.duel.chairman.name", briefing: "op.act4.duel.chairman.briefing",
+        unlock: Completed(["op.act4.story.halden", "op.act4.story.castor"]),
+        objective: DestroyGroup(tag: "ace", fraction: 1.0),
+        tags: [MinSpeed(kn: 28.0), Range(min_km: 500.0)],
+        ghosts: [(kind: CaptureTheAce, reward: Intel(3)), (kind: NoHullDamage, reward: Intel(2))],
+        force: [
+            (fleet: "fleet.act4.ace.charter", marker: "enemy", tag: "ace"),
+            (fleet: "fleet.act4.tg.screen", marker: "enemy_2", tag: "task_group"),
+        ],
+        complications: [None, WeatherTurns(to: Overcast, at_s: 600)],
+        approach_m: 18000.0,
+        declared_hostile: ["class.ace_charter"],
+        reference_setup: Some("reference/act4/duel_chairman.bp.ron"),
+    ),
+
+    // =========================================================================================================
+    // Final capstone: the Meridian yards. Open once the four story operations are done (the generator checks the
+    // act's list); winning it opens Open Theatre (acts.ron).
+    // =========================================================================================================
+    // Commitment: garrison 1,858 t (3) + heavy task group 9,085 t (5) + cruiser squadron 5,028 t (2) + strike task
+    // group at 600 s 7,373 t (5) = 23,344 t, 15 hulls, plus a patrol boat off the yard, a four-aircraft raid at
+    // 300 s and the Chairman if still at sea: two capitals at most.
+    (
+        id: "op.act4.capstone", kind: Capstone, act: Act4,
+        name: "op.act4.capstone.name", briefing: "op.act4.capstone.briefing",
+        node: Some("yard.meridian"),
+        objective: DestroySite(marker: "depot"),
+        tags: [Range(min_km: 550.0), DraftLimit(max_m: 5.5), MinSpeed(kn: 28.0)],
+        ghosts: [(kind: NoHullDamage, reward: Intel(2)), (kind: UnderTime(seconds: 2100), reward: Intel(2)), (kind: NeverDetected, reward: Intel(3))],
+        force: [
+            (fleet: "fleet.act4.garrison", marker: "depot", tag: "garrison"),
+            (fleet: "fleet.act4.tg.heavy", marker: "objective", tag: "task_group"),
+            (fleet: "fleet.act4.squadron", marker: "enemy", tag: "squadron"),
+            (fleet: "fleet.act4.tg.strike", marker: "enemy", tag: "reinforcements", arrives_s: 600),
+            (fleet: "fleet.act4.sub", marker: "enemy_2", tag: "submarine"),
+            (fleet: "fleet.act2.air.strike", marker: "enemy_2", tag: "air", arrives_s: 300),
+        ],
+        complications: [AceArrives("ace.chairman")],
+        approach_m: 16000.0,
+        declared_hostile: ["class.consol", "class.principal"],
+    ),
+]

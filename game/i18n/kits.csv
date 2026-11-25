@@ -1,0 +1,92 @@
+keys,?context,en
+kit.gun.name,Stock kit name in the editor tray,76 mm gun
+kit.gun.desc,Stock kit tooltip; first sentence 12 words or fewer,76 mm gun with its magazine and hoist.
+kit.radar_mast.name,Stock kit name in the editor tray,Radar mast
+kit.radar_mast.desc,Stock kit tooltip; first sentence 12 words or fewer,"Pole mast with a navigation radar, a fire-control radar and its director."
+kit.engine.name,Stock kit name in the editor tray,Diesel engine
+kit.engine.desc,Stock kit tooltip; first sentence 12 words or fewer,"3,000 kW diesel for the engine room."
+kit.fuel_tank.name,Stock kit name in the editor tray,Fuel tank
+kit.fuel_tank.desc,Stock kit tooltip; first sentence 12 words or fewer,"12,000 L fuel tank."
+kit.engine.waterjet.name,Stock kit name in the editor tray,Waterjet drive
+kit.engine.waterjet.desc,Stock kit tooltip; first sentence 12 words or fewer,"3,000 kW diesel driving a transom waterjet. Nothing hangs below the hull, so it suits a draft limit."
+kit.engine.electric.name,Stock kit name in the editor tray,Electric drive
+kit.engine.electric.desc,Stock kit tooltip; first sentence 12 words or fewer,"800 kW electric motor with its battery and generator, for quiet running."
+kit.engine.turbine.name,Stock kit name in the editor tray,Gas turbine
+kit.engine.turbine.desc,Stock kit tooltip; first sentence 12 words or fewer,"20,000 kW gas turbine for large hulls."
+kit.generator.name,Stock kit name in the editor tray,Generator pair
+kit.generator.desc,Stock kit tooltip; first sentence 12 words or fewer,Two 150 kW diesel generators side by side.
+kit.gun.20mm.name,Stock kit name in the editor tray,20 mm gun
+kit.gun.20mm.desc,Stock kit tooltip; first sentence 12 words or fewer,20 mm mount with 600 ready rounds.
+kit.gun.30mm.name,Stock kit name in the editor tray,30 mm gun
+kit.gun.30mm.desc,Stock kit tooltip; first sentence 12 words or fewer,30 mm mount with 400 ready rounds.
+kit.gun.40mm.name,Stock kit name in the editor tray,40 mm gun
+kit.gun.40mm.desc,Stock kit tooltip; first sentence 12 words or fewer,40 mm turret with 300 ready rounds.
+kit.gun.57mm.name,Stock kit name in the editor tray,57 mm gun
+kit.gun.57mm.desc,Stock kit tooltip; first sentence 12 words or fewer,57 mm gun with its magazine and hoist.
+kit.gun.100mm.name,Stock kit name in the editor tray,100 mm gun
+kit.gun.100mm.desc,Stock kit tooltip; first sentence 12 words or fewer,100 mm gun with its magazine and hoist.
+kit.gun.127mm.name,Stock kit name in the editor tray,127 mm gun
+kit.gun.127mm.desc,Stock kit tooltip; first sentence 12 words or fewer,127 mm gun with its magazine and hoist.
+kit.ciws.name,Stock kit name in the editor tray,Point-defence gun
+kit.ciws.desc,Stock kit tooltip; first sentence 12 words or fewer,Six-barrel 20 mm gun with its own fire-control radar.
+kit.pd_missile.name,Stock kit name in the editor tray,Point-defence missiles
+kit.pd_missile.desc,Stock kit tooltip; first sentence 12 words or fewer,Eight-round point-defence launcher with its own fire-control radar.
+kit.decoys.name,Stock kit name in the editor tray,Chaff and flares
+kit.decoys.desc,Stock kit tooltip; first sentence 12 words or fewer,A chaff launcher and a flare launcher side by side.
+kit.towed_decoy.name,Stock kit name in the editor tray,Towed decoy
+kit.towed_decoy.desc,Stock kit tooltip; first sentence 12 words or fewer,Towed decoy winch for the stern.
+kit.ashm.light.name,Stock kit name in the editor tray,Light anti-ship missiles
+kit.ashm.light.desc,Stock kit tooltip; first sentence 12 words or fewer,Four light anti-ship missiles in two twin launchers.
+kit.ashm.heavy.name,Stock kit name in the editor tray,Heavy anti-ship missiles
+kit.ashm.heavy.desc,Stock kit tooltip; first sentence 12 words or fewer,Eight heavy anti-ship missiles in two quad launchers.
+kit.sam.name,Stock kit name in the editor tray,Surface-to-air missiles
+kit.sam.desc,Stock kit tooltip; first sentence 12 words or fewer,"Eight-cell vertical launcher, set flush with the deck."
+kit.torpedo.light.name,Stock kit name in the editor tray,Light torpedo tubes
+kit.torpedo.light.desc,Stock kit tooltip; first sentence 12 words or fewer,Trainable triple tubes for the deck edge.
+kit.torpedo.heavy.name,Stock kit name in the editor tray,Heavy torpedo tubes
+kit.torpedo.heavy.desc,Stock kit tooltip; first sentence 12 words or fewer,Twin heavy tubes for the deck edge.
+kit.mine_rail.name,Stock kit name in the editor tray,Mine rail
+kit.mine_rail.desc,Stock kit tooltip; first sentence 12 words or fewer,"Mine rail with 8 influence mines, for the stern."
+kit.radar_mast.lattice.name,Stock kit name in the editor tray,Lattice radar mast
+kit.radar_mast.lattice.desc,Stock kit tooltip; first sentence 12 words or fewer,12 m lattice mast carrying a search and a navigation radar.
+kit.radar_mast.stealth.name,Stock kit name in the editor tray,Enclosed sensor mast
+kit.radar_mast.stealth.desc,Stock kit tooltip; first sentence 12 words or fewer,"Composite mast with a low-intercept radar, ESM and fire control. Cuts the hull's radar return."
+kit.sonar.name,Stock kit name in the editor tray,Hull sonar
+kit.sonar.desc,Stock kit tooltip; first sentence 12 words or fewer,Passive and active sonar domes for the keel.
+kit.camera_mast.name,Stock kit name in the editor tray,Camera mast
+kit.camera_mast.desc,Stock kit tooltip; first sentence 12 words or fewer,Trainable camera for photo reconnaissance.
+kit.passengers.name,Stock kit name in the editor tray,Passenger berths
+kit.passengers.desc,Stock kit tooltip; first sentence 12 words or fewer,Six passenger berths.
+kit.rhib.name,Stock kit name in the editor tray,RHIB davit
+kit.rhib.desc,Stock kit tooltip; first sentence 12 words or fewer,"Davit and RHIB for insertion, extraction and rescue."
+kit.boarding.name,Stock kit name in the editor tray,Boarding kit
+kit.boarding.desc,Stock kit tooltip; first sentence 12 words or fewer,"Davit, RHIB and a boarding team of 6."
+kit.recovery_net.name,Stock kit name in the editor tray,Recovery net
+kit.recovery_net.desc,Stock kit tooltip; first sentence 12 words or fewer,Net for hauling survivors aboard.
+kit.crane.name,Stock kit name in the editor tray,Crane
+kit.crane.desc,Stock kit tooltip; first sentence 12 words or fewer,Deck crane with a 6 m reach.
+kit.drone.rotor.name,Stock kit name in the editor tray,Rotor drones
+kit.drone.rotor.desc,Stock kit tooltip; first sentence 12 words or fewer,Deck bay with two camera drones.
+kit.drone.fixed.name,Stock kit name in the editor tray,Fixed-wing drones
+kit.drone.fixed.desc,Stock kit tooltip; first sentence 12 words or fewer,Catapult with two fixed-wing drones.
+kit.heli_deck.name,Stock kit name in the editor tray,Helicopter deck
+kit.heli_deck.desc,Stock kit tooltip; first sentence 12 words or fewer,10 by 8 m pad with its helicopter.
+kit.damage_control.name,Stock kit name in the editor tray,Damage control station
+kit.damage_control.desc,Stock kit tooltip; first sentence 12 words or fewer,"Four berths for one damage-control team, with two pumps."
+kit.gun.130mm.name,Stock kit name in the editor tray,130 mm gun
+kit.gun.130mm.desc,Stock kit tooltip; first sentence 12 words or fewer,130 mm gun with its magazine and hoist.
+kit.gun.155mm.name,Stock kit name in the editor tray,155 mm gun
+kit.gun.155mm.desc,Stock kit tooltip; first sentence 12 words or fewer,155 mm gun with its magazine and hoist.
+kit.gun.155mm.twin.name,Stock kit name in the editor tray,Twin 155 mm turret
+kit.gun.155mm.twin.desc,Stock kit tooltip; first sentence 12 words or fewer,Twin 155 mm turret with its magazine and hoist.
+kit.depth_charge.name,Stock kit name in the editor tray,Depth-charge rack
+kit.depth_charge.desc,Stock kit tooltip; first sentence 12 words or fewer,Stern rack of 10 depth charges against submarines.
+kit.gun.130mm.twin.name,Stock kit name in the editor tray,Twin 130 mm turret
+kit.gun.130mm.twin.desc,Stock kit tooltip; first sentence 12 words or fewer,Twin 130 mm turret with its magazine and hoist.
+kit.sam.large.name,Stock kit name in the editor tray,Large surface-to-air launcher
+kit.sam.large.desc,Stock kit tooltip; first sentence 12 words or fewer,"Sixteen-cell vertical launcher, set flush with the deck."
+kit.radar_mast.long.name,Stock kit name in the editor tray,Long-range radar mast
+kit.radar_mast.long.desc,Stock kit tooltip; first sentence 12 words or fewer,"Lattice mast with a long-range search radar at 12 m. A navigation radar sits on a side platform."
+kit.engine.turbine.large.name,Stock kit name in the editor tray,Large gas turbine
+kit.engine.turbine.large.desc,Stock kit tooltip; first sentence 12 words or fewer,"30,000 kW gas turbine for 1,800 t hulls."
+kit.example.gun76.name,Example kit name in the blueprints folder,76 mm gun

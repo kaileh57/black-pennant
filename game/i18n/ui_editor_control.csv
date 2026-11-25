@@ -1,0 +1,182 @@
+keys,?context,en
+editor_control.name,Accessible name of the officers' settings panel,Officer settings
+editor_control.closed,Officers tab text when no design is open,Open a design to set its officers.
+editor_control.reset_all,Button: return every officer setting and rule to stock,Return to stock
+editor_control.reset_all_tip,Tooltip,"Sets presets, sliders, priorities and rules back to the stock officers. Graph edits stay."
+editor_control.reset_all_title,Confirmation title,Return every officer setting to stock?
+editor_control.reset_all_body,Confirmation body,"Presets, sliders, doctrine rows, emission, power priorities, mount limits, the repair order and every rule go back to stock. Graph edits and scripts stay. Undo brings it all back."
+editor_control.reset_all_keep,Confirmation button that changes nothing,Keep my settings
+editor_control.reset_all_confirm,Confirmation button,Return to stock
+editor_control.refused,Status line when the model refused an edit,That change was not stored.
+editor_control.layer.summary,"Officers tab; {0} highest control layer the design uses, {1} highest this dock allows","Control in use: {0}. This dock allows up to {1}."
+editor_control.layer.illegal,"Officers tab problem; {0} layer in use, {1} layer allowed","This design uses {0}, but this lobby allows up to {1}. Stock officers run in its place."
+editor_control.layer.capped,Officers tab; {0} a control layer the lobby's ruleset does not allow,"This lobby's rules do not allow {0}, so it is switched off."
+editor_control.overrides.none,Officers tab when nothing is set by hand,Every value is automatic.
+editor_control.overrides.one,Officers tab,1 value set by hand.
+editor_control.overrides.count,Officers tab; {0} a number above 1,{0} values set by hand.
+editor_control.unit.m,Field suffix: metres,m
+editor_control.unit.deg,Field suffix: degrees,°
+editor_control.unit.kn,Field suffix: knots,kn
+editor_control.unit.s,Field suffix: seconds,s
+editor_control.unit.pct,Field suffix: percent,%
+editor_control.unit.kw,Field suffix: kilowatts,kW
+editor_control.doctrine.title,Section title: L0 doctrine presets and engagement rows,Doctrine
+editor_control.doctrine.scope,Picker label: the whole ship or one mount,Applies to
+editor_control.doctrine.scope_tip,Tooltip,"Set doctrine for the whole ship, or give one mount its own."
+editor_control.doctrine.whole_ship,Scope picker entry,Whole ship
+editor_control.preset.same,Preset choice for a mount; {0} the ship's preset,Same as ship ({0})
+editor_control.preset.same_short,The automatic preset of a mount,Same as ship
+editor_control.preset.inherits,Preset description for a mount that follows the ship; {0} the preset's description,From the ship's preset. {0}
+editor_control.doctrine.rows,Heading over the engagement rows,When each weapon may fire
+editor_control.doctrine.no_weapons,Doctrine section on a design without weapons,"This design has no weapons, so there is nothing to engage with."
+editor_control.doctrine.reset_ship,Button,Reset ship doctrine
+editor_control.doctrine.reset_mount,Button,Reset this mount's doctrine
+editor_control.doctrine.row,"Engagement row heading; {0} weapon class, {1} target category",{0}: {1}
+editor_control.doctrine.stance,Engagement row field,Lowest stance
+editor_control.doctrine.stance_tip,Tooltip,Fires only at tracks of this stance or worse. Never below Suspect.
+editor_control.doctrine.rung,Engagement row field,Identified to
+editor_control.doctrine.rung_tip,Tooltip,How far a track must be identified before this weapon fires.
+editor_control.doctrine.grade,Engagement row field,Track quality
+editor_control.doctrine.grade_tip,Tooltip,The least track quality before firing. Fine and Lock hit more often.
+editor_control.doctrine.salvo,Engagement row field,Salvo
+editor_control.doctrine.salvo_tip,Tooltip,Rounds or missiles per engagement. Hold never fires on its own.
+editor_control.doctrine.hold,Salvo choice that never fires automatically,Hold fire
+editor_control.doctrine.range,Engagement row field,Range
+editor_control.doctrine.own_range,Check box,Set a range
+editor_control.doctrine.own_range_tip,Tooltip,Off: fires out to the weapon's effective range.
+editor_control.doctrine.range_value,Engagement row field,Open fire inside
+editor_control.doctrine.range_value_tip,Tooltip,Fires only at targets closer than this.
+editor_control.doctrine.refused,Status line,That doctrine row was not stored. The lowest stance is Suspect.
+editor_control.limits.title,Mount scope heading,Training and elevation limits
+editor_control.limits.train_min,Mount limit field: training towards port,Train from
+editor_control.limits.train_max,Mount limit field: training towards starboard,Train to
+editor_control.limits.elevation_min,Mount limit field,Elevation from
+editor_control.limits.elevation_max,Mount limit field,Elevation to
+editor_control.limits.tip,Tooltip,Degrees from the bow. The mount's mechanism sets the outer limits.
+editor_control.limits.refused,Status line,Those limits were not stored.
+editor_control.tuning.title,Section title: L1 officer sliders,Tuning
+editor_control.tuning.more,Expander title over every other officer parameter,All parameters
+editor_control.tuning.more_tip,Tooltip,"Every officer parameter, beyond the named sliders."
+editor_control.slider.range,"Slider tooltip second line; {0} lowest, {1} highest value",From {0} to {1}.
+editor_control.slider_tip.helm.evasion,Slider tooltip,How hard the helm jinks when a weapon is inbound.
+editor_control.slider_tip.helm.responsiveness,Slider tooltip,"How quickly the helm turns onto a new heading. High overshoots, low lags."
+editor_control.slider_tip.helm.cruise_speed,Slider tooltip,Share of top speed the helm keeps when not in action.
+editor_control.slider_tip.helm.lookahead,Slider tooltip,"How far ahead the helm steers along a route, in turning circles."
+editor_control.slider_tip.helm.station_radius_m,Slider tooltip,How far from its station the ship may drift before it corrects.
+editor_control.slider_tip.gunnery.aggression,Slider tooltip,"High ranks the most dangerous target first, low the nearest."
+editor_control.slider_tip.gunnery.open_fire_range,Slider tooltip,Share of effective range at which guns open fire.
+editor_control.slider_tip.gunnery.pn_surface,Slider tooltip,"Guidance gain against ships. Higher turns harder, misses more at long range."
+editor_control.slider_tip.gunnery.pn_air,Slider tooltip,Guidance gain against aircraft and missiles.
+editor_control.slider_tip.gunnery.iteration_cap,Slider tooltip,Passes the fire-control solver makes per solution.
+editor_control.slider_tip.gunnery.converge_m,Slider tooltip,How close the solver's aim point must settle before firing.
+editor_control.slider_tip.sensors.burst_rotations,Slider tooltip,Radar sweeps in each burst.
+editor_control.slider_tip.sensors.burst_repeat_s,Slider tooltip,Time between bursts while a contact is inside the trigger range.
+editor_control.slider_tip.sensors.pd_radar_range_m,Slider tooltip,Point-defence radars switch on when a weapon comes inside this range.
+editor_control.slider_tip.engineer.reserve_margin,Slider tooltip,Spare generation the Engineer keeps before shedding load.
+editor_control.slider_tip.engineer.restore_delay_s,Slider tooltip,Wait before shed consumers get power back.
+editor_control.slider_tip.engineer.fuel_reserve,Slider tooltip,Fuel the Engineer keeps for the run home.
+editor_control.slider_tip.dc.pump_threshold_m,Slider tooltip,Water depth in a compartment before its pumps start.
+editor_control.slider_tip.dc.door_discipline,Slider tooltip,"High keeps watertight doors shut, low lets crews move faster."
+editor_control.slider_tip.dc.magazine_flood_s,Slider tooltip,Cook-off time left when Damage Control floods a burning magazine.
+editor_control.emission.emcon,Sensors officer setting: emission control,Emission control
+editor_control.emission.emcon_tip.0,Tooltip of the Silent emission setting,Every emitter off. Passive sensors only.
+editor_control.emission.emcon_tip.1,Tooltip of the Burst emission setting,Radars sweep in short bursts when a contact closes.
+editor_control.emission.emcon_tip.2,Tooltip of the Active emission setting,Radars radiate all the time.
+editor_control.emission.burst,Sensors officer setting,Burst trigger range
+editor_control.emission.burst_tip,Tooltip,Radars burst when a contact comes inside this range.
+editor_control.emission.self_defence,Gunnery officer setting,Self-defence range
+editor_control.emission.self_defence_tip,Tooltip,Inside this range threats to the ship rank first.
+editor_control.power.title,Expander title,Power priorities
+editor_control.power.explain,Power priorities section text,"When power runs short, priority 5 is shed first and 1 last."
+editor_control.power.empty,Power priorities section text,No part on this design draws power.
+editor_control.power.level.1,Power priority choice,"1, shed last"
+editor_control.power.level.2,Power priority choice,2
+editor_control.power.level.3,Power priority choice,3
+editor_control.power.level.4,Power priority choice,4
+editor_control.power.level.5,Power priority choice,"5, shed first"
+editor_control.power.pick,Accessible name; {0} the part,Power priority of {0}
+editor_control.power.pick_tip,Tooltip,Lower numbers keep power longer when generation falls short.
+editor_control.repair.title,Expander title,Repair order
+editor_control.repair.explain,Repair order section text,Damage control works down this list.
+editor_control.repair.up,Icon button,Move up the repair order
+editor_control.repair.down,Icon button,Move down the repair order
+editor_control.repair.row,"Repair order row; {0} position, {1} job",{0}. {1}
+editor_rules.name,Accessible name of the rules table,Rules table
+editor_rules.title,Section title: L2 rules,Rules
+editor_rules.count,"Rules table; {0} rules stored, {1} the most allowed",{0} of {1} rules
+editor_rules.explain,Rules table text,"Checked from the top 30 times a second. A rule overrides its officer while its condition holds; when two set the same thing, the higher one wins."
+editor_rules.empty,Rules table with no rules,No rules yet. Add one to override an officer while a condition holds.
+editor_rules.add,Button,Add rule
+editor_rules.add_tip,Tooltip,Build a when-then rule at the bottom of the table.
+editor_rules.full,Rules table; {0} the most rules a ship holds,The table is full at {0} rules.
+editor_rules.row.enabled,Accessible name of a rule's switch; {0} rule number,Rule {0} on
+editor_rules.row.enabled_tip,Tooltip,Off keeps the rule but stops it running.
+editor_rules.row.text,"Rule row; {0} rule number, {1} the rule as a sentence",{0}. {1}
+editor_rules.row.invalid,Rule row problem,Does not fit this design. Edit or delete it.
+editor_rules.row.off,Rule row state,Switched off.
+editor_rules.row.up,Icon button,Move rule up
+editor_rules.row.down,Icon button,Move rule down
+editor_rules.row.edit,Button,Edit
+editor_rules.row.edit_tip,Tooltip,Change this rule's condition or what it sets.
+editor_rules.row.delete,Icon button,Delete rule
+editor_rules.builder.new,Rule builder title,New rule
+editor_rules.builder.edit,Rule builder title; {0} rule number,Rule {0}
+editor_rules.builder.when,Rule builder heading,When
+editor_rules.builder.then,Rule builder heading,Then set
+editor_rules.builder.kept,Rule builder; {0} the rule as a sentence,"Keeps its condition, written outside this builder: {0}"
+editor_rules.builder.replace,Button,Replace the condition
+editor_rules.builder.replace_tip,Tooltip,Start the condition again as a list of comparisons.
+editor_rules.builder.all,Rule builder choice,All of these hold
+editor_rules.builder.any,Rule builder choice,Any of these holds
+editor_rules.builder.join,Accessible name,How the comparisons combine
+editor_rules.builder.add_comparison,Button,Add a comparison
+editor_rules.builder.remove_comparison,Icon button,Remove this comparison
+editor_rules.builder.cmp,Accessible name,Comparison
+editor_rules.builder.operand,Accessible name,Value to compare
+editor_rules.builder.operand_tip,Tooltip,What the rule reads each tick.
+editor_rules.builder.part,Accessible name,Part
+editor_rules.builder.of,"Rule builder joining word, as in ""Health of a part"" then the part",of
+editor_rules.builder.number,Accessible name,Number
+editor_rules.builder.sink,Accessible name,What to set
+editor_rules.builder.sink_tip,Tooltip,The officer output this rule overrides.
+editor_rules.builder.sink_part,Accessible name,Which one
+editor_rules.builder.value,Accessible name,Value
+editor_rules.builder.to,"Rule builder joining word, as in ""set helm speed to"" then the value",to
+editor_rules.builder.add,Button,Add rule
+editor_rules.builder.store,Button,Store rule
+editor_rules.builder.cancel,Button that closes the builder without storing,Discard
+editor_rules.builder.position,Rule builder; {0} the rule's position,Runs as rule {0}. Rules above it win when they set the same thing.
+editor_rules.filter.stance,Accessible name,Lowest stance
+editor_rules.filter.domain,Accessible name,Domain
+editor_rules.filter.grade,Accessible name,Track quality
+editor_rules.filter.any_stance,Contact filter choice,Any stance
+editor_rules.filter.stance_at_least,Contact filter choice; {0} a stance,{0} or worse
+editor_rules.filter.hostile_only,Contact filter choice,Hostile only
+editor_rules.filter.any_domain,Contact filter choice,Any domain
+editor_rules.filter.any_grade,Contact filter choice,Any track quality
+editor_rules.filter.grade_at_least,Contact filter choice; {0} a track grade,{0} or better
+editor_rules.sink.mount_aim_point,Rule builder: what a rule sets,Mount target
+editor_rules.sink.mount_fire_permission,Rule builder: what a rule sets,Mount fire permission
+editor_rules.sink.missile_target,Rule builder: what a rule sets,Missile target
+editor_rules.sink.missile_launch,Rule builder: what a rule sets,Missile launch
+editor_rules.sink.helm_heading,Rule builder: what a rule sets,Helm heading
+editor_rules.sink.helm_speed,Rule builder: what a rule sets,Helm speed
+editor_rules.sink.ship_preset,Rule builder: what a rule sets,Ship preset
+editor_rules.sink.ship_emcon,Rule builder: what a rule sets,Emission control
+editor_rules.sink.emission_state,Rule builder: what a rule sets,Emitter on or off
+editor_rules.sink.track_stance_override,Rule builder: what a rule sets,Track stance
+editor_rules.sink.track_id_override,Rule builder: what a rule sets,Track identification
+editor_rules.sink.power_priority,Rule builder: what a rule sets,Power priority
+editor_rules.sink.pump,Rule builder: what a rule sets,Pump
+editor_rules.sink.door,Rule builder: what a rule sets,Watertight door
+editor_rules.sink.flood_valve,Rule builder: what a rule sets,Flood valve
+editor_rules.value.nearest,Rule builder; the value is chosen below,The nearest contact that is
+editor_rules.value.on.emission_state,Rule builder value,Radiating
+editor_rules.value.off.emission_state,Rule builder value,Silent
+editor_rules.value.on.pump,Rule builder value,Running
+editor_rules.value.off.pump,Rule builder value,Stopped
+editor_rules.value.on.door,Rule builder value,Open
+editor_rules.value.off.door,Rule builder value,Shut
+editor_rules.value.on.flood_valve,Rule builder value,Open
+editor_rules.value.off.flood_valve,Rule builder value,Shut
+editor_rules.builder.comparison,Rule builder heading; {0} comparison number,Comparison {0}

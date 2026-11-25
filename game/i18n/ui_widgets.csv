@@ -1,0 +1,41 @@
+keys,?context,en
+widgets.alert.caution,Alert priority word on a badge (MSC.302(87)),Caution
+widgets.alert.warning,Alert priority word on a badge (MSC.302(87)),Warning
+widgets.alert.alarm,Alert priority word on a badge (MSC.302(87)),Alarm
+widgets.alert.emergency,Alert priority word on a badge (MSC.302(87)),Emergency
+widgets.alert.cleared,Badge word for an alarm rectified before it was acknowledged,Cleared
+widgets.auto_chip.auto,Accessible name of the A chip beside an automatic value,Automatic value
+widgets.auto_chip.auto_tip,Tooltip of the A chip,Set automatically. Change the value to override it.
+widgets.auto_chip.revert,Accessible name of the hand glyph on an overridden value; pressing it reverts,Overridden; revert to automatic
+widgets.auto_chip.revert_tip,Tooltip of the hand glyph on an overridden value,Overridden by you. Select to return to the automatic value.
+widgets.auto_chip.default,Tooltip line naming the automatic value; {0} is the value with units,Automatic value: {0}
+widgets.auto_chip.held,Accessible name of the hand glyph while the player holds a control,Held by you
+widgets.auto_chip.held_tip,Tooltip of the hand glyph while the player holds a control,You hold this control. Release it to hand it back.
+widgets.gauge.access,"Accessible name of a gauge: {0} label, {1} value with units, {2} where it stands","{0}: {1}, {2}"
+widgets.gauge.state.normal,Gauge state for screen readers,in the normal band
+widgets.gauge.state.outside_band,Gauge state for screen readers,outside the normal band
+widgets.gauge.state.caution,Gauge state for screen readers,past the caution limit
+widgets.gauge.state.warning,Gauge state for screen readers,past the warning limit
+widgets.gauge.state.no_reading,Gauge value for screen readers when there is no reading,no reading
+widgets.stance.access,"Accessible name of a track symbol: {0} stance word, {1} domain word",{0} {1}
+widgets.damage.flooding_access,"Accessible name of a damage sample: {0} damage word, {1} flooded percentage","{0}, {1} flooded"
+widgets.shortcut.unbound,Key cap text when an action has no binding on this device,Not bound
+widgets.shortcut.access,"Accessible name of a shortcut hint: {0} effect, {1} key or button","{0}: {1}"
+widgets.pad.face_south,Gamepad button by position,Bottom face button
+widgets.pad.face_east,Gamepad button by position,Right face button
+widgets.pad.face_west,Gamepad button by position,Left face button
+widgets.pad.face_north,Gamepad button by position,Top face button
+widgets.pad.dpad_up,Gamepad button by position,D-pad up
+widgets.pad.dpad_down,Gamepad button by position,D-pad down
+widgets.pad.dpad_left,Gamepad button by position,D-pad left
+widgets.pad.dpad_right,Gamepad button by position,D-pad right
+widgets.pad.shoulder_left,Gamepad button by position,Left shoulder
+widgets.pad.shoulder_right,Gamepad button by position,Right shoulder
+widgets.pad.trigger_left,Gamepad button by position,Left trigger
+widgets.pad.trigger_right,Gamepad button by position,Right trigger
+widgets.pad.stick_left,Gamepad stick,Left stick
+widgets.pad.stick_right,Gamepad stick,Right stick
+widgets.pad.stick_left_press,Gamepad stick press,Left stick press
+widgets.pad.stick_right_press,Gamepad stick press,Right stick press
+widgets.pad.start,Gamepad button,Start
+widgets.pad.select,Gamepad button,Select

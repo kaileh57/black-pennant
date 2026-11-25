@@ -1,0 +1,80 @@
+keys,?context,en
+benchmark.title,Benchmark screen title,Benchmark
+benchmark.title_results,Benchmark screen title once a report exists,Benchmark report
+benchmark.back,Button that returns to the main menu,Back to the menu
+benchmark.intro,What the benchmark is for,"The benchmark plays fixed battles and timing runs on this computer and writes a report. Reports pasted into the project's issue form decide which graphics tier each class of hardware gets by default."
+benchmark.plan_title,Title over the list of stages,What runs
+benchmark.plan_line,"One numbered stage; {0} number, {1} the stage",{0}. {1}
+benchmark.plan.1,Stage 1,"Reference battle replay, 3 minutes at the detected graphics tier, then 3 minutes each at Low and Medium."
+benchmark.plan.2,Stage 2,"Co-op reference battle, 2 minutes, hosted on this computer."
+benchmark.plan.3,Stage 3,"Minimum swarm, 2 minutes."
+benchmark.plan.4,Stage 4,Dry dock timing: gauge updates and splash start.
+benchmark.plan.5,Stage 5,Simulation calibration on one core.
+benchmark.plan.6,Stage 6,"Optional soak: the reference battle for 20 minutes, to catch thermal slowdown."
+benchmark.soak,Checkbox that adds the soak stage,Add the 20-minute soak
+benchmark.estimate,Run length; {0} minutes,About {0} minutes. Leave the computer alone while it runs.
+benchmark.privacy,What the report holds,"The report holds the build, the operating system, the processor, memory, graphics adapter and driver, and the timings. It holds no names or file paths, and nothing is sent: you choose whether to post it."
+benchmark.start,Button that starts the benchmark,Start benchmark
+benchmark.busy_title,Dialog title,Benchmark not started
+benchmark.busy_body,Dialog body when a session is live,A sortie or lobby is still open. Leave it and start again.
+benchmark.progress,Accessible name of the progress bar,Stage progress
+benchmark.left,Time left in the stage; {0} duration,{0} left
+benchmark.loading,Strip text while a battle stage loads,Loading
+benchmark.cancel,Button that stops the run,Stop benchmark
+benchmark.stage.reference,Stage name in the results,Reference battle
+benchmark.stage.coop,Stage name in the results,Co-op reference battle
+benchmark.stage.swarm,Stage name in the results,Minimum swarm
+benchmark.stage.editor,Stage name in the results,Dry dock timing
+benchmark.stage.calib,Stage name in the results,Simulation calibration
+benchmark.stage.soak,Stage name in the results,Soak
+benchmark.results,Accessible name of the results table,Benchmark results
+benchmark.col.stage,Results column,Stage
+benchmark.col.tier,Results column: graphics tier,Tier
+benchmark.col.frame,"Results column: frame time at the 50th, 95th and 99th percentile",Frame p50/p95/p99
+benchmark.col.gpu,Results column: GPU time at the 95th percentile,GPU p95
+benchmark.col.tick,Results column: simulation tick at the 95th and 99th percentile,Tick p95/p99
+benchmark.col.adapter,Results column: adapter time at the 99th percentile,Adapter p99
+benchmark.col.missed,Results column: share of frames that missed the display refresh,Missed vblanks
+benchmark.col.frames,Results column: frames measured,Frames
+benchmark.ms,Milliseconds; {0} number,{0} ms
+benchmark.triple,"Three percentiles in ms; {0}, {1}, {2}",{0} / {1} / {2} ms
+benchmark.pair,"Two values; {0}, {1}",{0} / {1}
+benchmark.not_measured,GPU time on drivers that do not report it,Not measured
+benchmark.failed,A stage that did not complete,Stage failed
+benchmark.calib,Calibration result; {0} microseconds,{0} us per tick
+benchmark.editor,"Dry dock result; {0} gauge time, {1} splash start time",Gauges {0} / splash {1} at p95
+benchmark.done,Line over the results,"The run is complete. Copy the report and paste it into the issue form, or save it as a file."
+benchmark.soak_pass,Soak verdict; {0} frame time p95,Soak passed: frame time p95 over the last 5 minutes was {0}.
+benchmark.soak_fail,Soak verdict; {0} frame time p95,Soak failed: frame time p95 over the last 5 minutes was {0}.
+benchmark.copy,Button that copies the report JSON,Copy report
+benchmark.issue,Button that opens the issue form in the browser,Open the issue form
+benchmark.save,Button that saves the report as a file,Save report
+benchmark.again,Button that returns to the start of the benchmark,Run again
+benchmark.vulkan,Button that relaunches the benchmark on the Vulkan driver (Windows),Run again under Vulkan
+benchmark.vulkan_failed,Note when the relaunch failed,The game could not be started under Vulkan.
+benchmark.copied,Note after copying,Report copied. Paste it into the issue form.
+benchmark.saved,Note after saving; {0} the file's full path,Report saved to {0}
+benchmark.save_failed,Note after a failed save,The report could not be saved.
+benchmark.no_report,Note when there is no report,There is no report yet.
+benchmark.issue_opened,Note after opening the browser,The issue form is open in your browser. Paste the report there.
+benchmark.machine,Title over the machine facts,This computer
+benchmark.fact.build,"Machine line; {0} build, {1} operating system","Build {0} on {1}"
+benchmark.fact.cpu,"Machine line; {0} processor, {1} memory in GB","{0}, {1} GB memory"
+benchmark.fact.gpu,"Machine line; {0} graphics adapter, {1} driver version","{0}, driver {1}"
+benchmark.fact.render,"Machine line; {0} rendering method, {1} driver, {2} fallbacks taken","{0} on {1}, fallbacks: {2}"
+benchmark.none,No fallbacks,none
+benchmark.fact.tier,"Machine line; {0} tier, {1} window size, {2} 3D scale","{0} tier, {1} window, 3D scale {2}"
+benchmark.fact.memory,"Machine line; {0} peak memory in MB, {1} video memory in MB","Peak memory {0} MB, video memory {1} MB"
+benchmark.fact.pipelines,Machine line; {0} count,{0} pipeline compilations after loading
+benchmark.fact.dpi,Machine line; {0} Windows DPI awareness,DPI awareness: {0}
+benchmark.fact.thermal,Machine line; {0} the worst thermal state,Worst thermal state: {0}
+benchmark.thermal.0,Thermal state,nominal
+benchmark.thermal.1,Thermal state,fair
+benchmark.thermal.2,Thermal state,serious
+benchmark.thermal.3,Thermal state,critical
+benchmark.run_title,Title over the stages of the run in progress,Progress
+benchmark.run_done,A finished stage; {0} the stage line,Done: {0}
+benchmark.run_now,The stage running now; {0} the stage line,Running: {0}
+benchmark.run_help,Shown while a stage without a picture runs,This stage runs without a picture. The figures appear when every stage is done.
+benchmark.job_row,"Results row of a timing stage; {0} stage, {1} its figures","{0}: {1}"
+benchmark.fact.gpu_no_driver,Machine line when the driver gives no version; {0} adapter,"{0}, driver version not reported"

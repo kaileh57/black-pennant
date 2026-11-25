@@ -1,0 +1,29 @@
+// Stock kit (DESIGN.md L140). Unit `data-kits-act1`. Licensed CC BY 4.0.
+// Four berths (one Damage Control team, L703) with a large and a small pump.
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.damage_control",
+    version: 1,
+    hash: "",
+    name: "Damage control station",
+    name_key: "kit.damage_control.name",
+    description_key: "kit.damage_control.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "berths.crew", offset: (x: 0, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+        (part: "pump.large", offset: (x: 0, y: 0, z: 3), rot: (yaw: 0, tilt: 0)),
+        (part: "pump.small", offset: (x: 2, y: 0, z: 3), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "floor", offset: (x: 2, y: 0, z: 1), face: YNeg),
+    ],
+    settings: [],
+    graph: (),
+    officer: None,
+    tags: [],
+    tray_order: 70,
+)

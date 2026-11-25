@@ -1,0 +1,70 @@
+// Vec<FleetTemplate>: the Combine's Act 1 groups (DESIGN.md L747, L94-102). Unit `data-enemy-act1`. Licensed CC BY 4.0.
+//
+// Commitment arithmetic uses each slot's minimum count of its lightest class (class tonnages are listed in
+// enemy_classes/act1.ron). Every task group and the hunter-killer meet 5 hulls and 600 t on that worst draw,
+// because the operation generator reuses them as reinforcement waves; so does the convoy escort, which alone
+// commits a convoy raid. Convoys, decoys, prizes and the defector are not combat hulls and never count.
+//
+// The generator adds "the act's first fleet of a kind" by sorted id for Alert 3 escorts and decoy convoys, so the
+// light generic fleets carry the shortest ids of their kinds (fleet.act1.escort sorts before
+// fleet.act1.escort.convoy). Act 1 has no aircraft, so no air patrol fleet exists.
+[
+    // ---- Shipping -----------------------------------------------------------------------------------------------
+    (id: "fleet.act1.convoy", kind: Convoy, act: Act1, formation: Column,
+        slots: [(classes: ["class.coaster", "class.tanker"], min: 3, max: 4)]),
+    (id: "fleet.act1.convoy.prize", kind: Convoy, act: Act1, formation: Column,
+        slots: [(classes: ["class.coaster", "class.tanker"], min: 1, max: 2)]),
+    (id: "fleet.act1.convoy.moored", kind: Convoy, act: Act1, formation: Column,
+        slots: [(classes: ["class.supply_tender", "class.coaster"], min: 1, max: 1)]),
+    (id: "fleet.act1.convoy.defector", kind: Convoy, act: Act1, formation: Column,
+        slots: [(classes: ["class.patrol_boat"], min: 1, max: 1)]),
+    (id: "fleet.act1.decoy", kind: DecoyConvoy, act: Act1, formation: Column,
+        slots: [(classes: ["class.coaster"], min: 2, max: 3)]),
+    // ---- Escorts ------------------------------------------------------------------------------------------------
+    // Alert 3 escort: about 300 to 400 t added to an operation.
+    (id: "fleet.act1.escort", kind: Escort, act: Act1, formation: Screen,
+        slots: [(classes: ["class.patrol_corvette", "class.escort_corvette"], min: 1, max: 1), (classes: ["class.gunboat", "class.torpedo_boat"], min: 1, max: 2)]),
+    // Convoy escort: worst draw 2 x 252 + 3 x 54 = 666 t in 5 hulls.
+    (id: "fleet.act1.escort.convoy", kind: Escort, act: Act1, formation: Screen,
+        slots: [(classes: ["class.patrol_corvette", "class.escort_corvette"], min: 2, max: 2), (classes: ["class.gunboat", "class.picket", "class.torpedo_boat"], min: 3, max: 3)]),
+    // ---- Patrols and garrisons ------------------------------------------------------------------------------------
+    (id: "fleet.act1.patrol", kind: Patrol, act: Act1, formation: LineAbreast,
+        slots: [(classes: ["class.patrol_boat", "class.launch"], min: 2, max: 3), (classes: ["class.gunboat", "class.torpedo_boat"], min: 1, max: 2)]),
+    (id: "fleet.act1.patrol.heavy", kind: Patrol, act: Act1, formation: Wedge,
+        slots: [(classes: ["class.patrol_corvette"], min: 1, max: 1), (classes: ["class.gunboat", "class.torpedo_boat", "class.picket"], min: 2, max: 3)]),
+    (id: "fleet.act1.garrison", kind: Garrison, act: Act1, formation: Box,
+        slots: [(classes: ["class.launch", "class.patrol_boat"], min: 2, max: 3), (classes: ["class.gunboat"], min: 1, max: 2), (classes: ["class.picket", "class.minesweeper"], min: 0, max: 1)]),
+    // Radar pickets the "radar pickets" doctrine card adds to night operations.
+    (id: "fleet.act1.pickets", kind: Patrol, act: Act1, formation: LineAbreast,
+        slots: [(classes: ["class.picket"], min: 2, max: 2), (classes: ["class.patrol_boat"], min: 1, max: 2)]),
+    // Ace flagships sail alone in their own group, so a duel's objective is the ace's ship and nothing else.
+    (id: "fleet.act1.ace.arrears", kind: Patrol, act: Act1, formation: Column,
+        slots: [(classes: ["class.ace_arrears"], min: 1, max: 1)]),
+    (id: "fleet.act1.ace.covenant", kind: Patrol, act: Act1, formation: Column,
+        slots: [(classes: ["class.ace_covenant"], min: 1, max: 1)]),
+    // The tutorial operation's single opponent.
+    (id: "fleet.act1.tutorial", kind: Patrol, act: Act1, formation: Column,
+        slots: [(classes: ["class.patrol_boat"], min: 1, max: 1)]),
+    // ---- Task groups (5 hulls, at least 600 t on the worst draw) --------------------------------------------------
+    // 252 + 173 + 2 x 90 + 44 = 649 t.
+    (id: "fleet.act1.tg.gun", kind: TaskGroup, act: Act1, formation: Wedge,
+        slots: [(classes: ["class.patrol_corvette", "class.escort_corvette"], min: 1, max: 1), (classes: ["class.fac"], min: 1, max: 1),
+            (classes: ["class.gunboat", "class.gunboat_b", "class.picket"], min: 2, max: 2), (classes: ["class.patrol_boat", "class.torpedo_boat"], min: 1, max: 1)]),
+    // 321 + 2 x 131 + 2 x 44 = 671 t.
+    (id: "fleet.act1.tg.strike", kind: TaskGroup, act: Act1, formation: LineAbreast,
+        slots: [(classes: ["class.missile_corvette"], min: 1, max: 1), (classes: ["class.missile_boat"], min: 2, max: 2),
+            (classes: ["class.torpedo_boat", "class.patrol_boat"], min: 2, max: 2)]),
+    // 291 + 252 + 2 x 90 + 44 = 767 t.
+    (id: "fleet.act1.tg.screen", kind: TaskGroup, act: Act1, formation: Screen,
+        slots: [(classes: ["class.escort_corvette"], min: 1, max: 1), (classes: ["class.patrol_corvette"], min: 1, max: 1),
+            (classes: ["class.gunboat", "class.picket"], min: 2, max: 2), (classes: ["class.patrol_boat"], min: 1, max: 1)]),
+    // 553 + 252 + 131 + 2 x 54 = 1,044 t.
+    (id: "fleet.act1.tg.heavy", kind: TaskGroup, act: Act1, formation: Column,
+        slots: [(classes: ["class.frigate"], min: 1, max: 1), (classes: ["class.patrol_corvette", "class.escort_corvette"], min: 1, max: 1),
+            (classes: ["class.fac", "class.missile_boat"], min: 1, max: 1), (classes: ["class.gunboat", "class.torpedo_boat"], min: 2, max: 2)]),
+    // Hunter-killer: 2 x 553 + 2 x 291 + 173 = 1,861 t. The Alert 5 hunter group itself is drawn from hull records of
+    // the top tier (theatre alert); this template sails in standalone operations and as the heaviest wave.
+    (id: "fleet.act1.hunter", kind: HunterKiller, act: Act1, formation: Wedge,
+        slots: [(classes: ["class.frigate", "class.frigate_b"], min: 2, max: 2), (classes: ["class.escort_corvette", "class.missile_corvette"], min: 2, max: 2),
+            (classes: ["class.fac"], min: 1, max: 1)]),
+]

@@ -1,0 +1,92 @@
+// Vec<FleetTemplate>: the Combine's Act 4 groups (DESIGN.md L747, L94-102, L749, L126, L866-875). Unit `data-act4`.
+// Licensed CC BY 4.0.
+//
+// Commitment arithmetic uses each slot's minimum count of its lightest class (tonnages in enemy_classes/act1.ron to
+// act4.ron). Act 4 commits 5 hulls and 7,200 t per player (L747). Every task group and the hunter-killer meets that
+// on its worst draw, because the operation generator draws its reinforcement waves and co-op groups from the latest
+// act's task groups and hunter-killers; so does the convoy escort, which alone commits a convoy raid or prize
+// capture. Convoys, prizes, moored hulls and the defector are not combat hulls and never count. Act 1 to Act 3
+// hulls stay in service and fill some patrol and garrison slots.
+//
+// The same groups serve Open Theatre, which plays Act 4's templates in all four regions (L873): nothing here names
+// a Meridian place, so a group sails the same in the Gannet Banks as in the Roads.
+//
+// Capitals (L126): the heavy cruiser sails only in the cruiser squadron and the Chairman's flagship only in her own
+// group; neither is ever a task-group, hunter-killer, escort or wave hull. An operation names the squadron at most
+// once, so with the Chairman arriving it fields two hulls over 90 m, inside the limit of 4.
+//
+// Submarines (L451): Act 4 builds no boats. Its submarine patrols sail Act 3's patrol and coastal boats beside a
+// surface force, never as an objective, so every floor holds on surface hulls alone and nothing needs rewriting if
+// submarines are cut (L875).
+//
+// Aircraft: Act 4 adds no air groups. The generator's Alert 3 air patrol and the air-patrol complication take the
+// first air-patrol fleet by sorted id across every act up to the current one, which stays fleet.act2.air (two strike
+// aircraft), and the capstone names Act 2's four-aircraft raid. The Alert 3 escort and decoy convoy likewise stay
+// fleet.act1.escort and fleet.act1.decoy, so this file carries no generic escort or decoy nothing would draw.
+[
+    // ---- Shipping -----------------------------------------------------------------------------------------------
+    (id: "fleet.act4.convoy", kind: Convoy, act: Act4, formation: Column,
+        slots: [(classes: ["class.cargo_liner", "class.replenisher", "class.bulk_carrier", "class.fleet_tanker"], min: 3, max: 4)]),
+    // The fleet train: the replenishment ships that carry the Charter's fuel and shells.
+    (id: "fleet.act4.convoy.train", kind: Convoy, act: Act4, formation: Column,
+        slots: [(classes: ["class.replenisher"], min: 3, max: 4)]),
+    (id: "fleet.act4.convoy.prize", kind: Convoy, act: Act4, formation: Column,
+        slots: [(classes: ["class.cargo_liner", "class.replenisher"], min: 1, max: 2)]),
+    (id: "fleet.act4.convoy.moored", kind: Convoy, act: Act4, formation: Column,
+        slots: [(classes: ["class.cargo_liner", "class.replenisher", "class.supply_tender"], min: 1, max: 1)]),
+    // The defector: a board member's yacht carrying the people who walk out of the Combine.
+    (id: "fleet.act4.convoy.defector", kind: Convoy, act: Act4, formation: Column,
+        slots: [(classes: ["class.yacht"], min: 1, max: 1)]),
+    // ---- Escorts ------------------------------------------------------------------------------------------------
+    // Convoy escort: worst draw 1,539 + 1,511 + 1,475 + 1,424 + 2,067 = 8,016 t in 5 hulls.
+    (id: "fleet.act4.escort.convoy", kind: Escort, act: Act4, formation: Screen,
+        slots: [(classes: ["class.margin"], min: 1, max: 1), (classes: ["class.escrow"], min: 1, max: 1),
+            (classes: ["class.debenture", "class.debenture_b"], min: 1, max: 1), (classes: ["class.yield"], min: 1, max: 1),
+            (classes: ["class.consol"], min: 1, max: 1)]),
+    // ---- Patrols and garrisons ----------------------------------------------------------------------------------
+    // 666 + 526 = 1,192 t in 2 hulls at least.
+    (id: "fleet.act4.patrol", kind: Patrol, act: Act4, formation: LineAbreast,
+        slots: [(classes: ["class.surety", "class.surety_b"], min: 1, max: 2), (classes: ["class.option", "class.pledge_b", "class.annuity"], min: 1, max: 2)]),
+    // 1,475 + 2 x 666 = 2,807 t in 3 hulls at least.
+    (id: "fleet.act4.patrol.heavy", kind: Patrol, act: Act4, formation: Wedge,
+        slots: [(classes: ["class.debenture"], min: 1, max: 1), (classes: ["class.surety", "class.surety_b"], min: 2, max: 3)]),
+    // 2 x 666 + 526 = 1,858 t in 3 hulls at least.
+    (id: "fleet.act4.garrison", kind: Garrison, act: Act4, formation: Box,
+        slots: [(classes: ["class.surety", "class.surety_b"], min: 2, max: 3), (classes: ["class.option"], min: 1, max: 1),
+            (classes: ["class.collateral", "class.annuity"], min: 0, max: 1)]),
+    // ---- Capitals -----------------------------------------------------------------------------------------------
+    // The cruiser squadron: the heavy cruiser and her air-defence destroyer, 3,489 + 1,539 = 5,028 t in 2 hulls.
+    (id: "fleet.act4.squadron", kind: Patrol, act: Act4, formation: Column,
+        slots: [(classes: ["class.principal"], min: 1, max: 1), (classes: ["class.margin"], min: 1, max: 1)]),
+    // ---- Submarines (Act 3's boats) -----------------------------------------------------------------------------
+    (id: "fleet.act4.sub", kind: SubmarinePatrol, act: Act4, formation: LineAbreast,
+        slots: [(classes: ["class.accrual"], min: 1, max: 2)]),
+    (id: "fleet.act4.sub.pack", kind: SubmarinePatrol, act: Act4, formation: LineAbreast,
+        slots: [(classes: ["class.accrual"], min: 2, max: 2), (classes: ["class.tontine"], min: 0, max: 1)]),
+    // ---- Ace ----------------------------------------------------------------------------------------------------
+    // The ace flagship sails alone in her own group, so the duel's objective is the Charter and nothing else.
+    (id: "fleet.act4.ace.charter", kind: Patrol, act: Act4, formation: Column,
+        slots: [(classes: ["class.ace_charter"], min: 1, max: 1)]),
+    // ---- Task groups (5 hulls, at least 7,200 t on the worst draw) ------------------------------------------------
+    // 2 x 1,475 + 2,067 + 1,511 + 1,539 = 8,067 t.
+    (id: "fleet.act4.tg.gun", kind: TaskGroup, act: Act4, formation: Wedge,
+        slots: [(classes: ["class.debenture", "class.debenture_b"], min: 2, max: 2), (classes: ["class.consol"], min: 1, max: 1),
+            (classes: ["class.escrow"], min: 1, max: 1), (classes: ["class.margin"], min: 1, max: 1)]),
+    // 2 x 1,424 + 1,539 + 1,511 + 1,475 = 7,373 t.
+    (id: "fleet.act4.tg.strike", kind: TaskGroup, act: Act4, formation: LineAbreast,
+        slots: [(classes: ["class.yield"], min: 2, max: 2), (classes: ["class.margin"], min: 1, max: 1),
+            (classes: ["class.escrow"], min: 1, max: 1), (classes: ["class.debenture", "class.debenture_b"], min: 1, max: 1)]),
+    // The air-defence group that covers the Roads' anchorages: 2 x 1,539 + 1,424 + 1,511 + 1,475 = 7,488 t.
+    (id: "fleet.act4.tg.screen", kind: TaskGroup, act: Act4, formation: Screen,
+        slots: [(classes: ["class.margin"], min: 2, max: 2), (classes: ["class.yield"], min: 1, max: 1),
+            (classes: ["class.escrow"], min: 1, max: 1), (classes: ["class.debenture"], min: 1, max: 1)]),
+    // 2 x 2,067 + 1,901 + 1,539 + 1,511 = 9,085 t.
+    (id: "fleet.act4.tg.heavy", kind: TaskGroup, act: Act4, formation: Column,
+        slots: [(classes: ["class.consol"], min: 2, max: 2), (classes: ["class.debenture_b"], min: 1, max: 1),
+            (classes: ["class.margin"], min: 1, max: 1), (classes: ["class.escrow"], min: 1, max: 1)]),
+    // Hunter-killer: 3 x 2,067 + 1,901 + 1,539 = 9,641 t. The Alert 5 hunter group itself is drawn from hull records
+    // of the top tier (theatre alert); this template sails in standalone operations and as the heaviest wave.
+    (id: "fleet.act4.hunter", kind: HunterKiller, act: Act4, formation: Wedge,
+        slots: [(classes: ["class.consol"], min: 3, max: 3), (classes: ["class.debenture_b"], min: 1, max: 1),
+            (classes: ["class.margin"], min: 1, max: 1)]),
+]

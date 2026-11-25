@@ -1,0 +1,28 @@
+keys,?context,en
+tutorial.open,"Tutorial, step 1 of 6, full hull; the player presses Continue","This 22 m fast attack craft floats, but it is too narrow to sit steady and has no main gun or radar. Fit it out, then take it to sea."
+tutorial.open_float,"Tutorial, step 1 of 6, fallback hull with Float already at Pass","This 22 m fast attack craft floats steady, but it has no main gun or radar. Fit it out, then take it to sea."
+tutorial.open_drive,"Tutorial, step 1 of 6, fallback hull with engine and fuel tank fitted","This 22 m fast attack craft already has an engine and fuel, but no main gun or radar. Fit it out, then take it to sea."
+tutorial.open_nogun,"Tutorial, step 1, fallback hull fitted except for its gun","This 22 m fast attack craft is ready for sea except for one thing: it has no main gun."
+tutorial.beam,"Tutorial, step 2; the beam handle is a ring on the hull, framed on screen; Float and Pass are gauge names","Drag the framed beam handle up or to the right to widen the hull, until the Float gauge shows Pass. A wider hull rolls less."
+tutorial.beam_demo,"Tutorial, step 2 as a 20 s demonstration; Float and Pass are gauge names","Watch the beam handle. Widening the hull is how Float reached Pass."
+tutorial.kits,"Tutorial, step 3, four kits; a dropped kit moves to its place on the hull by itself","Drag the gun, radar mast, engine and fuel tank from the tray onto the hull. Each one settles into its place."
+tutorial.kits_two,"Tutorial, step 3, two kits; a dropped kit moves to its place on the hull by itself","Drag the gun and the radar mast from the tray onto the hull. Each one settles into its place."
+tutorial.kits_gun,"Tutorial, the one-drag fallback; the dropped gun moves to its place by itself",Drag the gun from the tray onto the hull. It settles into its place.
+tutorial.fix_arc,"Tutorial, step 4; Ship's Notes is a panel name; the framed fix button reads Move and the gun's name; Accept fix is a button","The gun sits low in the bow, so the hull blocks most of its arc. In Ship's Notes, press the framed Move button, then Accept fix."
+tutorial.fix_arc_demo,"Tutorial, step 4 as a demonstration; Fix is a button","The gun sits low in the bow, so the hull blocks most of its arc. Watch the preview of the Fix, then it is applied for you."
+tutorial.launch,"Tutorial, step 5; Space is the splash key","Press Space to splash. Your ship goes into a test basin with drones to shoot at."
+tutorial.drones,"Tutorial, step 5 in the splash basin; W, A, S and D are helm keys; the guns fire without the player","Press W a few times to get under way: each press rings up more speed. Steer with A and D. The guns find and hit the drones on their own."
+tutorial.patrol_launch,"Tutorial, step 6; Space is the splash key, in the dry dock or in the basin",Splash again with Space. This time a patrol boat fires back.
+tutorial.patrol_boat,"Tutorial, step 6 in the splash basin; W, A and D are helm keys; Rewind 30 s is a button","Beat the patrol boat. Press W to close inside your gun's reach, and steer with A and D to throw off its aim. Press Rewind 30 s if you are hit hard."
+tutorial.aggression,"Tutorial, step 6; Officers is a dry dock tab, Aggression a slider name, framed on screen","In the dry dock's Officers tab, move the framed Aggression slider. It sets how eagerly the gunnery officer engages."
+tutorial.splash_again,"Tutorial, step 6; Space is the splash key",Splash once more with Space to see the new setting at work.
+tutorial.done,"Tutorial, last step; the reward hull is added to the player's blueprints","Done. The fully fitted fast attack craft is now in your blueprints."
+tutorial.done_short,"Tutorial, last step of the one-drag fallback","Done. The fully fitted fast attack craft is now in your blueprints. Try it against the patrol boat next."
+tutorial.done.beam,"Tutorial card, after step 2: what the player achieved; the hull then settles on its design beam",Float shows Pass. The hull settles at its working beam and sits steady.
+tutorial.done.kits,"Tutorial card, after step 3: what the player achieved",All four kits are fitted.
+tutorial.done.kits_two,"Tutorial card, after step 3 of a fallback: what the player achieved",The gun and the radar mast are fitted.
+tutorial.done.kits_gun,"Tutorial card, after the one-drag fallback's kit step",The gun is fitted.
+tutorial.done.fix_arc,"Tutorial card, after step 4: what the player achieved",The gun's arc is clear.
+tutorial.done.drones,"Tutorial card, after the drones: what the player achieved",Your guns opened fire on the drones.
+tutorial.done.patrol_boat,"Tutorial card, after the patrol boat: what the player achieved",The patrol boat is out of the fight.
+tutorial.done.aggression,"Tutorial card, after the Aggression slider: what the player achieved",Aggression is set.

@@ -1,0 +1,172 @@
+keys,?context,en
+campaign.reject.not_host,Refusal; a co-op member tried a host-only action,Only the host can do that.
+campaign.reject.not_enough_salvage,Refusal; the shared pool lacks Salvage,Not enough Salvage in SEXTANT's pool.
+campaign.reject.not_enough_intel,Refusal; the shared pool lacks Intel,Not enough Intel.
+campaign.reject.not_at_cove,"Refusal; SEXTANT is away from a cove, on passage, refitting, or a sortie is out",SEXTANT must lie at a cove with no sortie or passage under way.
+campaign.reject.hull_not_ready,Refusal; a hull is still in refit or rebuild,A hull is still in the dock.
+campaign.reject.operation_not_offered,Refusal; the operation left the chart,That operation is no longer on offer.
+campaign.reject.forced_operation_pending,Refusal; a forced operation must be fought first,A forced operation must be fought first.
+campaign.reject.ironman_locked,Refusal; Ironman locks this,Ironman locks this setting.
+campaign.reject.over_tonnage_cap,Refusal; the design is over the act's hull cap,The design is over this act's tonnage cap.
+campaign.reject.invalid_blueprint,Refusal; the design fails validation,The design does not pass validation. Fix it in the dry dock.
+campaign.reject.no_such_proposal,Refusal; the proposal is closed,That proposal is no longer open.
+campaign.reject.unknown_target,Refusal; the target is not on the chart,That is not on the chart.
+campaign.reject.campaign_over,Refusal; the Ironman campaign has ended,The campaign is over.
+campaign.reject.no_campaign,Refusal; no campaign is loaded,No campaign is loaded.
+campaign.reject.busy,Refusal; theatre time is running or a sortie is out,Wait until theatre time stops.
+campaign.reject.no_design,Refusal; refit with no design saved in the dry dock,Save a design in the dry dock first.
+campaign.reject.hull_count_locked,Refusal; the hull count slider is locked,Hull count locks when the campaign starts.
+campaign.reject.unknown_service,Refusal; an unknown cove service was asked for,SEXTANT offers no such service.
+campaign.reject.bad_action,Refusal; a chart-table action was incomplete,That order is incomplete.
+campaign.reject.no_briefing,Refusal; launch with no briefing open,Open an operation's briefing first.
+campaign.reject.not_accepted,Refusal; co-op launch before the accept committed,Every player must accept the operation first.
+campaign.reject.member_waits,Refusal; a member has no link to the host,No link to the host.
+campaign.reject.no_dock,Refusal; the dry dock is closed,The dry dock is closed.
+campaign.transit.hours,"Transit preview; {0} hours, {1} destination cove",{0} to {1}.
+campaign.transit.hours_cut,"Transit preview through a cut lane; {0} hours, {1} destination cove","{0} to {1}, through a cut lane."
+campaign.transit.here,Transit preview; SEXTANT is already at this node,SEXTANT lies here.
+campaign.transit.not_cove,Transit preview; the node is not an open cove,SEXTANT can only move to an open cove.
+campaign.transit.no_route,Transit preview; no open lanes reach the node,No open route.
+campaign.transit.forced,Transit preview; a forced operation blocks transits,A forced operation must be fought first.
+campaign.transit.sextant_refit,Transit preview; SEXTANT is refitting,SEXTANT is refitting.
+campaign.transit.under_way,Transit preview; SEXTANT is already moving or a sortie is out,SEXTANT is under way.
+campaign.sortie.failed,The sortie did not start; the offer stands,The sortie did not start. The operation is still on offer.
+campaign.sortie.lost_result,The sortie's result never arrived; the offer stands,The sortie's result was lost. The operation is still on offer.
+campaign.new.bad_difficulty,New campaign problem; difficulty settings out of range,The difficulty settings are not valid.
+campaign.new.bad_starter,New campaign problem; unknown starter hull,That starter hull is not offered.
+campaign.new.busy,Problem; a sortie or session is running,Leave the current sortie first.
+campaign.new.save_failed,New campaign problem; the first save could not be written,"The campaign could not be saved, so it did not start. Check the free space in the user data folder."
+campaign.save.write_failed,Save problem; writing failed,The save could not be written.
+campaign.save.not_found,Save problem; the file is gone,That save no longer exists.
+campaign.save.outside,Save problem; a path outside the saves folder,That file is not in the saves folder.
+campaign.save.forked,Co-op save copy refused; it forked from this player's copy,"The host's save forked from your copy, so it was refused. Your copy is kept; the session shows the host's state."
+campaign.save.other_campaign,Co-op save copy problem; a different campaign,That save belongs to another campaign.
+campaign.save.suspend_failed,The suspend save could not be written,The suspend save could not be written. The operation is still on offer.
+campaign.save.not_allowed,Save refused; only at a cove between operations,Saving is possible at a cove between operations.
+campaign.save.copy_refused,Co-op save copy refused as older,The host's copy is older than yours and was not stored.
+campaign.save.unreadable,A save file could not be read,This save could not be read.
+campaign.save.other_build,Suspend slot refused; another build wrote its sortie,This sortie was suspended by another build and cannot be resumed here. The campaign continues from its last save.
+campaign.save.stale_suspend,Suspend slot refused; the campaign was saved after it,This suspended sortie is older than the campaign's last save and cannot be resumed.
+campaign.save.later_act,Save refused; its act is not in this build,This save is from a later act than this build plays.
+campaign.threat.unknown,Briefing threat entry of unknown class,Unknown contacts
+campaign.interrupt.arrived,Interrupt; {0} cove name,SEXTANT arrived at {0}.
+campaign.interrupt.refit_done,Interrupt,Refits complete.
+campaign.interrupt.wait_done,Interrupt,Wait complete.
+campaign.interrupt.operation_offered,Interrupt; {0} operation name,New operation on offer: {0}.
+campaign.interrupt.forced_operation,Interrupt; {0} operation name,{0} cannot be declined. Fight it next.
+campaign.interrupt.hunter_group_warning,Interrupt; {0} hours until it arrives,A hunter group has sortied against SEXTANT. It arrives in {0}.
+campaign.interrupt.card_arriving,"Interrupt; {0} doctrine card, {1} region, {2} hours",{0} reaches {1} in {2}.
+campaign.interrupt.clock_low,Interrupt; {0} theatre days left,{0} days left on the operation clock.
+campaign.interrupt.act_ended,Interrupt,The act has ended.
+campaign.interrupt.build_end,"Interrupt when the last act this build ships is won; {0} act number",Act {0} is the end of this build. The chart stays open to look over.
+campaign.interrupt.build_end_lost,"Interrupt when the clock runs out on the last act this build ships; {0} act number",Act {0} lost. It starts again in retreat with a new clock.
+campaign.interrupt.hull_ready,Interrupt; {0} player name,{0}'s hull is ready.
+campaign.interrupt.paused,Interrupt,Theatre time paused.
+campaign.event.hour_advanced,Theatre log; {0} theatre hour,Hour {0}.
+campaign.event.sextant_moved,"Theatre log; {0} from node, {1} to node",SEXTANT moved from {0} to {1}.
+campaign.event.sextant_placed,Theatre log; {0} cove,SEXTANT lies at {0}.
+campaign.event.lane_cut,"Theatre log; {0} and {1} nodes, {2} days",The lane from {0} to {1} is cut for {2} days.
+campaign.event.lane_restored,Theatre log; {0} and {1} nodes,The lane from {0} to {1} is open again.
+campaign.event.depot_emptied,Theatre log; {0} depot,{0} is empty.
+campaign.event.supply_changed,"Theatre log; {0} region, {1} supply 0 to 100",{0} supply is {1}.
+campaign.event.patrol_density_changed,"Theatre log; {0} region, {1} percent of base patrols",{0} patrols at {1} of strength.
+campaign.event.alert_changed,"Theatre log; Alert is a proper noun, the region threat level; {0} region, {1} Alert level, {2} cause",{0} Alert {1}: {2}.
+campaign.event.alert_escalated,Theatre log; {0} region,"{0} reached Alert 3. Escorts, air patrols and decoy convoys now sail."
+campaign.event.hunter_group_sortied,Theatre log; {0} hours until it arrives,A hunter group sortied against SEXTANT. It arrives in {0}.
+campaign.event.hunter_group_sortied_ace,"Theatre log; {0} ace name, {1} hours",A hunter group under {0} sortied against SEXTANT. It arrives in {1}.
+campaign.event.hunter_group_arrived,Theatre log,The hunter group reached SEXTANT's cove.
+campaign.event.tally_changed,"Theatre log; {0} what is tallied, {1} tally value",Combine tally of {0}: {1}.
+campaign.event.card_queued,"Theatre log; {0} card, {1} region, {2} hours",Doctrine bulletin: {0} reaches {1} in {2}.
+campaign.event.card_delayed,"Theatre log; {0} card, {1} region, {2} hours",{0} delayed. It reaches {1} in {2}.
+campaign.event.card_cancelled,"Theatre log; {0} card, {1} region",{0} cancelled in {1}.
+campaign.event.card_arrived,"Theatre log; {0} card, {1} region",{0} is in force in {1}.
+campaign.event.clock_pushed_back,Theatre log; {0} theatre hours,Operation clock pushed back {0}.
+campaign.event.clock_expired,Theatre log,The operation clock ran out.
+campaign.event.act_lost,Theatre log; {0} act number,Act {0} lost. The next act starts in retreat.
+campaign.event.act_lost_build_end,"Theatre log when the last act this build ships is lost; {0} act number","Act {0} lost. This build ends at Act {0}, so it starts again in retreat."
+campaign.event.act_won,Theatre log; {0} act number,Act {0} won.
+campaign.event.act_won_build_end,"Theatre log when the last act this build ships is won; {0} act number",Act {0} won. This build ends here: the clock stops and the chart stays open to look over.
+campaign.event.act_started,Theatre log; {0} act number,Act {0} begins.
+campaign.event.act_started_retreat,Theatre log; {0} act number,Act {0} begins in retreat.
+campaign.event.open_theatre_opened,"Theatre log; Open Theatre is a proper noun, the mode after Act 4",Open Theatre: the operation clock stops.
+campaign.event.operation_offered,Theatre log; {0} operation name,New operation on offer: {0}.
+campaign.event.operation_withdrawn,Theatre log; {0} operation name,{0} is off the chart.
+campaign.event.operation_unlocked,Theatre log; {0} operation name,{0} is now possible.
+campaign.event.tier_opened,Theatre log; {0} part tier number,Tier {0} parts are open.
+campaign.event.part_unlocked,Theatre log; {0} part name,Blueprint recovered: {0}.
+campaign.event.resources_changed,Theatre log,SEXTANT's stores changed.
+campaign.event.hull_lost,Theatre log; {0} player name,{0}'s hull was lost.
+campaign.event.hull_rebuilt,Theatre log; {0} player name,{0}'s hull is being rebuilt.
+campaign.event.refit_started,"Theatre log; {0} player name, {1} hours",{0}'s refit takes {1}.
+campaign.event.sextant_sunk,"Theatre log; {0} cove, {1} hours",SEXTANT was sunk and refits at {0}. Ready in {1}.
+campaign.event.campaign_over,Theatre log,No hull remains. The Ironman campaign is over.
+campaign.event.group_sighted,Theatre log; {0} node,Combine group sighted at {0}.
+campaign.event.convoy_revealed,Theatre log,Convoy located.
+campaign.event.ace_revealed,"Theatre log; {0} ace name, {1} node",{0} located at {1}.
+campaign.event.proposal_made,Theatre log; {0} player name,{0} made a proposal.
+campaign.event.proposal_accepted,Theatre log; {0} player name,{0} accepted.
+campaign.event.proposal_declined,Theatre log; {0} player name,{0} declined.
+campaign.event.proposal_committed,Theatre log,Proposal committed.
+campaign.event.proposal_withdrawn,Theatre log,Proposal withdrawn.
+campaign.event.saved,Theatre log,Campaign saved.
+campaign.cause.observed_kill,Alert cause,observed kill
+campaign.cause.unobserved_kill_noticed,Alert cause,loss noticed
+campaign.cause.sighting,Alert cause,sighting
+campaign.cause.evidence,Alert cause,evidence found
+campaign.cause.quiet_decay,Alert cause,quiet hours
+campaign.cause.act_start,Alert cause,act start
+campaign.cause.sextant_sunk,Alert cause,SEXTANT sunk
+campaign.word.range.close,Engagement range band word,close range
+campaign.word.range.medium,Engagement range band word,medium range
+campaign.word.range.long,Engagement range band word,long range
+campaign.word.range.beyond_horizon,Engagement range band word,beyond the horizon
+campaign.tally.method,Doctrine tally; {0} kill method word,{0} kills
+campaign.tally.range,Doctrine tally; {0} range band,Kills at {0}
+campaign.tally.time,Doctrine tally; {0} time of day word,{0} kills
+campaign.tally.emission,Doctrine tally; {0} emission control word,Kills in emission state {0}
+campaign.action.transit,Proposal; {0} cove,Transit to {0}.
+campaign.action.refit,Proposal,Wait at the cove until refits finish.
+campaign.action.wait,Proposal; {0} hours,Wait {0}.
+campaign.action.accept,Proposal; {0} operation,Accept {0}.
+campaign.action.decline,Proposal; {0} operation,Decline {0}.
+campaign.action.delay_card,"Proposal; {0} Intel cost, {1} card, {2} region",Spend {0} to delay {1} in {2} by 72 h.
+campaign.action.cancel_card,"Proposal; {0} Intel cost, {1} card, {2} region",Spend {0} to cancel {1} in {2}.
+campaign.action.reveal_convoys,"Proposal; {0} Intel cost, {1} region",Spend {0} to locate convoys in {1} for 4 days.
+campaign.action.reveal_ace,"Proposal; {0} Intel cost, {1} ace",Spend {0} to locate {1}.
+campaign.action.rebuild,Proposal; {0} player name,Rebuild {0}'s hull.
+campaign.part_tag.crane,Required part in a briefing tag,a crane
+campaign.part_tag.mine_rail,Required part in a briefing tag,mine rails
+campaign.part_tag.rhib_davit,Required part in a briefing tag,a RHIB davit
+campaign.part_tag.boarding_kit,Required part in a briefing tag,a boarding kit
+campaign.part_tag.recovery_net,Required part in a briefing tag,a recovery net
+campaign.part_tag.camera_mast,Required part in a briefing tag,a camera mast
+campaign.part_tag.passenger_berths,Required part in a briefing tag,passenger berths
+campaign.part_tag.point_defence,Required part in a briefing tag,point defence
+campaign.part_tag.magazine,Required part in a briefing tag,a magazine
+campaign.part_tag.fuel_store,Required part in a briefing tag,a fuel store
+campaign.part_tag.propulsion,Required part in a briefing tag,propulsion
+campaign.part_tag.steering,Required part in a briefing tag,steering
+campaign.part_tag.generation,Required part in a briefing tag,power generation
+campaign.part_tag.low_signature,Required part in a briefing tag,a low-signature mast
+campaign.tag.draft_limit,Briefing constraint tag; {0} metres as a number,Draft at most {0} m.
+campaign.tag.rcs_limit,Briefing constraint tag; {0} square metres,Radar cross-section at most {0} m².
+campaign.tag.range,Briefing constraint tag; {0} kilometres,Range at least {0}.
+campaign.tag.passengers,"Briefing constraint tag; {0} passengers, {1} allowed losses",Carry {0} passengers; lose at most {1}.
+campaign.tag.requires,Briefing constraint tag; {0} part,Requires {0}.
+campaign.tag.min_speed,Briefing constraint tag; {0} knots,Speed at least {0}.
+campaign.ghost.no_radar_emissions,Ghost condition,No radar emissions.
+campaign.ghost.no_losses,Ghost condition,No losses.
+campaign.ghost.never_detected,Ghost condition,Never detected.
+campaign.ghost.capture_the_ace,Ghost condition,Capture the ace.
+campaign.ghost.no_kills,Ghost condition,No kills.
+campaign.ghost.under_time,Ghost condition; {0} minutes,Finish within {0}.
+campaign.ghost.no_hull_damage,Ghost condition,No hull damage.
+campaign.reward.intel,Ghost reward; {0} Intel,{0}
+campaign.reward.blueprint,Ghost reward; {0} part,Blueprint: {0}
+campaign.reward.salvage,Ghost reward; {0} Salvage,{0}
+campaign.end.objective_done,Why the sortie ended; the primary objective was completed,Objective completed
+campaign.end.objective_failed,Why the sortie ended; the primary objective can no longer be completed,Objective failed
+campaign.end.hulls_lost,Why the sortie ended; every player ship capsized or sank,Every ship was lost
+campaign.end.hulls_disabled,Why the sortie ended; every player ship was lost or dead in the water without a break; {0} duration,Every ship was sunk or dead in the water for {0}
+campaign.end.time_limit,Why the sortie ended; the sortie's time limit ran out,The time limit ran out
+campaign.end.withdrew,Why the sortie ended; the players withdrew from the area,Withdrew from the area

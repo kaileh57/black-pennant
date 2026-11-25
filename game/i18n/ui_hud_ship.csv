@@ -1,0 +1,87 @@
+keys,?context,en
+hud_ship.helm.title,Title of the own-ship helm cluster,Helm
+hud_ship.helm.take,Button: the player takes the helm from the Helm officer,Take helm
+hud_ship.helm.release,Button: the player hands the helm back to the Helm officer,Hand back helm
+hud_ship.helm.take_tooltip,Tooltip of the take-the-helm button,You steer and set speed; the Helm officer advises
+hud_ship.helm.release_tooltip,Tooltip of the hand-back button,The Helm officer steers again within one graph tick
+hud_ship.helm.waiting,Helm cluster before the first picture of the sortie arrives,Waiting for the first picture
+hud_ship.helm.no_hull,Helm cluster when the viewer has no hull,No own hull in this sortie
+hud_ship.helm.more_tooltip,Tooltip and accessible name of the helm cluster button that shows the secondary gauges,"Show heel, trim, fuel and power"
+hud_ship.helm.fewer_tooltip,Tooltip and accessible name of the helm cluster button that hides the secondary gauges,"Hide heel, trim, fuel and power until one passes its caution limit"
+hud_ship.holder.officer,Who holds the helm: the officer,Officer
+hud_ship.holder.player,Who holds the helm: the player,Player
+hud_ship.status.disabled,Own hull status line,"Disabled: no propulsion or steering"
+hud_ship.status.lost,Own hull status line,Hull lost
+hud_ship.status.wreck,Own hull status line,Wreck
+hud_ship.gauge.speed,Gauge label,Speed
+hud_ship.gauge.heading,Gauge label,Heading
+hud_ship.gauge.heel,Gauge label when the hull is level,Heel
+hud_ship.gauge.heel_port,Gauge label while the hull heels to port,Heel to port
+hud_ship.gauge.heel_starboard,Gauge label while the hull heels to starboard,Heel to starboard
+hud_ship.gauge.trim,Gauge label when the hull is on an even keel,Trim
+hud_ship.gauge.trim_bow_up,Trim gauge label while the bow is up,Bow up
+hud_ship.gauge.trim_bow_down,Trim gauge label while the bow is down,Bow down
+hud_ship.gauge.fuel,Gauge label,Fuel
+hud_ship.gauge.power,Gauge label: electrical demand against generation,Power
+hud_ship.gauge.power_waiver,Why the power gauge has no trend arrow (gauge checklist),Demand steps with orders; it has no useful rate
+hud_ship.speed.ordered,Line under the speed gauge. {0} speed with unit,Ordered {0}
+hud_ship.heading.ordered,Line under the heading tape. {0} ordered bearing; {1} rudder text,"Ordered {0}, {1}"
+hud_ship.heading.access,Accessible name of the heading tape. {0} label; {1} bearing,{0} {1}
+hud_ship.rudder.amidships,Rudder position,rudder amidships
+hud_ship.rudder.port,Rudder position. {0} percent of full rudder,rudder {0} to port
+hud_ship.rudder.starboard,Rudder position. {0} percent of full rudder,rudder {0} to starboard
+hud_ship.fuel.endurance,Line under the fuel gauge. {0} time left at the current burn,{0} left
+hud_ship.fuel.litres,Tooltip of the fuel gauge. {0} litres aboard,{0} aboard
+hud_ship.fuel.idle,Line under the fuel gauge while no fuel flows. {0} litres,"{0}, none burning"
+hud_ship.power.generating,Line under the power gauge. {0} generation with unit,Generation {0}
+hud_ship.power.supplied,Line under the power gauge when supply falls short. {0} kW supplied; {1} demand with unit,Supplied {0} of {1}
+hud_ship.power.shed_one,Power line with one consumer shed. {0} supply text,"{0}, 1 shed"
+hud_ship.power.shed_many,Power line with several consumers shed. {0} supply text; {1} count,"{0}, {1} shed"
+hud_ship.route.one,Route line. {0} waypoint count; {1} bearing; {2} range,"Route: 1 waypoint, {1} at {2}"
+hud_ship.route.many,Route line. {0} waypoint count; {1} bearing of the next; {2} its range,"Route: {0} waypoints, next {1} at {2}"
+hud_ship.pacing.access,Accessible name of the time controls,Time controls
+hud_ship.pause.pause,Button: pause the sortie,Pause
+hud_ship.pause.resume,Button: resume the sortie,Resume
+hud_ship.pause.tooltip,Tooltip of the pause button,Stops time; orders given now take effect on resume
+hud_ship.pause.tooltip_resume,Tooltip of the resume button,Time runs again and orders given while paused apply
+hud_ship.rate.factor,A time rate. {0} the factor as a number,{0}x
+hud_ship.rate.access,Accessible name of a time rate button. {0} rate,Ask for time at {0}
+hud_ship.rate.tooltip,Tooltip of a compression button. {0} rate,Time at {0} while no threat is near
+hud_ship.rate.tooltip_1,Tooltip of the 1x button,Time at normal speed
+hud_ship.rate.effective,The effective time rate. {0} rate,Time {0}
+hud_ship.rate.effective_paused,The time rate while paused. {0} rate,"Paused, then {0}"
+hud_ship.held.plain,The asked-for rate is not in effect and no reason came. {0} effective rate,Time held at {0}
+hud_ship.held.players,Co-op: other players ask for less. {0} effective rate; {1} their names,Time held at {0}: {1} asks for less
+hud_ship.held.player_n,Name of a co-op player without a name. {0} slot number,Player {0}
+hud_ship.scale.text,The host's overload time scale below 1x. {0} scale,Time scale {0}: the host is overloaded
+hud_ship.rung.line,The host's overload ladder rung. {0} rung number; {1} what it does,Host load rung {0}: {1}
+hud_ship.rung.compression,Ladder rung 1 on the host,compression limited
+hud_ship.rung.kinematic_far,Ladder rung 2 first step,untracked hulls beyond 5 km simplified
+hud_ship.rung.kinematic_all,Ladder rung 2 second step,untracked hulls simplified at any range
+hud_ship.rung.projectiles_1500,Ladder rung 3 first step,"projectile cap 1,500"
+hud_ship.rung.projectiles_1000,Ladder rung 3 second step,"projectile cap 1,000, autocannon rounds paired"
+hud_ship.rung.time_scale,Ladder rung 4,time scale lowered
+hud_ship.tick.text,The host's simulation tick time (p95). {0} milliseconds,Host tick {0} ms
+hud_ship.objectives.title,Title of the objectives panel,Objectives
+hud_ship.objectives.none,Objectives panel with allies but no objectives,No objectives in this sortie
+hud_ship.objectives.more,Tooltip and accessible name of the objectives panel button that lists every ghost condition,List every ghost condition
+hud_ship.objectives.fewer,Tooltip and accessible name of the objectives panel button that folds the ghost conditions into one line,Fold the ghost conditions into one line
+hud_ship.objectives.ghosts,"Objectives panel line counting the ghost conditions; {0} the counts, such as ""1 failed, 2 open""",Ghost conditions: {0}
+hud_ship.objectives.ghosts_met,Count of ghost conditions met; {0} the number,{0} met
+hud_ship.objectives.ghosts_failed,Count of ghost conditions failed; {0} the number,{0} failed
+hud_ship.objectives.ghosts_open,Count of ghost conditions still in play; {0} the number,{0} open
+hud_ship.objective.unnamed,An objective that came without text,Objective
+hud_ship.objective.ghost,An optional ghost condition of the operation. {0} its text,Ghost condition: {0}
+hud_ship.objective.done,An objective that is met. {0} its text,"{0}, done"
+hud_ship.objective.failed,An objective that can no longer be met. {0} its text,"{0}, failed"
+hud_ship.objective.progress,An objective partly met. {0} its text; {1} percent,"{0}, {1}"
+hud_ship.objective.show,Icon button: show the objective's marker on the plot table,Show on plot
+hud_ship.allies.title,Title of the allied hulls list,Allies
+hud_ship.allies.tooltip,Tooltip of an ally row,Centre the plot table on this hull
+hud_ship.allies.unnamed,An allied hull without a name,Allied hull
+hud_ship.allies.row,One ally. {0} name; {1} its state,{0}: {1}
+hud_ship.allies.lost,Ally hull damage. {0} percent of cells lost,{0} hull lost
+hud_ship.allies.fire,Ally state word,fire
+hud_ship.allies.flooding,Ally state word,flooding
+hud_ship.allies.silent,Ally state: radars off,radar silent
+hud_ship.allies.officers,Ally state: the player dropped and officers command,officers in command

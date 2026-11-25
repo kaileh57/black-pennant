@@ -1,0 +1,42 @@
+[package]
+name = "gdclient"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = []
+steam = ["net/steam"]
+# L4 Luau scripts (DESIGN.md L355-390): builds sim-systems with its mlua-backed ScriptHost.
+luau = ["sim-systems/luau"]
+
+[dependencies]
+godot.workspace = true
+content.workspace = true
+sim-core.workspace = true
+sim-systems.workspace = true
+net.workspace = true
+hull-mesh.workspace = true
+audio.workspace = true
+glam.workspace = true
+# The sim pool of exactly 3 workers (DESIGN.md L1084) is built by the host driver.
+rayon.workspace = true
+sentry.workspace = true
+# Co-op save copies travel as bincode of `content::save::SaveGame` (`net::msg::TransferKind::SaveCopy`).
+bincode.workspace = true
+
+# Platform queries of `platform.rs` (DESIGN.md L1363, L1401, L1744, L2016, L2024). Pure Rust bindings.
+# windows-sys 0.61 has no COM interfaces, so DXGI is declared by hand in platform.rs.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Threading", "Win32_UI_HiDpi", "Win32_System_ProcessStatus"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSProcessInfo", "NSString", "NSObject"] }
+libc = "0.2"

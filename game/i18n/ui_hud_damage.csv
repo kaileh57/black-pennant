@@ -1,0 +1,165 @@
+keys,?context,en
+hud_damage.title,Accessible name of the damage-control station,Damage control
+hud_damage.waiting,Station before the first picture of the sortie arrives,Waiting for the first picture
+hud_damage.no_hull,Station when the viewer has no hull,No own hull in this sortie
+hud_damage.compartment,A compartment by number. {0} its number,Compartment {0}
+hud_damage.compartment_in_text,A compartment by number inside a sentence. {0} its number,compartment {0}
+hud_damage.deck,A deck by number counted from the bottom. {0} its number,Deck {0}
+hud_damage.deck_tooltip,Tooltip of a deck button,Show this deck in plan; deck 1 is the lowest
+hud_damage.plan_deck,Label before the deck buttons,Plan view of
+hud_damage.schematic.access,Accessible name of the damage schematic,"Damage schematic. Left and Right step through compartments, Up and Down change deck."
+hud_damage.schematic.plan,Label of the plan view in the schematic. {0} deck number,"Plan, deck {0}"
+hud_damage.schematic.bow,Label at the right of the schematic: the bow is to the right,Bow
+hud_damage.schematic.waterline,Label of the design waterline in the profile view,Waterline
+hud_damage.legend.damaged,Legend entry of the damage schematic,Damaged part
+hud_damage.legend.heavy,Legend entry of the damage schematic,Heavy damage
+hud_damage.legend.destroyed,Legend entry of the damage schematic,Destroyed part
+hud_damage.legend.flooding,Legend entry of the damage schematic,Flooding
+hud_damage.legend.fire,Legend entry of the damage schematic,Fire
+hud_damage.legend.breach,Legend entry of the damage schematic,Breached
+hud_damage.legend.magazine,Legend entry of the damage schematic,Magazine
+hud_damage.legend.selected,Legend entry of the damage schematic,Selected
+hud_damage.sum.line,Damage summary. {0} what is damaged; {1} teams and pumps,{0}. {1}.
+hud_damage.sum.none,Damage summary with no damage,No damage
+hud_damage.sum.fire_one,Damage summary part. {0} count,1 fire
+hud_damage.sum.fires,Damage summary part. {0} count,{0} fires
+hud_damage.sum.flood_one,Damage summary part. {0} count,1 compartment flooding
+hud_damage.sum.floods,Damage summary part. {0} count,{0} compartments flooding
+hud_damage.sum.breached,Damage summary part. {0} count of breached compartments,{0} compartments breached
+hud_damage.sum.breached_one,Damage summary part: one breached compartment,1 compartment breached
+hud_damage.sum.part_one,Damage summary part. {0} count,1 part damaged
+hud_damage.sum.parts,Damage summary part. {0} count,{0} parts damaged
+hud_damage.sum.destroyed,Damage summary part. {0} count,{0} destroyed
+hud_damage.sum.idle,Damage summary part. {0} teams with no job,{0} teams standing by
+hud_damage.sum.idle_one,Damage summary part: one team with no job,1 team standing by
+hud_damage.sum.pumps,Damage summary part. {0} pumps running,{0} pumps running
+hud_damage.sum.pump_one,Damage summary part: one pump running,1 pump running
+hud_damage.sum.heel_port,Damage summary part. {0} heel angle,heel {0} to port
+hud_damage.sum.heel_starboard,Damage summary part. {0} heel angle,heel {0} to starboard
+hud_damage.facts.below,Compartment fact,below the waterline
+hud_damage.facts.volume,Compartment fact. {0} volume in cubic metres,{0} cubic metres
+hud_damage.facts.magazine,Compartment fact,magazine
+hud_damage.state.flooded,Compartment state. {0} percent flooded,Flooded {0}
+hud_damage.state.fire,Compartment state. {0} fire intensity in percent,Fire at {0}
+hud_damage.state.breached,Compartment state,breached
+hud_damage.state.valve,Compartment state,flood valve open
+hud_damage.state.open,Compartment state: a door or hatch stands open,a door is open
+hud_damage.state.sound,Compartment state with nothing wrong,"Dry, no fire, no breach"
+hud_damage.send.fire,Button: send a team to fight the fire here. {0} team number,Send team {0} to the fire
+hud_damage.send.fire_tooltip,Tooltip of the fire button,A team sprays 2 points of intensity per second
+hud_damage.send.patch,Button: send a team to patch the breach here. {0} team number,Send team {0} to patch
+hud_damage.send.patch_tooltip,Tooltip of the patch button,One 0.25 m2 face per 10 s at full berths
+hud_damage.send.patch_flooded,Why the patch button is off,Pump it below half flooded first
+hud_damage.send.no_berths,Why no damage-control job can start,No surviving berths: no job can start
+hud_damage.valve.open,Button: open this compartment's flood valve,Open flood valve
+hud_damage.valve.close,Button: close this compartment's flood valve,Close flood valve
+hud_damage.valve.open_tooltip,Tooltip of the open-valve button,Floods this compartment to fight fire or counter list
+hud_damage.valve.close_tooltip,Tooltip of the close-valve button,Stops the sea coming in through the valve
+hud_damage.magazine.flooded,A magazine already flooded. {0} its name,"{0}: flooded, ammunition lost"
+hud_damage.magazine.tooltip,Tooltip of a magazine flood button,The fire main fills it in 10 s; cannot be undone
+hud_damage.magazine.confirm_title,Dialog title before flooding a magazine. {0} the action,{0}?
+hud_damage.magazine.confirm_body,Dialog body before flooding a magazine,The fire main fills the magazine in 10 s and puts out its fire. Its ammunition is lost until the ship rearms. You cannot undo this during the sortie.
+hud_damage.magazine.flood,Dialog button: flood the magazine,Flood the magazine
+hud_damage.magazine.keep,Dialog button: do not flood,Keep the magazine
+hud_damage.magazines.title,Section title,Magazines
+hud_damage.repair.send,Button: send a team to repair a part. {0} team number,Repair with team {0}
+hud_damage.repair.tooltip,Tooltip of the repair button,"30 s, restores 25 points of health up to 75%"
+hud_damage.repair.capped,Why the repair button is off,At 75%: only the tender repairs further
+hud_damage.repair.tender,Disabled button on a destroyed part,Tender only
+hud_damage.repair.tender_tooltip,Tooltip on a destroyed part,Destroyed parts are repaired at the tender for Salvage
+hud_damage.part.row,A part and its damage word. {0} name; {1} level,{0}: {1}
+hud_damage.part.row_health,A part with its health. {0} name; {1} level; {2} health percent,"{0}: {1}, {2}"
+hud_damage.level.0,Damage level word,Intact
+hud_damage.level.1,Damage level word,Damaged
+hud_damage.level.2,Damage level word,Heavy
+hud_damage.level.3,Damage level word,Destroyed
+hud_damage.teams.title,Section title before data arrives,Teams
+hud_damage.teams.title_counts,Teams section title. {0} teams; {1} surviving berths; {2} original berths,"Teams: {0}, from {1} of {2} berths"
+hud_damage.teams.row,One team. {0} team number; {1} its job,Team {0}: {1}
+hud_damage.teams.idle,A team with no job,standing by
+hud_damage.teams.progress,A team's job with its progress. {0} team text; {1} percent,"{0}, {1}"
+hud_damage.teams.pinned,A job the player set. {0} team text,"{0}, your order"
+hud_damage.teams.hand_back,Button: return the team to the officer,Hand back
+hud_damage.teams.hand_back_tooltip,Tooltip of the hand-back button,The officer picks this team's jobs from the repair order again
+hud_damage.teams.hand_back_access,Accessible name of a hand-back button. {0} team number,Hand team {0} back to the officer
+hud_damage.order.title,Section title,Repair order
+hud_damage.order.row,One priority of the repair order. {0} position; {1} what,{0}. {1}
+hud_damage.order.up,Icon button,Move up
+hud_damage.order.down,Icon button,Move down
+hud_damage.order.up_access,Accessible name of a move-up button. {0} the priority,Move {0} up
+hud_damage.order.down_access,Accessible name of a move-down button. {0} the priority,Move {0} down
+hud_damage.repair_word.0,Repair order entry,Fires in or next to a magazine
+hud_damage.repair_word.1,Repair order entry,"Breaches below the waterline, deepest first"
+hud_damage.repair_word.2,Repair order entry,Other fires
+hud_damage.repair_word.3,Repair order entry,Cut conduits to priority 1 and 2 consumers
+hud_damage.repair_word.4,Repair order entry,Other cut conduits
+hud_damage.repair_word.5,Repair order entry,"Part repairs, highest power priority first"
+hud_damage.pumps.title,Section title,Pumps
+hud_damage.pump.state_on,A running pump. {0} its name,"{0}: running"
+hud_damage.pump.state_off,A stopped pump. {0} its name,"{0}: stopped"
+hud_damage.pump.run,Button: start the pump,Run
+hud_damage.pump.stop,Button: stop the pump,Stop
+hud_damage.pump.tooltip,Tooltip of the pump button,Drains its own or one adjacent compartment
+hud_damage.pump.unusable,Why the pump button is off,The pump is destroyed or has no power
+hud_damage.pump.officer,Pump target option: the officer chooses,Officer's choice
+hud_damage.pump.own,Suffix on the pump's own compartment in the target list,", own"
+hud_damage.pump.target_tooltip,Tooltip of the pump target list,Which compartment this pump drains
+hud_damage.pump.target_access,Accessible name of the pump target list. {0} pump name,{0} drains
+hud_damage.doors.title,Section title,Doors and hatches
+hud_damage.door.closed,A closed door. {0} its name,"{0}: closed"
+hud_damage.door.open_state,An open door. {0} its name,"{0}: open"
+hud_damage.door.close,Button: close the door,Close
+hud_damage.door.open,Button: open the door,Open
+hud_damage.door.tooltip,Tooltip of the door button,An open door passes water between compartments
+hud_damage.door.unusable,Why the door button is off,The door is destroyed or has no power
+hud_damage.net.title,Accessible name of the networks station,Networks
+hud_damage.net.power,Network name,Power
+hud_damage.net.fuel,Network name,Fuel
+hud_damage.net.data,Network name,Data
+hud_damage.net.power_tooltip,Tooltip of the power network button,"Electrical conduits, solid lines"
+hud_damage.net.fuel_tooltip,Tooltip of the fuel network button,"Fuel lines, dashed lines"
+hud_damage.net.data_tooltip,Tooltip of the data network button,"Track and command links, dotted lines"
+hud_damage.net.tab_cut,Network button with cut conduits. {0} network; {1} count,"{0}, {1} cut"
+hud_damage.net.diagram_access,Accessible name of the network diagram. {0} network; {1} conduits; {2} cut,"{0} network: {1} conduits, {2} cut"
+hud_damage.net.legend.power,Legend entry,Power conduit
+hud_damage.net.legend.fuel,Legend entry,Fuel line
+hud_damage.net.legend.data,Legend entry,Data link
+hud_damage.net.legend.doubled,Legend entry,Doubled route
+hud_damage.net.legend.cut,Legend entry,Cut
+hud_damage.net.legend.jury_rigged,Legend entry,Jury-rigged at 50%
+hud_damage.net.sum.no_conduits,Network summary,This network has no conduits.
+hud_damage.net.sum.intact,Network summary. {0} conduits,"{0} conduits, all intact."
+hud_damage.net.sum.intact_one,Network summary with one conduit,"1 conduit, intact."
+hud_damage.net.sum.conduits,Network summary. {0} conduits; {1} their state,{0} conduits: {1}.
+hud_damage.net.sum.cut,Network summary part. {0} count,{0} cut
+hud_damage.net.sum.rigged,Network summary part. {0} count,{0} jury-rigged
+hud_damage.net.sum.doubled,Network summary part. {0} count,{0} doubled
+hud_damage.net.sum.consumers,Network summary. {0} consumers on a fallback; {1} without supply,"{0} consumers on a fallback, {1} without supply."
+hud_damage.net.sum.consumer_one,Network summary with one consumer on a fallback. {1} without supply,"1 consumer on a fallback, {1} without supply."
+hud_damage.net.sum.all_supplied,Network summary,Every consumer is supplied.
+hud_damage.net.sum.shed,Network summary. {0} consumers shed,{0} consumers shed by the Engineer.
+hud_damage.net.sum.shed_one,Network summary: one consumer shed,1 consumer shed by the Engineer.
+hud_damage.net.conduits_title,Section title,Damaged conduits
+hud_damage.net.conduit_cut,A cut conduit. {0} number; {1} and {2} the compartments it joins,"Conduit {0}, {1} to {2}: cut"
+hud_damage.net.conduit_rigged,A jury-rigged conduit. {0} number; {1} and {2} the compartments,"Conduit {0}, {1} to {2}: jury-rigged at 50% until the tender"
+hud_damage.net.conduit_doubled,A conduit on a doubled route. {0} conduit text,"{0}, other path intact"
+hud_damage.net.jury_rig,Button: send a team to jury-rig the conduit. {0} team number,Jury-rig with team {0}
+hud_damage.net.jury_rig_tooltip,Tooltip of the jury-rig button,"20 s at full berths, restores 50% capacity"
+hud_damage.net.jury_rig_busy,Why the jury-rig button is off,A team is already on it
+hud_damage.net.consumers_title,Section title,Consumers off the network
+hud_damage.net.consumer,A consumer and its fallback. {0} part name; {1} its state,{0}: {1}
+hud_damage.net.link.redundant,Consumer fallback step,on the second path
+hud_damage.net.link.buffer_power,Consumer fallback step,"on its battery, 30 s at rated draw"
+hud_damage.net.link.buffer_fuel,Consumer fallback step,"on its day tank, 60 s at rated flow"
+hud_damage.net.link.local,Consumer fallback step (DESIGN L394),"local control, own sensor, 3x error"
+hud_damage.net.link.dead,Consumer fallback step,no supply
+hud_damage.net.link.shed,Consumer state,shed by the Engineer
+hud_damage.net.link.shed_and,Consumer state with a fallback. {0} the fallback,"{0}, shed by the Engineer"
+hud_damage.net.priority_title,Section title,Power priorities
+hud_damage.net.priority_note,Help line under the priorities title,"When power runs short, the Engineer sheds priority 5 first and 1 last."
+hud_damage.net.priority_row,A consumer's power priority. {0} name; {1} priority 1 to 5,"{0}: priority {1}"
+hud_damage.net.priority_shed,A consumer shed now. {0} priority text,"{0}, shed"
+hud_damage.net.priority_lower,Icon button: a larger priority number (shed sooner),Shed sooner
+hud_damage.net.priority_raise,Icon button: a smaller priority number (shed later),Shed later
+hud_damage.net.priority_lower_access,Accessible name. {0} part name,Shed {0} sooner
+hud_damage.net.priority_raise_access,Accessible name. {0} part name,Shed {0} later

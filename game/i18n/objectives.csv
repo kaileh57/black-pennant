@@ -1,0 +1,37 @@
+keys,?context,en
+objective.destroy_all,Primary objective,Sink or disable every enemy ship
+objective.destroy_group,"Primary objective; {0} is a percentage",Sink or disable {0} of the marked group's tonnage
+objective.destroy_site,Primary objective; only gunfire counts toward a site,Destroy the marked site with gunfire
+objective.destroy_site.landing,"Primary objective where a landing party can also take the site; {0} distance, {1} duration","Destroy the marked site with gunfire, or hold within {0} of the landing for {1}"
+objective.extract.hold,"Primary objective; {0} distance, {1} duration",Hold within {0} of the landing for {1}
+objective.extract.passengers,"Primary objective; {0} count, {1} distance, {2} duration",Pick up {0} passengers: hold within {1} of the landing for {2}
+objective.extract.leave,Primary objective after the pickup,Leave the area by an exit
+objective.lay_mines,"Primary objective; {0} count",Lay {0} mines in the marked area
+objective.capture,Primary objective,Board and capture the marked ship
+objective.capture.decide,Primary objective after the capture,Choose whether the prize sails home or is stripped
+objective.escort,Primary objective,Bring the marked ships safely to the exit
+objective.feint.detect,Primary objective (feint) first step,Let the enemy detect you
+objective.feint.hold,"Primary objective (feint); {0} duration",Hold the enemy's attention for {0}
+objective.feint.escape,Primary objective (feint) last step,Break contact and get away
+objective.photograph,"Primary objective; {0} count",Photograph {0} marked ships
+objective.survive,"Primary objective; {0} duration",Stay afloat for {0}
+objective.survive.exit,"Primary objective; {0} duration",Stay afloat for {0} or leave by the exit
+objective.cut_out,Primary objective,Capture the marked ship and sail it out by the exit
+objective.ghost.no_radar,Optional condition,No radar emissions
+objective.ghost.no_losses,Optional condition,Lose no ships
+objective.ghost.never_detected,Optional condition,Stay undetected
+objective.ghost.capture_ace,Optional condition,Capture the ace's ship
+objective.ghost.no_kills,Optional condition,Sink or disable no ships
+objective.ghost.under_time,"Optional condition; {0} duration",Finish within {0}
+objective.ghost.no_hull_damage,Optional condition,Take no hull damage
+objective.elimination,PvP elimination goal,Sink or disable every ship of the other team
+objective.pvp_escort,"PvP escort goal; {0} is a percentage","Get {0} of the convoy's tonnage through the exit, or stop it"
+objective.sandbox,Sandbox has no goal,Free play: no objective
+objective.end.hulls_disabled,"Shown in the primary objective's place when the sortie ends because every player ship was lost or dead in the water; {0} duration",Every ship was sunk or dead in the water for {0}: the sortie is lost
+objective.side.team_a,Name of the first PvP or sandbox team,Team 1
+objective.side.team_b,Name of the second PvP or sandbox team,Team 2
+objective.side.players,Name of the players' side,Players
+objective.side.convoy,Name of the AI convoy's side in PvP escort,Convoy
+objective.side.combine,Name of the AI enemy side in a skirmish,Meridian Combine
+objective.side.civilian,Name of the neutral civilian traffic side in a campaign operation,Civilian traffic
+objective.side.protected,Name of the side the player escorts or protects in a campaign operation,Protected ships

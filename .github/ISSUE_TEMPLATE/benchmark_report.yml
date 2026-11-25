@@ -1,0 +1,33 @@
+name: Benchmark report
+description: Attach the JSON file the in-game benchmark writes, so its numbers join the hardware table.
+title: "Benchmark report: "
+labels: ["benchmark"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Run Benchmark from the main menu (or start the game with --benchmark). When it finishes, choose
+        Copy report and paste it below. The report holds no names or file paths, and the game never sends
+        it by itself.
+  - type: textarea
+    id: report
+    attributes:
+      label: Report file
+      description: The whole JSON report, pasted as it is.
+      render: json
+    validations:
+      required: true
+  - type: input
+    id: machine
+    attributes:
+      label: Machine
+      description: The computer or graphics card, for example "Desktop, RTX 3050 6 GB" or "MacBook Air M1".
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything you saw
+      description: Stutters, wrong colours, crashes, fan noise or anything else worth knowing.
+    validations:
+      required: false

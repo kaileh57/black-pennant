@@ -1,0 +1,28 @@
+// Stock kit (DESIGN.md L140). Unit `data-kits-act1`. Licensed CC BY 4.0.
+// Point defence engages on a fire-control lock (L487), so the mount comes with its own radar.
+// The graph fragment is empty: the generator wires a placed kit's parts itself (auto-set wiring, L207), and only pinned nodes are stored.
+(
+    format: 1,
+    id: "kit.ciws",
+    version: 1,
+    hash: "",
+    name: "Point-defence gun",
+    name_key: "kit.ciws.name",
+    description_key: "kit.ciws.desc",
+    author: None,
+    licence: "CC-BY-4.0",
+    lineage: [],
+    kind: Assembly,
+    parts: [
+        (part: "gun.ciws.20mm", offset: (x: 0, y: 0, z: 0), rot: (yaw: 0, tilt: 0)),
+        (part: "radar.fire_control", offset: (x: 4, y: 0, z: 1), rot: (yaw: 0, tilt: 0)),
+    ],
+    sockets: [
+        (name: "deck", offset: (x: 2, y: 0, z: 2), face: YNeg),
+    ],
+    settings: [],
+    graph: (),
+    officer: None,
+    tags: [PointDefence],
+    tray_order: 20,
+)

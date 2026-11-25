@@ -1,0 +1,42 @@
+keys,?context,en
+hud_weapons.title,Title of the weapons and fire control panel,Weapons
+hud_weapons.solutions,Toggle button: show each mount's fire-control solution,Solutions
+hud_weapons.solutions_tooltip,Tooltip of the solutions toggle,"Flight time, impact error and iterations per mount"
+hud_weapons.waiting,Weapons panel before the first picture arrives,Waiting for the first picture
+hud_weapons.empty,Weapons panel for a hull with no weapons,No weapons fitted
+hud_weapons.status.idle,What a weapons group is doing,Idle
+hud_weapons.status.engaging,What a weapons group is doing,Engaging
+hud_weapons.status.holding,What a weapons group is doing,Holding
+hud_weapons.holder.officer,Who holds a weapons group: the officer,Officer
+hud_weapons.holder.player,Who holds a weapons group: the player,Player
+hud_weapons.group.short,Short name of a weapons group. {0} its takeover key number,Group {0}
+hud_weapons.group.take,Button: the player takes a weapons group,Take
+hud_weapons.group.release,Button: the player hands a weapons group back,Hand back
+hud_weapons.group.take_tooltip,Tooltip of the take button,"You aim and fire this group by hand; the officer advises"
+hud_weapons.group.release_tooltip,Tooltip of the hand-back button,The weapons officer fires this group by doctrine again
+hud_weapons.mount.on_track,A mount and the track it is on. {0} mount name; {1} track number,"{0}, on {1}"
+hud_weapons.mount.by_hand,Third mount line while the player holds it,Aimed by hand.
+hud_weapons.rounds.of,Mount ammunition. {0} ready rounds; {1} rounds in the magazine,{0} of {1}
+hud_weapons.rounds.ready,Mount ammunition. {0} ready rounds or cells,{0} ready
+hud_weapons.rounds.reload,Launcher state. {0} ready cells; {1} seconds to the next reload,"{0} ready, reload {1}"
+hud_weapons.rounds.empty,Mount with no ammunition,Empty
+hud_weapons.reach,The mount's engagement range. {0} range,Reach {0}.
+hud_weapons.local_control,Mount on local control after losing its data link (DESIGN L394),"Local control: own sensor, 3x error."
+hud_weapons.solution.converged,Fire-control solution. {0} flight time; {1} predicted impact error; {2} iterations,"Solution: {0} flight, {1} error, {2} iterations."
+hud_weapons.solution.unconverged,Fire-control solution that did not converge. {0} iterations; {1} error,"Solution unconverged after {0} iterations, {1} error."
+hud_weapons.solution.none,Mount with no fire-control solution yet,No solution yet.
+hud_weapons.launch.at,Button: launch a missile or torpedo at a track. {0} track number,Launch at {0}
+hud_weapons.launch.plain,Launch button with no track to launch at,Launch
+hud_weapons.launch.tooltip,Tooltip of the launch button,One weapon at the designated or selected track
+hud_weapons.launch.no_track,Why the launch button is off,Designate or select a track first
+hud_weapons.launch.empty,Why the launch button is off,No weapon ready in this launcher
+hud_weapons.decoys.title,Title of the decoy launcher rows,Decoys
+hud_weapons.decoys.all,Shortcut hint label: the key fires every decoy launcher,All launchers
+hud_weapons.decoys.launch,Button: fire this decoy launcher,Launch decoys
+hud_weapons.decoys.tooltip,Tooltip of the decoy button,One salvo of decoys from this launcher
+hud_weapons.decoys.empty,Why the decoy button is off,No decoys ready
+hud_weapons.aim.position,Aim readout: where the shot falls. {0} range from the mount; {1} bearing,"{0}, bearing {1}"
+hud_weapons.aim.flight,Aim readout. {0} shell or weapon flight time,Flight {0}
+hud_weapons.aim.track,Aim readout: the track under the reticle. {0} track number,On {0}
+hud_weapons.aim.out_of_arc,Aim readout: the mount cannot reach the point,Out of arc or reach
+hud_weapons.aim.sky,Aim readout: the reticle is on open sky,No point to lay on

@@ -1,0 +1,33 @@
+(
+    header: (
+        format: 1,
+        game_version: "0.1.0",
+        hash: "",
+        kind: Ship,
+        name: "Minimal raft",
+        name_key: None,
+        author: None,
+        licence: "CC-BY-4.0",
+        lineage: [],
+    ),
+    hull: (
+        source: Freeform,
+        planes: [],
+        design_waterline_y: 1,
+    ),
+    cells: [
+        (y: 0, z: 0, runs: [(x: 0, len: 8, cell: (material: Steel, armour: None, paint: 0, shape: 0))]),
+        (y: 0, z: 1, runs: [(x: 0, len: 8, cell: (material: Steel, armour: None, paint: 0, shape: 0))]),
+    ],
+    paint: [
+        (token: "hull.haze_grey", rgb: (0.2, 0.22, 0.24), usage: Hull),
+    ],
+    markings: [],
+    parts: [],
+    kits: [],
+    embedded_kits: {},
+    officers: (),
+    rules: [],
+    networks: (),
+    graph: (),
+)

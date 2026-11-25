@@ -1,0 +1,5 @@
+# libFuzzer and the sanitizers need nightly; this dated pin is separate from the project's stable pin
+# (DESIGN.md L2125). Clang in the fuzz job must match the LLVM major version `rustc -vV` reports here.
+[toolchain]
+channel = "nightly-2026-11-01"
+components = ["llvm-tools-preview"]

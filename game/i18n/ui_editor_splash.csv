@@ -1,0 +1,62 @@
+keys,?context,en
+editor_splash.options.name,Accessible name of the splash options popup,Splash options
+editor_splash.water,Splash option row heading,Water
+editor_splash.water.calm,Splash water option,Calm
+editor_splash.water.b4,Splash water option: Beaufort force 4,Beaufort 4
+editor_splash.water.b7,Splash water option: Beaufort force 7,Beaufort 7
+editor_splash.water.calm.tip,"Tooltip, first line at most 12 words","Flat water, for gunnery and handling without roll"
+editor_splash.water.b4.tip,"Tooltip, first line at most 12 words","Moderate breeze, about 1 m waves: the trial battery's sea"
+editor_splash.water.b7.tip,"Tooltip, first line at most 12 words","Near gale, about 4 m waves: tests stability and gun laying"
+editor_splash.target,Splash option row heading,Target
+editor_splash.target.drones,Splash target option,Drones
+editor_splash.target.patrol,Splash target option,Patrol boat
+editor_splash.target.drones.tip,"Tooltip, first line at most 12 words",Target drones that never shoot back
+editor_splash.target.patrol.tip,"Tooltip, first line at most 12 words",A Combine patrol boat that fights back
+editor_splash.options.hint,"Under the splash options; one line, at most 40 characters",Space and Splash use these settings.
+editor_splash.stats.ready,"Splash options status; one line, at most 40 characters",A pre-built basin is ready.
+editor_splash.stats.preparing,"Splash options status; one line, at most 40 characters",Preparing a pre-built basin.
+editor_splash.stats.last,"Splash options status, at most 40 characters; {0} last load time, {1} load time at p95","Last load {0}, {1} at p95."
+editor_splash.stats.slow,"Splash options status; one line, at most 40 characters",Slower than the 1 s target.
+editor_splash.stats.progressive,"Splash options status; one line, at most 40 characters","Progressive: ship first, sea in 1 s."
+editor_splash.bar.name,Accessible name of the bar shown during a splash,Splash controls
+editor_splash.rewind,Splash bar button,Rewind 30 s
+editor_splash.rewind.tip,"Tooltip, first line at most 12 words",Takes the basin back 30 s; your edits stay. Key: R
+editor_splash.restart,Splash bar button,Restart
+editor_splash.restart.tip,"Tooltip, first line at most 12 words",Starts the same basin again from the beginning
+editor_splash.apply,Splash bar button,Apply edits
+editor_splash.apply_count,Splash bar button; {0} number of edits waiting,Apply {0} edits
+editor_splash.apply.tip,"Tooltip, first line at most 12 words","Sends kit, tuning and graph edits into the running basin"
+editor_splash.scope,Splash bar menu button,Scope
+editor_splash.scope.tip,"Tooltip, first line at most 12 words",Shows the live value on any port of the control graph
+editor_splash.scope.none,Scope menu with no graph ports,The control graph has no ports to scope.
+editor_splash.scope.ship,Scope submenu for nodes that belong to no officer,Ship
+editor_splash.scope.port,"Scope menu item; {0} node title, {1} port name","{0}, {1}"
+editor_splash.basin,"Splash bar status; {0} water, {1} target",{0} against {1}
+editor_splash.filling,Splash bar status while the basin loads,Filling the basin.
+editor_splash.end,Splash bar button: close the basin and see the report,End splash
+editor_splash.end.tip,"Tooltip, first line at most 12 words",Closes the basin and shows the report card
+editor_splash.value.on,Scoped value of a true signal,On
+editor_splash.value.off,Scoped value of a false signal,Off
+editor_splash.value.none,Scoped value when the port carries nothing,No value
+editor_splash.value.waiting,Scoped value before the first reading arrives,Waiting
+editor_splash.report.title,Report card title,Splash report
+editor_splash.report.tip,Report card tip; {0} the tip sentence,Next: {0}
+editor_splash.report.no_tip,Report card when the splash had nothing to point out,Nothing stood out. Try rougher water or the patrol boat.
+editor_splash.report.duration,Report card row,Time in the basin
+editor_splash.report.score,Report card row,Score
+editor_splash.report.rounds,Report card row,Rounds fired
+editor_splash.report.hit_rate,Report card row,Hit rate
+editor_splash.report.no_shots,Report card value when nothing was fired,No shots
+editor_splash.report.destroyed,Report card row,Targets destroyed
+editor_splash.report.first_hit,Report card row,First hit after
+editor_splash.report.no_hit,Report card value when nothing was hit,No hits
+editor_splash.report.damage,Report card row,Damage taken
+editor_splash.report.heel,Report card row,Peak heel
+editor_splash.report.back,Report card button: close it and return to editing,Back to the design
+editor_splash.report.again,Report card button: start another splash,Splash again
+editor_splash.report.again.tip,"Tooltip, first line at most 12 words",Saves and starts the basin again with the same settings
+editor_splash.basin.calm,"Water in running text, inserted into editor_splash.basin",Calm water
+editor_splash.basin.b4,"Water in running text, inserted into editor_splash.basin",Beaufort 4
+editor_splash.basin.b7,"Water in running text, inserted into editor_splash.basin",Beaufort 7
+editor_splash.basin.drones,"Target in running text, inserted into editor_splash.basin",drones
+editor_splash.basin.patrol,"Target in running text, inserted into editor_splash.basin",a patrol boat

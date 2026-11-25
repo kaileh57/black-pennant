@@ -1,0 +1,60 @@
+name: Bug report
+description: A crash, a freeze or something that works wrong.
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Build
+      description: The line at the bottom of the main menu, for example "Version 0.1.0, build 3f2a9c1".
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: System
+      options:
+        - macOS (Apple silicon)
+        - Windows 10
+        - Windows 11
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to make it happen
+      description: Numbered steps from the main menu, as far as you remember them.
+      placeholder: |
+        1. Campaign, continue
+        2. Open the briefing for the convoy raid
+        3. Splash test in the dry dock
+    validations:
+      required: true
+  - type: textarea
+    id: crash_log
+    attributes:
+      label: Crash log
+      description: |
+        After a crash the game says so at the next start and names the logs folder. Settings > Playtest >
+        Open log folder opens it. Drag the newest file named godot followed by a date into this box (that is
+        the crashed session; godot.log is the current one). It can contain your user name inside folder
+        paths: open it in a text editor and replace the name first. The folder is
+        ~/Library/Application Support/BlackPennant/logs on macOS and %APPDATA%\BlackPennant\logs on Windows.
+    validations:
+      required: false
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Settings > Playtest > Copy diagnostics, pasted as it is. It holds the build, renderer and changed settings, without names or paths.
+      render: text
+    validations:
+      required: false

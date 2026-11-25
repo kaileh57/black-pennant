@@ -1,0 +1,201 @@
+keys,?context,en
+mp.title,Multiplayer screen title,Multiplayer
+mp.back,Button that returns to the main menu,Back
+mp.name,Field label: the name other players see,Your name
+mp.name_help,Help beside the name field,Other players see this name. There are no accounts.
+mp.join.title,Panel title: joining a game someone hosts,Join a game
+mp.join.code,Field label: the join code the host shared,Join code
+mp.join.code_help,Under the empty join code field,Paste the code the host shared. Spaces and line breaks are ignored.
+mp.join.code_ok,"Under a valid join code; {0} host address, {1} port","Host {0}, port {1}"
+mp.join.code_bad,Under a join code that does not read,This is not a join code. Check that it was copied whole.
+mp.join.by_code,Button that joins with the join code,Join with code
+mp.join.address_title,Panel title: joining by address and lobby key,Join by address
+mp.join.address_help,Help for joining by address,"Use the address and port and the 16-character lobby key the host panel shows. On the same network, use the host's LAN address."
+mp.join.address,Field label: host address with port,Address and port
+mp.join.key,Field label: the 16-character lobby key,Lobby key
+mp.join.by_address,Button that joins by address and key,Join by address
+mp.join.address_bad,Shown when the address or key does not read,Enter the address as address:port and the 16-character lobby key.
+mp.join.connecting,Joining state; {0} the host address,Connecting to {0}.
+mp.join.cancel,Button that stops joining,Stop joining
+mp.join.failed,Join failed with no reason given,The host did not let you join.
+mp.host.title,Panel title: hosting a game,Host a game
+mp.host.mode,Field label: game mode of the hosted lobby,Mode
+mp.host.ruleset,Field label: PvP ruleset,Ruleset
+mp.host.cap,Field label: PvP tonnage cap per hull,Tonnage cap per hull
+mp.host.name,Field label: the lobby's name,Lobby name
+mp.host.port,Field label: UDP port to host on,UDP port
+mp.host.upload,Field label: the host's upload speed,Upload speed
+mp.host.mbps,Unit suffix in the upload speed field,Mbps
+mp.host.upload_help,Help under the upload speed field,"1 Mbps carries 3 other players: co-op, skirmish and 2v2. An 8-player sandbox needs about 2 Mbps."
+mp.host.start,Button that starts hosting,Host lobby
+mp.host.opening,Shown after Host while the lobby opens,Opening the lobby.
+mp.host.failed,Hosting failed with no reason given,The lobby could not be opened.
+mp.host.firewall_title,Dialog title before the firewall prompt can appear,Before you host
+mp.host.firewall_cancel,Dialog button that does not host,Do not host
+mp.host.firewall_host,Dialog button that hosts after reading the notice,Host lobby
+mp.mode.coop,Mode name: co-op on the loaded campaign,Campaign co-op
+mp.mode.0,Fallback mode name,Campaign
+mp.mode.1,Fallback mode name,Skirmish
+mp.mode.2,Fallback mode name,Sandbox
+mp.mode.3,Fallback mode name,Elimination
+mp.mode.4,Fallback mode name,Escort
+mp.ruleset.standard,PvP ruleset name: stock fire control only,Standard
+mp.ruleset.open,PvP ruleset name: forked officers and graphs allowed,Open
+lobby.title,Lobby screen title before the lobby has a name,Lobby
+lobby.leave,Button that leaves the lobby,Leave lobby
+lobby.waiting,Lobby line before the first lobby view arrives,Waiting for the host.
+lobby.summary,"Lobby line; {0} mode, {1} players in, {2} player limit","{0}, {1} of {2} players."
+lobby.summary_pvp,"Lobby line for PvP; {0} ruleset, {1} tonnage cap, {2} complexity cap per vessel, {3} per lobby","{0} ruleset, {1} per hull, {2} complexity points per vessel and {3} per lobby."
+lobby.players,Panel title of the player table,Players
+lobby.col.name,Player table column,Name
+lobby.col.team,Player table column: PvP team,Team
+lobby.col.design,Player table column: the design fielded,Design
+lobby.col.tonnage,Player table column: displacement of the design,Tonnage
+lobby.col.ready,Player table column,Ready
+lobby.col.ping,Player table column: round trip time,Ping
+lobby.unnamed,Player with no name,Unnamed player
+lobby.mark.host,Mark after a name: this player hosts,host
+lobby.mark.you,Mark after a name: the local player,you
+lobby.name_marks,"Name with marks; {0} name, {1} marks such as host, you",{0} ({1})
+lobby.team.0,PvP team name,Team 1
+lobby.team.1,PvP team name,Team 2
+lobby.team,Field label: the local player's PvP team,Team
+lobby.design_none,Design column: nothing chosen yet,No design chosen
+lobby.design_fetching,Design column: the design is still being fetched,Fetching design
+lobby.design_uploading,Design column while a design uploads; {0} percent received,Uploading {0}
+lobby.is_ready,Ready column: the player is ready,Ready
+lobby.not_ready,Ready column: the player is not ready,Not ready
+lobby.open_slot,Empty row of the player table,Open slot
+lobby.issues,Title over the reasons the sortie cannot start,Before the sortie can start
+lobby.saturated,Issue: the host's upload is saturated,The host's upload is full. New players cannot join until it clears.
+lobby.field,Button that fields the chosen design in this lobby,Field this design
+lobby.fielded,After fielding a design; {0} its name,{0} is your design for this sortie.
+lobby.design_over_cap,"Why a design cannot be fielded in a PvP lobby; {0} its displacement, {1} the lobby's per-hull cap",{0} is over this lobby's {1} cap per hull.
+lobby.field_failed,Fielding failed with no reason given,That design could not be fielded.
+lobby.ready,Toggle: the local player is ready,Ready
+lobby.mark_ready,Ready toggle while the local player is not ready; pressing it marks them ready,Mark me ready
+lobby.is_ready_toggle,Ready toggle while the local player is ready; pressing it again takes the mark back,You are ready
+lobby.start,Button that starts the sortie (host),Start sortie
+lobby.start_refused,Shown when Start was refused,The sortie cannot start yet.
+lobby.can_start_host,Status when the host can start,Everyone is ready. Start the sortie when you choose.
+lobby.can_start_member,Status when the lobby can start,Everyone is ready. The host starts the sortie.
+lobby.need_design,Status when the local player has no design,Field a design to get ready.
+lobby.waiting_ready,Status while players are not ready,Waiting for every player to be ready.
+lobby.starting,Countdown to the sortie; {0} seconds left,Sortie starts in {0} s.
+lobby.left_title,Dialog title after leaving a lobby for a reason,You left the lobby
+lobby.leave_title,Dialog title before the host closes the lobby,Close the lobby?
+lobby.leave_host_body,Dialog body before the host closes the lobby,You are the host. Leaving closes the lobby for every player.
+lobby.stay,Dialog button that stays in the lobby,Stay
+lobby.close_lobby,Dialog button that closes the lobby,Close lobby
+lobby.tab.connection,Tab name,Connection
+lobby.tab.hosting,Tab name,Hosting
+lobby.tab.settings,Tab name,Settings
+lobby.settings.pvp,Settings panel title for PvP rules,Rules
+lobby.settings.ruleset,Field label,Ruleset
+lobby.settings.ruleset_help,Help under the ruleset choice,"Standard allows doctrine, sliders and rules tables, so every ship uses stock fire control. Open also allows forked officers and graphs."
+lobby.settings.cap,Field label: tonnage cap per hull,Tonnage cap per hull
+lobby.settings.skirmish,Settings panel title for the skirmish operation,Operation
+lobby.settings.template,Field label: mission template,Template
+lobby.settings.act,Field label: the act that sets the enemy and the cap,Act
+lobby.settings.act_row,"Act choice; {0} act name, {1} its tonnage cap","{0}, {1} cap"
+lobby.settings.enemies,Field label: enemy hulls per player,Enemy hulls per player
+lobby.settings.difficulty,Field label,Difficulty
+lobby.settings_refused,Shown when the host's settings change was refused,That setting was refused.
+hosting.title,Host panel title,Hosting
+hosting.close,Button that closes the host panel,Close
+hosting.not_hosting,Host panel when not hosting,You are not hosting a lobby.
+hosting.binding,Host panel while the port opens; {0} UDP port,Opening UDP port {0}.
+hosting.bound,Host panel once the port is open; {0} UDP port,Listening on UDP port {0}.
+hosting.portmap.1,Fallback port mapping line,Asking the router to forward the port.
+hosting.portmap.2,Fallback port mapping line,The router forwards the port.
+hosting.portmap.3,Fallback port mapping line,This host is behind double NAT. Outside players cannot reach it.
+hosting.portmap.4,Fallback port mapping line,The router did not forward the port.
+hosting.portmap.5,Fallback port mapping line,The router stopped forwarding the port.
+hosting.code,Label over the join code,Join code
+hosting.code_pending,Join code field before the code exists,Waiting for the port
+hosting.copy_code,Button that copies a join code,Copy code
+hosting.copied_code,Inline note after copying the join code,Join code copied.
+hosting.code_ip_warning,Warning under the join code,This code contains your public IP address. Share it only with players you trust.
+hosting.key,Label over the lobby key,Lobby key
+hosting.copy_key,Button that copies the lobby key,Copy key
+hosting.copied_key,Inline note after copying the key,Lobby key copied.
+hosting.lan,LAN line; {0} LAN address and port,Players on your network join at {0}.
+hosting.lan_unknown,LAN line when no LAN address is known,No LAN address found.
+hosting.external,External address line; {0} public address,Your public address is {0}.
+hosting.manual_title,Panel title over the manual forwarding steps,Forward the port by hand
+hosting.step,"One numbered manual step; {0} number, {1} the step",{0}. {1}
+hosting.vpn_title,Panel title over the mesh VPN option,Use a mesh VPN
+hosting.vpn_found,Mesh VPN line; {0} VPN address,"A mesh VPN is running at {0}. Players on the same VPN join with this code:"
+hosting.vpn_none,Mesh VPN line when none runs,"With Tailscale or ZeroTier running on every machine, players join over the VPN and no port forwarding is needed."
+hosting.vpn_code,Accessible name of the VPN join code field,VPN join code
+hosting.upload_title,Panel title over the upload speed,Upload
+hosting.upload,Field label: the host's upload speed,Upload speed
+hosting.mbps,Unit suffix,Mbps
+hosting.limit_one,Client limit; {0} is 1,Allows {0} other player.
+hosting.limit_many,Client limit; {0} other players,Allows {0} other players.
+hosting.saturated,Shown while the host's upload is saturated,Your upload is full. Player caps are lowered and new joins are refused until it clears.
+hosting.players_title,Panel title over the player moderation list,Players
+hosting.players_none,No other players yet,No other players yet.
+hosting.unnamed,Player with no name,Unnamed player
+hosting.kick,Button that removes a player,Kick
+hosting.ban,Button that removes a player for this session,Ban
+hosting.kick_named,Accessible name; {0} player,Kick {0}
+hosting.ban_named,Accessible name; {0} player,Ban {0}
+hosting.kick_title,Dialog title,Kick this player?
+hosting.kick_body,Dialog body; {0} player,{0} leaves the lobby and can join again.
+hosting.ban_title,Dialog title,Ban this player?
+hosting.ban_body,Dialog body; {0} player,{0} leaves the lobby and cannot join again until you close it.
+hosting.keep_player,Dialog button that keeps the player,Keep player
+hosting.kick_confirm,Dialog button,Kick player
+hosting.ban_confirm,Dialog button,Ban player
+hosting.banned,Count of banned players; {0} count,Banned this session: {0}
+hosting.regenerate_help,Help over Regenerate key,A new key stops old join codes and keys from working.
+hosting.regenerate,Button that makes a new lobby key,Regenerate key
+hosting.regenerate_title,Dialog title,Make a new lobby key?
+hosting.regenerate_body,Dialog body,"Old join codes and keys stop working. Players connected by UDP drop, and they can rejoin their held slot with the new code."
+hosting.regenerate_keep,Dialog button that keeps the key,Keep key
+conn.title,Connection panel title,Connection
+conn.close,Button that closes the connection panel,Close
+conn.table,Accessible name of the connection table,Connections
+conn.col.player,Connection table column,Player
+conn.col.ping,Connection table column: round trip time,Ping
+conn.col.loss,Connection table column: packet loss,Loss
+conn.col.behind,Connection table column: snapshots behind the newest,Behind
+conn.col.quality,Connection table column: bandwidth quality,Quality
+conn.col.state,Connection table column,State
+conn.ms,Milliseconds; {0} number,{0} ms
+conn.quality.good,Bandwidth quality word,Good
+conn.quality.fair,Bandwidth quality word,Fair
+conn.quality.poor,Bandwidth quality word,Poor
+conn.state.closed,Connection state word,Closed
+conn.state.connecting,Connection state word,Connecting
+conn.state.connected,Connection state word,Connected
+conn.state.warning,Connection state word,Poor link
+conn.state.dropped,Connection state word,Dropped
+conn.state.refused,Connection state word,Refused
+conn.unnamed,Player with no name,Unnamed player
+conn.host_name,Name of the host in the table; {0} name,{0} (host)
+conn.tick,"Host tick rate when healthy; {0} rate, {1} nominal rate",Host simulation at {0} Hz of {1} Hz.
+conn.tick_slow,"Host tick rate below nominal; {0} rate, {1} nominal","Host simulation slowed to {0} Hz of {1} Hz."
+conn.tick_none,No sortie running,No sortie is running.
+conn.empty,Connection panel with no connection,Not connected to another player.
+conn.warning_line,"Warning row; {0} player, {1} sentence",{0}: {1}
+conn.dropped,Line for a dropped player,Dropped.
+conn.dropped_officers,Line for a dropped co-op player,"Dropped. Their officers keep their hull."
+conn.held,Rejoin hold left; {0} clock,Slot held for {0}.
+conn.host_lost_auto,Notice after 10 s with no packet from the host,No word from the host for 10 s. The next player on the list is taking over as host.
+conn.host_lost_rehost,Notice when this player may re-host,No word from the host for 10 s and nobody could take over. Re-host to continue from the last checkpoint.
+conn.rehost,Button that re-hosts from the last checkpoint,Re-host
+conn.rehost_failed,Re-host did not work,Re-hosting did not work. Try again or leave.
+conn.rehosted,After re-hosting,You are now the host. Share this join code with the other players:
+conn.rehost_code,Accessible name of the new join code field,New join code
+conn.copy_code,Button that copies the new join code,Copy code
+conn.copied_code,Inline note after copying,Join code copied.
+conn.copy_log,Button that copies the connection log,Copy connection log
+conn.log_copied,Inline note after copying the log,Connection log copied. Paste it into a playtest report.
+conn.log_empty,Inline note when the log is empty,The connection log is empty.
+mp.name_needed,Shown while the name field is empty,Type your name before you join or host.
+conn.toast.joined,"Toast during a sortie; {0} the player who joined or rejoined",{0} joined the sortie.
+conn.toast.dropped,"Toast during a sortie; {0} the player who left or dropped while their hull fights on","{0} left the sortie. Their officers keep the hull, and {0} can rejoin within 5 minutes."
+conn.toast.left,"Toast during a sortie; {0} the player who left",{0} left the sortie.
+conn.toast.someone,Name used in the toasts when the player's name is not known,A player

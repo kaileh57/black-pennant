@@ -1,0 +1,83 @@
+keys,?context,en
+hud_tracks.title,Title of the docked track list,Tracks
+hud_tracks.access.table,Screen-reader name of the track table,Track table
+hud_tracks.access.table_description,Screen-reader description of the track table,Every track the side holds. Enter designates the selected track.
+hud_tracks.sort.name,Accessible name of the track list sort button,Sort tracks
+hud_tracks.sort.tooltip,Tooltip of the track list sort button,Order of the list; click a column title to sort by it
+hud_tracks.sort.threat,Track list sort option: highest threat first,By threat
+hud_tracks.sort.range,Track list sort option: nearest first,By range
+hud_tracks.sort.bearing,Track list sort option: by bearing from the own ship,By bearing
+hud_tracks.sort.number,Track list sort option: by track number,By number
+hud_tracks.column.track,Track table column title: track number,Track
+hud_tracks.column.id,Track table column title: identification rung,ID
+hud_tracks.column.symbol_tooltip,Tooltip of the symbol column title,"Frame shows stance; bar above is air, below is underwater"
+hud_tracks.column.sort_tooltip,Tooltip of a sortable column title,Click to sort; click again to reverse
+hud_tracks.count.total,Track list count line; {0} the number of live tracks,{0} contacts
+hud_tracks.count.total_one,Track list count line when one track is held; {0} is 1,{0} contact
+hud_tracks.count.hostile,Track list count line part; {0} number of Hostile tracks,{0} Hostile
+hud_tracks.count.suspect,Track list count line part; {0} number of Suspect tracks,{0} Suspect
+hud_tracks.count.inbound,Track list count line part; {0} number of inbound weapons,{0} inbound
+hud_tracks.count.join,Separator between parts of the track list count line,", "
+hud_tracks.count.with_designated,"Track list count line with the designated track; {0} the counts, {1} track number",{0}. Designated {1}
+hud_tracks.list_join,"Separator between items of a short list, such as sensor names",", "
+hud_tracks.empty,Track list with no tracks held,No contacts held
+hud_tracks.waiting,Track list before the first picture of the sortie,Waiting for the first picture
+hud_tracks.note.inbound,Tooltip line of an inbound weapon track,Inbound weapon
+hud_tracks.note.designated,Tooltip line of the designated track,Designated for the officers
+hud_tracks.note.engaged,Tooltip line; {0} number of own mounts engaging the track,Engaged by {0} mounts
+hud_tracks.note.engaged_one,Tooltip line when one own mount engages the track,Engaged by 1 mount
+hud_tracks.note.last_known,"Tooltip or card line of a last-known mark; {0} how long ago, such as 3 min",Last known {0} ago
+hud_tracks.card.access,Screen-reader name of the track card,Track card
+hud_tracks.card.title,Track card title; {0} track number,Track {0}
+hud_tracks.card.close,Accessible name and tooltip of the track card close button,Close the card and clear the selection
+hud_tracks.card.rung,Track card identification line; {0} the ID rung word,ID {0}
+hud_tracks.card.rung_class,"Track card identification line; {0} the ID rung word, {1} the class name",ID {0}: {1}
+hud_tracks.card.position,"Track card line; {0} bearing in three digits, {1} range","Bearing {0}, {1}"
+hud_tracks.card.motion,"Track card line; {0} course in three digits, {1} speed","Course {0}, {1}"
+hud_tracks.card.altitude,Track card line; {0} height above the sea,Altitude {0}
+hud_tracks.card.depth,Track card line; {0} depth below the surface,Depth {0}
+hud_tracks.card.cpa,"Track card line; {0} closest approach distance, {1} time until it",Closest approach {0} in {1}
+hud_tracks.card.cpa_now,Track card line for a track that is receding; {0} current distance,"Closest approach now, {0}"
+hud_tracks.card.grade,Track card line; {0} the quality grade word,Quality {0}
+hud_tracks.card.grade_sources,"Track card line; {0} the quality grade word, {1} the sensors holding the track","Quality {0}, from {1}"
+hud_tracks.card.envelope,Track card line; {0} the weapon range the plot draws for the track,Weapon range {0}
+hud_tracks.card.stance_struck,"Track card stance line once the side has seen the hull strike its colours (L2542); {0} stance word",{0}. Struck colours
+hud_tracks.card.emitting,Track card line while the track radiates,Radiating
+hud_tracks.card.inbound,Track card line for an inbound weapon,Inbound weapon
+hud_tracks.card.dropped,Track card text after the track left the picture; {0} track number,Track {0} is no longer held.
+hud_tracks.card.candidates,Track card line; {0} number of candidates consistent with the evidence,{0} candidates
+hud_tracks.card.candidates_one,Track card line when one candidate is left; {0} is 1,{0} candidate
+hud_tracks.card.candidate_own,Candidate list entry from the own-side roster; {0} its name,"{0}, own side"
+hud_tracks.card.candidate_civilian,Candidate list entry from the civilian traffic list; {0} its name,"{0}, civilian"
+hud_tracks.card.more,Last line of a shortened candidate list; {0} how many more,and {0} more
+hud_tracks.card.evidence,"Track card evidence line; {0} rung word, {1} sortie clock, {2} what moved it",{0} at {1}: {2}
+hud_tracks.card.set_stance,Label of the manual stance picker on the track card,Stance
+hud_tracks.card.set_identity,Label of the manual identity picker on the track card,Identity
+hud_tracks.card.stance_tooltip,Tooltip of the stance picker,Overrides the stance rules for this track; Friend is never engaged
+hud_tracks.card.identity_tooltip,Tooltip of the identity picker,Sets the class by hand; the officers treat it as identified
+hud_tracks.card.stance_auto,Stance picker choice that hands the stance back to the rules,By the rules
+hud_tracks.card.identity_auto,Identity picker choice that hands identification back to the evidence,By the evidence
+hud_tracks.card.identity_class,Identity picker choice; {0} a class name,Class: {0}
+hud_tracks.card.designate,Button that designates the track for the officers,Designate
+hud_tracks.card.clear_designation,Button that clears the designation of the designated track,Clear designation
+hud_tracks.card.designate_tooltip,Tooltip of the designate button,The officers engage it under doctrine
+hud_tracks.card.show_on_plot,Button that switches to the plot table centred on the track,Show on plot
+hud_tracks.overlay.label,"Bridge view track label; {0} track number, {1} stance word",{0} {1}
+hud_tracks.overlay.label_range,"Bridge view label of a track off the view; {0} the label, {1} range","{0}, {1}"
+hud_tracks.overlay.designated,Second line of the designated track label in the bridge view,Designated
+hud_tracks.overlay.inbound,Second line of an inbound weapon label in the bridge view,Inbound
+hud_tracks.overlay.last_known,Second line of a last-known mark label in the bridge view,Last known
+hud_tracks.source.search_radar,"Sensor that holds a track, in the track card source list",Search radar
+hud_tracks.source.fire_control,"Sensor that holds a track, in the track card source list",Fire control
+hud_tracks.source.seeker,"Sensor that holds a track, in the track card source list",Seeker
+hud_tracks.source.esm,"Sensor that holds a track, in the track card source list",ESM
+hud_tracks.source.passive_sonar,"Sensor that holds a track, in the track card source list",Passive sonar
+hud_tracks.source.active_sonar,"Sensor that holds a track, in the track card source list",Active sonar
+hud_tracks.source.visual,"Sensor that holds a track, in the track card source list",Lookouts
+hud_tracks.source.camera,"Sensor that holds a track, in the track card source list",Camera
+hud_tracks.source.datalink,"Sensor that holds a track, in the track card source list",Datalink
+hud_tracks.source.offboard,"Sensor that holds a track, in the track card source list",Drones
+hud_tracks.source.briefing,"Sensor that holds a track, in the track card source list",Briefing
+hud_tracks.row.number,"Track table cell; {0} track number, {1} stance word",{0} {1}
+hud_tracks.column.position,Track table column title: bearing and range from the own ship,"Bearing, range"
+hud_tracks.row.position,"Track table cell; {0} bearing in three digits, {1} range","{0}, {1}"

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="WorldWeatherLook" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://world/presets/weather_look.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+overcast = 1.0
+cirrus_cover = 0.0
+rain_shafts = 0.0
+sun_glow = 0.3
+shadow_opacity = 0.45
+ambient_sky_share = 0.75
+aerial_perspective = 0.5

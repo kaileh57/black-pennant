@@ -1,0 +1,87 @@
+// Vec<FleetTemplate>: the Combine's Act 3 groups (DESIGN.md L747, L94-102, L749, L451, L866-875). Unit `data-act3`.
+// Licensed CC BY 4.0.
+//
+// Commitment arithmetic uses each slot's minimum count of its lightest class (tonnages in enemy_classes/act1.ron to
+// act3.ron). Act 3 commits 5 hulls and 3,600 t per player. Every task group and the hunter-killer meets that on its
+// worst draw, because the operation generator draws its reinforcement waves from the latest act's task groups and
+// hunter-killers; so does the convoy escort, which alone commits a convoy raid or prize capture. Convoys, prizes,
+// moored hulls and the defector are not combat hulls and never count. Act 1 and Act 2 hulls stay in service and fill
+// some patrol and garrison slots.
+//
+// Submarines (L451) sail only in the two submarine patrols, never in a task group, hunter-killer or escort, so every
+// floor above holds on surface hulls alone and nothing needs rewriting if submarines are cut (L875). Operations add a
+// patrol beside their surface force; the boats count toward commitment when present, as any Combine combat hull does.
+//
+// Aircraft: Act 3 adds no air groups. The generator's Alert 3 air patrol and the air-patrol complication take the
+// first air-patrol fleet by sorted id across every act up to the current one, which stays fleet.act2.air (two strike
+// aircraft), and the capstone names Act 2's four-aircraft raid. The Alert 3 escort and decoy convoy likewise stay
+// fleet.act1.escort and fleet.act1.decoy, so this file carries no generic escort or decoy nothing would draw.
+[
+    // ---- Shipping -----------------------------------------------------------------------------------------------
+    (id: "fleet.act3.convoy", kind: Convoy, act: Act3, formation: Column,
+        slots: [(classes: ["class.bulk_carrier", "class.fleet_tanker", "class.freighter", "class.oiler"], min: 3, max: 4)]),
+    // The Strand fuel run: fleet tankers only.
+    (id: "fleet.act3.convoy.tankers", kind: Convoy, act: Act3, formation: Column,
+        slots: [(classes: ["class.fleet_tanker"], min: 3, max: 4)]),
+    (id: "fleet.act3.convoy.prize", kind: Convoy, act: Act3, formation: Column,
+        slots: [(classes: ["class.bulk_carrier", "class.fleet_tanker"], min: 1, max: 2)]),
+    (id: "fleet.act3.convoy.moored", kind: Convoy, act: Act3, formation: Column,
+        slots: [(classes: ["class.bulk_carrier", "class.fleet_tanker", "class.supply_tender"], min: 1, max: 1)]),
+    // The Saltby lighter: the bulk carrier that brings the yard its heavy gun mounts.
+    (id: "fleet.act3.convoy.lighter", kind: Convoy, act: Act3, formation: Column,
+        slots: [(classes: ["class.bulk_carrier"], min: 1, max: 1)]),
+    // The defector: an island packet carrying the people who walk out of the Combine's yards.
+    (id: "fleet.act3.convoy.defector", kind: Convoy, act: Act3, formation: Column,
+        slots: [(classes: ["class.packet"], min: 1, max: 1)]),
+    // ---- Escorts ------------------------------------------------------------------------------------------------
+    // Convoy escort: worst draw 1,022 + 925 + 766 + 2 x 474 = 3,661 t in 5 hulls.
+    (id: "fleet.act3.escort.convoy", kind: Escort, act: Act3, formation: Screen,
+        slots: [(classes: ["class.dividend"], min: 1, max: 1), (classes: ["class.collateral"], min: 1, max: 1),
+            (classes: ["class.annuity"], min: 1, max: 1), (classes: ["class.pledge", "class.pledge_b"], min: 2, max: 2)]),
+    // ---- Patrols and garrisons ----------------------------------------------------------------------------------
+    // 474 + 283 = 757 t in 2 hulls at least.
+    (id: "fleet.act3.patrol", kind: Patrol, act: Act3, formation: LineAbreast,
+        slots: [(classes: ["class.pledge", "class.pledge_b"], min: 1, max: 2), (classes: ["class.warrant", "class.indenture", "class.premium"], min: 1, max: 2)]),
+    // 925 + 2 x 474 = 1,873 t in 3 hulls at least.
+    (id: "fleet.act3.patrol.heavy", kind: Patrol, act: Act3, formation: Wedge,
+        slots: [(classes: ["class.collateral"], min: 1, max: 1), (classes: ["class.pledge", "class.pledge_b"], min: 2, max: 3)]),
+    // 2 x 474 + 639 = 1,587 t in 3 hulls at least.
+    (id: "fleet.act3.garrison", kind: Garrison, act: Act3, formation: Box,
+        slots: [(classes: ["class.pledge", "class.pledge_b"], min: 2, max: 3), (classes: ["class.bond", "class.bond_b"], min: 1, max: 1),
+            (classes: ["class.warrant", "class.aviso"], min: 0, max: 1)]),
+    // ---- Submarines ---------------------------------------------------------------------------------------------
+    // A coastal boat or two, on the approaches.
+    (id: "fleet.act3.sub", kind: SubmarinePatrol, act: Act3, formation: LineAbreast,
+        slots: [(classes: ["class.tontine"], min: 1, max: 2)]),
+    // A pack: two patrol boats and sometimes a coastal boat.
+    (id: "fleet.act3.sub.pack", kind: SubmarinePatrol, act: Act3, formation: LineAbreast,
+        slots: [(classes: ["class.accrual"], min: 2, max: 2), (classes: ["class.tontine"], min: 0, max: 1)]),
+    // ---- Aces ---------------------------------------------------------------------------------------------------
+    // Ace flagships sail alone in their own group, so a duel's objective is the ace's ship and nothing else.
+    (id: "fleet.act3.ace.contingency", kind: Patrol, act: Act3, formation: Column,
+        slots: [(classes: ["class.ace_contingency"], min: 1, max: 1)]),
+    (id: "fleet.act3.ace.foreclosure", kind: Patrol, act: Act3, formation: Column,
+        slots: [(classes: ["class.ace_foreclosure"], min: 1, max: 1)]),
+    // ---- Task groups (5 hulls, at least 3,600 t on the worst draw) ------------------------------------------------
+    // 2 x 925 + 766 + 474 + 1,022 = 4,112 t.
+    (id: "fleet.act3.tg.gun", kind: TaskGroup, act: Act3, formation: Wedge,
+        slots: [(classes: ["class.collateral", "class.collateral_b"], min: 2, max: 2), (classes: ["class.annuity"], min: 1, max: 1),
+            (classes: ["class.pledge", "class.pledge_b"], min: 1, max: 1), (classes: ["class.dividend"], min: 1, max: 1)]),
+    // 2 x 766 + 1,022 + 925 + 474 = 3,953 t.
+    (id: "fleet.act3.tg.strike", kind: TaskGroup, act: Act3, formation: LineAbreast,
+        slots: [(classes: ["class.annuity"], min: 2, max: 2), (classes: ["class.dividend"], min: 1, max: 1),
+            (classes: ["class.collateral"], min: 1, max: 1), (classes: ["class.pledge", "class.pledge_b"], min: 1, max: 1)]),
+    // The anti-submarine group that hunts with sonar and helicopters: 2 x 1,022 + 2 x 474 + 766 = 3,758 t.
+    (id: "fleet.act3.tg.asw", kind: TaskGroup, act: Act3, formation: Screen,
+        slots: [(classes: ["class.dividend"], min: 2, max: 2), (classes: ["class.pledge", "class.pledge_b"], min: 2, max: 2),
+            (classes: ["class.annuity"], min: 1, max: 1)]),
+    // 1,474 + 1,118 + 1,022 + 766 + 628 = 5,008 t.
+    (id: "fleet.act3.tg.heavy", kind: TaskGroup, act: Act3, formation: Column,
+        slots: [(classes: ["class.equity"], min: 1, max: 1), (classes: ["class.collateral_b"], min: 1, max: 1),
+            (classes: ["class.dividend"], min: 1, max: 1), (classes: ["class.annuity"], min: 1, max: 1), (classes: ["class.pledge_b"], min: 1, max: 1)]),
+    // Hunter-killer: 2 x 1,474 + 1,118 + 1,022 + 766 = 5,854 t. The Alert 5 hunter group itself is drawn from hull
+    // records of the top tier (theatre alert); this template sails in standalone operations and as the heaviest wave.
+    (id: "fleet.act3.hunter", kind: HunterKiller, act: Act3, formation: Wedge,
+        slots: [(classes: ["class.equity"], min: 2, max: 2), (classes: ["class.collateral_b"], min: 1, max: 1),
+            (classes: ["class.dividend"], min: 1, max: 1), (classes: ["class.annuity"], min: 1, max: 1)]),
+]

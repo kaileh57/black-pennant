@@ -1,0 +1,227 @@
+keys,?context,en
+graph.group.math,Node palette group heading,Math and logic
+graph.group.scripts,Node palette group heading,Scripts
+graph.group.sinks,Node palette group heading,Sinks
+graph.group.sources,Node palette group heading,Sources
+graph.group.stages,Node palette group heading,Officer stages
+graph.node.abs,Control graph node name,Absolute value
+graph.node.add,Control graph node name,Add
+graph.node.alpha_beta,Control graph node name,Alpha-beta filter
+graph.node.and,Control graph node name,And
+graph.node.ballistic_solver,Control graph node name,Ballistic solver
+graph.node.bearing_to,Control graph node name,Bearing to
+graph.node.clamp,Control graph node name,Clamp
+graph.node.compare_eq,Control graph node name,Equal
+graph.node.compare_ge,Control graph node name,At least
+graph.node.compare_gt,Control graph node name,Greater than
+graph.node.compare_le,Control graph node name,At most
+graph.node.compare_lt,Control graph node name,Less than
+graph.node.compare_ne,Control graph node name,Not equal
+graph.node.constant,Control graph node name,Constant
+graph.node.counter,Control graph node name,Counter
+graph.node.damage_control_planner,Control graph node name,Damage control planner
+graph.node.detections,Control graph node name,Raw detections
+graph.node.div,Control graph node name,Divide
+graph.node.door,Control graph node name,Watertight door
+graph.node.emission_controller,Control graph node name,Emission controller
+graph.node.emission_state,Control graph node name,Emitter on or off
+graph.node.evasion,Control graph node name,Evasion
+graph.node.flood_valve,Control graph node name,Flood valve
+graph.node.helm_autopilot,Control graph node name,Autopilot
+graph.node.helm_heading,Control graph node name,Helm heading
+graph.node.helm_speed,Control graph node name,Helm speed
+graph.node.latch,Control graph node name,Latch
+graph.node.load_shedder,Control graph node name,Load shedder
+graph.node.low_pass,Control graph node name,Low-pass filter
+graph.node.max,Control graph node name,Maximum
+graph.node.min,Control graph node name,Minimum
+graph.node.missile_launch,Control graph node name,Missile launch
+graph.node.missile_target,Control graph node name,Missile target
+graph.node.mount_aim_point,Control graph node name,Mount aim point
+graph.node.mount_assignment,Control graph node name,Mount assignment
+graph.node.mount_fire_permission,Control graph node name,Mount fire permission
+graph.node.mul,Control graph node name,Multiply
+graph.node.neg,Control graph node name,Negate
+graph.node.not,Control graph node name,Not
+graph.node.or,Control graph node name,Or
+graph.node.own_ship,Control graph node name,Own ship
+graph.node.part_state,Control graph node name,Part state
+graph.node.pid,Control graph node name,PID controller
+graph.node.pn_guidance,Control graph node name,Missile guidance
+graph.node.power_priority,Control graph node name,Power priority
+graph.node.pump,Control graph node name,Pump
+graph.node.range_to,Control graph node name,Range to
+graph.node.script,Control graph node name,Script
+graph.node.select,Control graph node name,Select
+graph.node.ship_emcon,Control graph node name,Ship EMCON
+graph.node.ship_preset,Control graph node name,Ship doctrine preset
+graph.node.station_keeping,Control graph node name,Station keeping
+graph.node.sub,Control graph node name,Subtract
+graph.node.theatre_orders,Control graph node name,Standing orders
+graph.node.threat_ranking,Control graph node name,Threat ranking
+graph.node.timer,Control graph node name,Timer
+graph.node.track_fusion,Control graph node name,Track fusion
+graph.node.track_id_override,Control graph node name,Track ID override
+graph.node.track_list,Control graph node name,Track list
+graph.node.track_stance_override,Control graph node name,Track stance override
+graph.node.vec_add,Control graph node name,Add vectors
+graph.node.vec_cross,Control graph node name,Cross product
+graph.node.vec_dot,Control graph node name,Dot product
+graph.node.vec_length,Control graph node name,Vector length
+graph.node.vec_make,Control graph node name,Make vector
+graph.node.vec_normalize,Control graph node name,Unit vector
+graph.node.vec_scale,Control graph node name,Scale vector
+graph.node.vec_split,Control graph node name,Split vector
+graph.node.vec_sub,Control graph node name,Subtract vectors
+graph.origin.generated,"Control graph node origin, shown on its frame",Generated
+graph.origin.kit,"Control graph node origin, shown on its frame",From kit
+graph.origin.pinned,"Control graph node origin, shown on its frame",Pinned
+graph.origin.replacement,"Control graph node origin, shown on its frame",Replaces a stage
+graph.origin.rule,"Control graph node origin, shown on its frame",Rule
+graph.origin.script,"Control graph node origin, shown on its frame",Script
+graph.param.alpha,Control graph node parameter,Alpha
+graph.param.beta,Control graph node parameter,Beta
+graph.param.dc.door_discipline,Control graph node parameter,Door discipline
+graph.param.dc.magazine_flood_s,Control graph node parameter,Flood magazine at cook-off (s)
+graph.param.dc.pump_threshold_m,Control graph node parameter,Pump start depth (m)
+graph.param.domain,Control graph node parameter,Domain
+graph.param.duration_s,Control graph node parameter,Duration (s)
+graph.param.engineer.fuel_reserve,Control graph node parameter,Fuel reserve
+graph.param.engineer.reserve_margin,Control graph node parameter,Power reserve
+graph.param.engineer.restore_delay_s,Control graph node parameter,Restore delay (s)
+graph.param.epsilon,Control graph node parameter,Tolerance
+graph.param.gunnery.aggression,Control graph node parameter,Aggression
+graph.param.gunnery.converge_m,Control graph node parameter,Convergence (m)
+graph.param.gunnery.iteration_cap,Control graph node parameter,Iteration cap
+graph.param.gunnery.open_fire_range,Control graph node parameter,Open fire at share of effective range
+graph.param.gunnery.pn_air,Control graph node parameter,"Navigation constant, air targets"
+graph.param.gunnery.pn_surface,Control graph node parameter,"Navigation constant, surface targets"
+graph.param.gunnery.self_defence_range_m,Control graph node parameter,Self-defence range (m)
+graph.param.helm.cruise_speed,Control graph node parameter,Cruise speed
+graph.param.helm.evasion,Control graph node parameter,Evasion
+graph.param.helm.lookahead,Control graph node parameter,Route lookahead (turning radii)
+graph.param.helm.responsiveness,Control graph node parameter,Helm responsiveness
+graph.param.helm.station_radius_m,Control graph node parameter,Station radius (m)
+graph.param.kd,Control graph node parameter,Derivative gain
+graph.param.ki,Control graph node parameter,Integral gain
+graph.param.kp,Control graph node parameter,Proportional gain
+graph.param.min_grade,Control graph node parameter,Lowest grade
+graph.param.min_stance,Control graph node parameter,Lowest stance
+graph.param.out_max,Control graph node parameter,Output maximum
+graph.param.out_min,Control graph node parameter,Output minimum
+graph.param.sensors.burst_repeat_s,Control graph node parameter,Burst repeat (s)
+graph.param.sensors.burst_rotations,Control graph node parameter,Burst length (rotations)
+graph.param.sensors.burst_trigger_range_m,Control graph node parameter,Burst trigger range (m)
+graph.param.sensors.pd_radar_range_m,Control graph node parameter,Point-defence radar range (m)
+graph.param.time_constant_s,Control graph node parameter,Time constant (s)
+graph.param.wrap,Control graph node parameter,Angle error
+graph.port.a,Control graph port name,A
+graph.port.active,Control graph port name,Active
+graph.port.aim_point,Control graph port name,Aim point
+graph.port.alpha_fire_control,Control graph port name,"Gain, fire control"
+graph.port.alpha_passive,Control graph port name,"Gain, passive sensors"
+graph.port.alpha_search,Control graph port name,"Gain, search radar"
+graph.port.ammo_fraction,Control graph port name,Ammunition left
+graph.port.b,Control graph port name,B
+graph.port.bearing,Control graph port name,Bearing
+graph.port.closed,Control graph port name,Closed
+graph.port.compartment,Control graph port name,Compartment
+graph.port.cond,Control graph port name,Condition
+graph.port.converged,Control graph port name,Converged
+graph.port.count,Control graph port name,Count
+graph.port.cross_track_m,Control graph port name,Cross-track error (m)
+graph.port.demand_kw,Control graph port name,Demand (kW)
+graph.port.designated,Control graph port name,Designated track
+graph.port.detections,Control graph port name,Detections
+graph.port.distance_m,Control graph port name,Distance (m)
+graph.port.done,Control graph port name,Done
+graph.port.door_closed,Control graph port name,Door closed
+graph.port.down,Control graph port name,Count down
+graph.port.elapsed_s,Control graph port name,Elapsed (s)
+graph.port.elevation,Control graph port name,Elevation
+graph.port.else,Control graph port name,If false
+graph.port.emcon,Control graph port name,EMCON
+graph.port.engaged,Control graph port name,Mounts engaged
+graph.port.error,Control graph port name,Error
+graph.port.esm_warning,Control graph port name,ESM warning
+graph.port.estimate,Control graph port name,Estimate
+graph.port.evade,Control graph port name,Evade
+graph.port.fire,Control graph port name,Fire
+graph.port.fires,Control graph port name,Fires
+graph.port.flooding,Control graph port name,Flooded compartments
+graph.port.from,Control graph port name,From
+graph.port.fuel_fraction,Control graph port name,Fuel left
+graph.port.gate_sigma,Control graph port name,Association gate
+graph.port.generation_kw,Control graph port name,Generation (kW)
+graph.port.heading,Control graph port name,Heading
+graph.port.health,Control graph port name,Health
+graph.port.heel,Control graph port name,Heel
+graph.port.hull_health,Control graph port name,Hull health
+graph.port.in_range,Control graph port name,In range
+graph.port.inbound_count,Control graph port name,Inbound count
+graph.port.inbound_weapons,Control graph port name,Inbound weapons
+graph.port.iterations,Control graph port name,Iterations
+graph.port.k,Control graph port name,Factor
+graph.port.keep_range_m,Control graph port name,Keep range (m)
+graph.port.launch,Control graph port name,Launch
+graph.port.lights,Control graph port name,Ship lights
+graph.port.max,Control graph port name,Maximum
+graph.port.measured,Control graph port name,Measured
+graph.port.min,Control graph port name,Minimum
+graph.port.n,Control graph port name,Navigation constant
+graph.port.nearest,Control graph port name,Nearest
+graph.port.nearest_range_m,Control graph port name,Nearest range (m)
+graph.port.on,Control graph port name,On
+graph.port.open,Control graph port name,Open
+graph.port.orders,Control graph port name,Orders
+graph.port.out,Control graph port name,Result
+graph.port.part,Control graph port name,Part
+graph.port.position,Control graph port name,Position
+graph.port.power_margin_kw,Control graph port name,Power margin (kW)
+graph.port.powered,Control graph port name,Powered
+graph.port.preset,Control graph port name,Preset
+graph.port.priority,Control graph port name,Priority
+graph.port.pump,Control graph port name,Pump on
+graph.port.pump_compartment,Control graph port name,Pump compartment
+graph.port.q,Control graph port name,Held
+graph.port.radiate,Control graph port name,Radiate
+graph.port.radiate_fire_control,Control graph port name,Fire-control radars on
+graph.port.radiate_jammer,Control graph port name,Jammers on
+graph.port.radiate_point_defence,Control graph port name,Point-defence radars on
+graph.port.radiate_search,Control graph port name,Search radars on
+graph.port.radiate_sonar,Control graph port name,Active sonar on
+graph.port.range_m,Control graph port name,Range (m)
+graph.port.ranked,Control graph port name,Ranked threats
+graph.port.rate,Control graph port name,Rate
+graph.port.reset,Control graph port name,Reset
+graph.port.residual_m,Control graph port name,Residual (m)
+graph.port.run,Control graph port name,Run
+graph.port.rung,Control graph port name,ID rung
+graph.port.set,Control graph port name,Set
+graph.port.setpoint,Control graph port name,Setpoint
+graph.port.setting,Control graph port name,EMCON setting
+graph.port.shed_count,Control graph port name,Loads shed
+graph.port.sigma_bearing,Control graph port name,Bearing error
+graph.port.sigma_range_m,Control graph port name,Range error (m)
+graph.port.sortie_time_s,Control graph port name,Sortie time (s)
+graph.port.speed_kn,Control graph port name,Speed (kn)
+graph.port.stance,Control graph port name,Stance
+graph.port.target,Control graph port name,Target
+graph.port.teams_busy,Control graph port name,Teams busy
+graph.port.then,Control graph port name,If true
+graph.port.threats,Control graph port name,Threats
+graph.port.time_of_flight_s,Control graph port name,Time of flight (s)
+graph.port.to,Control graph port name,To
+graph.port.top,Control graph port name,Top threat
+graph.port.track,Control graph port name,Track
+graph.port.tracks,Control graph port name,Tracks
+graph.port.train,Control graph port name,Training
+graph.port.up,Control graph port name,Count up
+graph.port.v,Control graph port name,Vector
+graph.port.value,Control graph port name,Value
+graph.port.velocity,Control graph port name,Velocity
+graph.port.weapons_tight,Control graph port name,Weapons tight
+graph.port.works,Control graph port name,Working
+graph.port.x,Control graph port name,X
+graph.port.y,Control graph port name,Y
+graph.port.z,Control graph port name,Z
